@@ -282,10 +282,15 @@ export default function Dashboard({
 }) {
   const [activePage, setActivePage] = useState(routeActivePage || "bulk-entry");
   const [records, setRecords] = useState(initialRecords);
+  const [localTabCounts, setLocalTabCounts] = useState(tabCounts);
 
   useEffect(() => {
     setRecords(initialRecords);
   }, [initialRecords]);
+
+  useEffect(() => {
+    setLocalTabCounts(tabCounts);
+  }, [tabCounts]);
 
   const [renewalCounts, setRenewalCounts] = useState({
     eodPremium: 0,
@@ -611,15 +616,20 @@ export default function Dashboard({
     return ids;
   }, [policyRecordResults]);
   const recordViewOptions = useMemo(() => {
-    if (activePage === "records" && tabCounts) {
-      const dynamicTabs = (tabCounts.categories || []).map((cat) => ({
+    const countsSource = localTabCounts || tabCounts;
+    if (activePage === "records" && countsSource) {
+      const dynamicTabs = (countsSource.categories || []).map((cat) => ({
         key: cat.key,
         label: cat.label,
         count: cat.count,
       }));
+      const duplicatesCount =
+        recordViewCategory === "duplicates" && records.length === 0
+          ? 0
+          : countsSource.duplicates || 0;
       return [
-        { key: "all", label: "All Records", count: tabCounts.all || 0 },
-        { key: "duplicates", label: "Duplicate Policies", count: tabCounts.duplicates || 0 },
+        { key: "all", label: "All Records", count: countsSource.all || 0 },
+        { key: "duplicates", label: "Duplicate Policies", count: duplicatesCount },
         ...dynamicTabs,
       ];
     }
@@ -636,7 +646,16 @@ export default function Dashboard({
       { key: "duplicates", label: "Duplicate Policies", count: duplicateRecordIds.size },
       ...Array.from(categories.values()),
     ];
-  }, [duplicateRecordIds.size, policyRecordResults.length, recordsWithSchema, activePage, tabCounts]);
+  }, [
+    duplicateRecordIds.size,
+    policyRecordResults.length,
+    recordsWithSchema,
+    activePage,
+    tabCounts,
+    localTabCounts,
+    recordViewCategory,
+    records.length,
+  ]);
   const visiblePolicyRecordResults = useMemo(() => {
     if (activePage === "records") return records;
     if (recordViewCategory === "all") return policyRecordResults;
@@ -1186,6 +1205,14 @@ export default function Dashboard({
         if (deletedCount > 0) {
           const deletedSet = new Set(deletedIds);
           setRecords((current) => current.filter((item) => !deletedSet.has(item.id)));
+          setLocalTabCounts((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              all: Math.max(0, (prev.all || 0) - deletedCount),
+              duplicates: Math.max(0, (prev.duplicates || 0) - deletedCount),
+            };
+          });
         }
 
         if (failedCount === 0) {

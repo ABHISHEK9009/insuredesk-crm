@@ -7,8 +7,8 @@ import { getTenantFilter } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db/prisma";
 import { MANUAL_RENEWAL_SQL_EXCLUSION, withoutManualRenewalSources } from "@/lib/records/manual-renewal-source";
 
-// Simple in-memory cache for slow dashboard tab counts (30 seconds TTL)
-const countsCache = new Map();
+import { getCachedTabCounts } from "@/lib/records/tab-counts-cache";
+
 const POLICY_RECORD_HIDDEN_SOURCE_FILES = ["generic_renewal_template.xlsx"];
 
 function addHiddenPolicyRecordSources(where) {
@@ -32,24 +32,13 @@ function withPolicyTypeTerms(baseWhere, terms) {
   };
 }
 
-async function getCachedTabCounts({ key, fetcher }) {
-  const now = Date.now();
-  const cached = countsCache.get(key);
-  if (cached && (now - cached.timestamp < 30000)) {
-    return cached.data;
-  }
-  const data = await fetcher();
-  countsCache.set(key, { data, timestamp: now });
-  return data;
-}
-
 async function loadPolicyRecordTabCounts({ basePolicyWhere, isSuperAdmin, orgId, session }) {
   try {
     void session;
     const duplicateCountQuery = `
       SELECT COUNT(*)::integer as count FROM pdf_records
       WHERE deleted_at IS NULL
-        AND ($1::boolean OR organization_id = $2::uuid)
+        AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
         AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
         AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx'
@@ -57,7 +46,7 @@ async function loadPolicyRecordTabCounts({ basePolicyWhere, isSuperAdmin, orgId,
           SELECT COALESCE(reviewed_data->>'policyNumber', data->>'policyNumber', '')
           FROM pdf_records
           WHERE deleted_at IS NULL
-            AND ($1::boolean OR organization_id = $2::uuid)
+            AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
             ${MANUAL_RENEWAL_SQL_EXCLUSION}
             AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
             AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx'

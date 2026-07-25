@@ -60,10 +60,6 @@ function buildDuration(startDate, expiryDate) {
 
   const months = Math.round(effectiveDays / 30.4375);
   if (months < 1) return `${diffDays} day${diffDays === 1 ? "" : "s"}`;
-  if (months >= 12 && months % 12 === 0) {
-    const years = months / 12;
-    return `${years} year${years === 1 ? "" : "s"}`;
-  }
   return `${months} month${months === 1 ? "" : "s"}`;
 }
 
@@ -87,7 +83,20 @@ function normalizeWarehouseDate(value = "") {
   return text;
 }
 
+function parseRobustDate(str) {
+  if (!str) return "";
+  const match = String(str).match(/(\d{1,2})[/\s-]?(\d{1,2})[/\s-]?(\d{4})/);
+  if (match) {
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+    const year = match[3];
+    return `${day}/${month}/${year}`;
+  }
+  return str;
+}
+
 module.exports = {
   buildDuration,
   normalizeWarehouseDate,
+  parseRobustDate,
 };

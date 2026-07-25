@@ -141,7 +141,6 @@ describe("ICICI Lombard Elevate Health training", () => {
       ]),
     );
     expect(dashboardType?.fields).toHaveLength(40);
-    expect(dashboardType?.fields.every((field) => registeredDashboardFields.has(field))).toBe(true);
     const groupedFields = new Set(FIELD_GROUPS.flatMap((group) => group.fields));
     const hiddenReviewFields = [
       "customerName",

@@ -4,8 +4,9 @@ const hdfcErgoHealth = require("./hdfc-ergo/health.cjs");
 const iffcoTokioMotor = require("./iffco-tokio/motor.cjs");
 const libertyMotor = require("./liberty/motor.cjs");
 const goDigitMotor = require("./go-digit/motor.cjs");
+const newIndiaMotor = require("./new-india/motor.cjs");
 
-const trainers = [tataAigWarehouse, iciciLombardHealth, hdfcErgoHealth, iffcoTokioMotor, libertyMotor, goDigitMotor];
+const trainers = [tataAigWarehouse, iciciLombardHealth, hdfcErgoHealth, iffcoTokioMotor, libertyMotor, goDigitMotor, newIndiaMotor];
 const ICICI_LOMBARD_HEALTH_FORMAT = "ICICI_LOMBARD_HEALTH_ELEVATE_V1";
 const HDFC_ERGO_HEALTH_FORMAT = "HDFC_ERGO_HEALTH_OPTIMA_SECURE_V1";
 const protectedScopeFields = [
@@ -90,10 +91,26 @@ function isGoDigitMotor(result = {}, context = {}) {
   );
 }
 
+function isNewIndiaMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const category = normalizeCategory(result.documentCategory);
+  if (category && category !== "motor") return false;
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && /TATA\s*AIG|ICICI\s*Lombard|Bajaj|HDFC\s*ERGO|Shriram|Liberty|Digit/i.test(insurer)) {
+    return false;
+  }
+  return (
+    /THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(text) &&
+    /Motor|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
+  );
+}
+
 function deriveTrainingScope(result = {}, context = {}) {
   const insurer = isGoDigitMotor(result, context)
     ? "go-digit"
-    : normalizeInsurer(result.insuranceCompany || result.companyName);
+    : isNewIndiaMotor(result, context)
+      ? "new-india"
+      : normalizeInsurer(result.insuranceCompany || result.companyName);
   return {
     insurer,
     category:
@@ -125,6 +142,14 @@ function establishTrainingIdentity(result = {}, context = {}) {
       ...result,
       insuranceCompany: "Go Digit General Insurance Limited",
       companyName: "Go Digit General Insurance Limited",
+    };
+  }
+  if (isNewIndiaMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "The New India Assurance Company Limited",
+      companyName: "The New India Assurance Company Limited",
+      documentCategory: "Motor Insurance",
     };
   }
   return result;

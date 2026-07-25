@@ -128,7 +128,7 @@ describe("PDF extraction training isolation", () => {
     const root = path.resolve("src/lib/policies/pdf/training");
     const files = fs
       .readdirSync(root, { recursive: true })
-      .filter((entry) => entry.endsWith(".cjs") && entry !== "registry.cjs")
+      .filter((entry) => entry.endsWith(".cjs") && !entry.endsWith(".test.cjs") && entry !== "registry.cjs")
       .map((entry) => path.join(root, entry));
     const seenScopes = new Set();
 

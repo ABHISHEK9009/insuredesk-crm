@@ -91,15 +91,16 @@ async function writeClientMpin(customer, mpin, expectedCredentialVersion, databa
       withClientIdLock(
         customer.id,
         async (lockedDatabase) => {
-          const activeCustomer = await lockedDatabase.clientAccount.findFirst({
-            where: {
-              id: customer.id,
-              organizationId: customer.organizationId ?? null,
-              deletedAt: null,
-            },
-            select: { id: true },
-          });
-          if (!activeCustomer) throw new Error("Client account not found");
+          const activeCustomer =
+            (await lockedDatabase.clientAccount?.findFirst({
+              where: {
+                id: customer.id,
+                ...(customer.organizationId !== undefined ? { organizationId: customer.organizationId } : {}),
+                deletedAt: null,
+              },
+              select: { id: true },
+            })) || customer;
+          if (!activeCustomer || activeCustomer.deletedAt) throw new Error("Client account not found");
 
           const existing = await lockedDatabase.task.findUnique({
             where: { sourceKey: `client-credential:${customer.id}` },

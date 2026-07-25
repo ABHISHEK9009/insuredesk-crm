@@ -8,6 +8,7 @@ import { formatReviewValidationError, getReviewValidation } from "@/app/lib/dash
 import insuranceCompanyMaster from "@/lib/master/insurance-companies.cjs";
 import { getUserFacingErrorMessage } from "@/lib/errors/user-facing";
 import { normalizeIndianPhone } from "@/lib/customer-profiles/utils";
+import { clearTabCountsCache } from "@/lib/records/tab-counts-cache";
 import {
   findActiveClientAccount,
   withClientIdLocks,
@@ -493,6 +494,8 @@ export async function DELETE(request, { params }) {
     if (!deleted) {
       return Response.json({ error: "Policy record not found." }, { status: 404 });
     }
+
+    clearTabCountsCache();
 
     // Audit log delete event
     const { ipAddress, userAgent } = getAuditMetadata(request);

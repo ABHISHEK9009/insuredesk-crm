@@ -70,7 +70,7 @@ function train({ text = "", result = {} }) {
   if (!result || typeof result !== "object") return result;
 
   const bifurcation = extractPremiumBifurcation(text);
-  if (!bifurcation) return result;
+  if (!bifurcation || !bifurcation.hasAddons) return result;
 
   const patch = {};
 

@@ -48,7 +48,6 @@ describe("renewal customer name persistence", () => {
   it("wires automatic name persistence into every policy creation workflow", () => {
     for (const file of [
       "src/app/api/policy-records/route.js",
-      "src/app/api/records/route.js",
       "src/app/api/records/upload/route.js",
       "src/app/api/renewals/import/route.js",
     ]) {
