@@ -155,14 +155,20 @@ function extractNewIndiaMotorDetails(text = "") {
   result.policyNumber =
     matchGroup(text, /Policy\s+Number\s*:?\s*(\d{10,})/i) ||
     matchGroup(text, /Policy\s+No\.?\s*:?\s*(\d{10,})/i);
-  result.insuredName = cleanHdfcValue(matchGroup(text, /Insured'?s?\s+Name\s+(.+?)\s+Customer\s+ID/i));
+  result.insuredName = cleanHdfcValue(
+    matchGroup(text, /Insured'?s?\s+Name\s+([A-Z\s.-]+?)(?=\s+Customer|\s+ID|\s+PAN|\s+Address|\n|$)/i) ||
+    matchGroup(text, /Insured'?s?\s+Name\s+(.+?)\s+Customer\s+ID/i)
+  );
   result.customerId = matchGroup(text, /Customer\s+ID\s+([A-Z0-9]+)/i);
   result.insuredAddress = cleanHdfcValue(
     matchGroup(text, /Insured'?s?\s+Address\s+([\s\S]+?)\s+Contact\s+Number/i),
   );
   result.customerMobile = matchGroup(text, /Contact\s+Number\s*\/\s*\/\s*([X\d]{6,14})/i);
   result.customerEmail = cleanHdfcValue(matchGroup(text, /Email\s+([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i));
-  result.gstin = matchGroup(text, /GSTIN\s+([0-9A-Z]{15}|NA)/i);
+  result.gstin =
+    matchGroup(text, /GSTIN\(Issuing\s+Office\)\s*:?\s*([0-9A-Z]{15})/i) ||
+    matchGroup(text, /GSTIN\s+([0-9A-Z]{15})/i) ||
+    matchGroup(text, /GSTIN\s+(NA)/i);
 
   const period = extractNewIndiaPolicyPeriod(text);
   result.policyStartDate = period.startDate;

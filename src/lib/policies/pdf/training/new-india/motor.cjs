@@ -17,7 +17,13 @@ function train({ text = "", result = {} }) {
 
   const patch = {};
 
-  // 1. Chassis No & Engine No extraction
+  // 1. Insured Name
+  const nameMatch = text.match(/Insured'?s?\s+Name\s+([A-Z\s.-]+?)(?=\s+Customer|\s+ID|\s+PAN|\s+Address|\n|$)/i);
+  if (nameMatch) {
+    patch.insuredName = nameMatch[1].trim();
+  }
+
+  // 2. Chassis No & Engine No extraction
   const chEngMatch = text.match(/Chassis\s+no\.\s*\/\s*Engine\s+no\.\s*:\s*([A-Z0-9]+)\s*\/\s*([A-Z0-9]+(?:\s+[A-Z0-9]+)?)/i);
   if (chEngMatch) {
     patch.chassisNumber = chEngMatch[1].trim();

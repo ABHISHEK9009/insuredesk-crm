@@ -20,6 +20,8 @@ import {
   shouldUseExtractedVariant,
 } from "@/app/lib/dashboard-helpers";
 
+import { buildDuration } from "@/lib/policies/pdf/utils/dates.cjs";
+
 const FIELD_OPTIONS = {
   fuelType: FUEL_TYPE_OPTIONS,
   modeOfPayment: PAYMENT_MODE_OPTIONS,
@@ -60,6 +62,13 @@ export default function FixedPolicyPreview({
   const manualFields = upload?.manualFields || [];
   const getPreviewValue = (key) => {
     if (isManualRequiredField(key)) return getReviewFieldValue(upload, key);
+    if (key === "duration") {
+      const currentDuration = upload?.extractedData?.duration || getReviewFieldValue(upload, "duration") || "";
+      if (currentDuration) return currentDuration;
+      const startVal = getReviewFieldValue(upload, "startDate") || upload?.extractedData?.startDate || "";
+      const expiryVal = getReviewFieldValue(upload, "expiryDate") || upload?.extractedData?.expiryDate || "";
+      return buildDuration(startVal, expiryVal) || "";
+    }
     if (
       isMotorPreview &&
       key === "variant" &&
