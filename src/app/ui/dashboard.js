@@ -20,7 +20,9 @@ import AlertCard from "@/app/components/shared/AlertCard";
 import EmptyState from "@/app/components/shared/EmptyState";
 import SearchBox from "@/app/components/shared/SearchBox";
 import {
+  Check,
   CheckCircle,
+  ChevronDown,
   Download,
   FileText,
   X,
@@ -370,6 +372,9 @@ export default function Dashboard({
     "sourceFile",
   ]);
   const [isExporting, setIsExporting] = useState(false);
+  const [showManualFields, setShowManualFields] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isDurationOpen, setIsDurationOpen] = useState(false);
   const [recordFilterField, setRecordFilterField] = useState(initialFilterField);
   const [recordFilterValue, setRecordFilterValue] = useState(initialFilterValue);
   const [recordPdfFilter, setRecordPdfFilter] = useState(initialPdfFilter);
@@ -1499,7 +1504,16 @@ export default function Dashboard({
 
     setIsExporting(true);
     try {
-      const exportSource = activePage === "records" ? await fetchAllPolicyRecordsForExport() : records;
+      let exportSource = [];
+      try {
+        exportSource = await fetchAllPolicyRecordsForExport();
+      } catch (fetchErr) {
+        console.warn("Export fetch warning, using local records:", fetchErr);
+        exportSource = Array.isArray(records) ? records : [];
+      }
+      if (!exportSource || !exportSource.length) {
+        exportSource = Array.isArray(records) ? records : [];
+      }
       let list = applyExportFilters(exportSource);
 
       if (!list.length) {
@@ -1514,7 +1528,7 @@ export default function Dashboard({
 
       if (exportFormat === "csv") {
         const headers = exportColumns.map(([label]) => label);
-        const csvRows = [headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(",")];
+        const csvRows = [headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(",")];
 
         list.forEach((record) => {
           const rowValues = exportColumns.map(([, key]) => {
@@ -1522,13 +1536,19 @@ export default function Dashboard({
             if ((key === "policyNumber" || key === "registrationNumber" || key === "vehicleNumber" || key === "clientId") && val) {
               return `="` + String(val).replace(/"/g, '""') + `"`;
             }
-            return `"${String(val).replace(/"/g, '""')}"`;
+            return `"${String(val ?? "").replace(/"/g, '""')}"`;
           });
           csvRows.push(rowValues.join(","));
         });
 
         const csvContent = "\ufeff" + csvRows.join("\n");
-        download("policy-records-export.csv", csvContent, "text/csv;charset=utf-8;");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "policy-records-export.csv";
+        link.click();
+        URL.revokeObjectURL(url);
         setToast("CSV exported successfully");
       } else if (exportFormat === "xlsx") {
         const XLSXModule = await import("xlsx");
@@ -1537,7 +1557,7 @@ export default function Dashboard({
         const data = list.map((record) => {
           const obj = {};
           exportColumns.forEach(([label, key]) => {
-            obj[label] = getExportValueForRecord(record, key);
+            obj[label] = getExportValueForRecord(record, key) ?? "";
           });
           return obj;
         });
@@ -1600,7 +1620,7 @@ export default function Dashboard({
         const tableData = list.map((record) => {
           const row = {};
           selectedColumns.forEach((col) => {
-            row[col.dataKey] = getExportValueForRecord(record, col.dataKey);
+            row[col.dataKey] = getExportValueForRecord(record, col.dataKey) ?? "";
           });
           return row;
         });
@@ -1692,6 +1712,48 @@ export default function Dashboard({
         if (exportDuration === "today") {
           return dateVal >= today && dateVal < addDays(today, 1);
         }
+        if (exportDuration === "yesterday") {
+          const yest = addDays(today, -1);
+          return dateVal >= yest && dateVal < today;
+        }
+        if (exportDuration === "7days" || exportDuration === "past-week") {
+          const cutoff = addDays(now, -7);
+          return dateVal >= cutoff && dateVal <= now;
+        }
+        if (exportDuration === "30days" || exportDuration === "past-month") {
+          const cutoff = addDays(now, -30);
+          return dateVal >= cutoff && dateVal <= now;
+        }
+        if (exportDuration === "this_month") {
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          return dateVal >= startOfMonth && dateVal <= now;
+        }
+        if (exportDuration === "last_month") {
+          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+          return dateVal >= startOfLastMonth && dateVal <= endOfLastMonth;
+        }
+        if (exportDuration === "3months" || exportDuration === "past-3-months") {
+          const cutoff = addDays(now, -90);
+          return dateVal >= cutoff && dateVal <= now;
+        }
+        if (exportDuration === "6months" || exportDuration === "past-6-months") {
+          const cutoff = addDays(now, -180);
+          return dateVal >= cutoff && dateVal <= now;
+        }
+        if (exportDuration === "financial_year") {
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+          const fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+          const fyStart = new Date(fyStartYear, 3, 1);
+          const fyEnd = new Date(fyStartYear + 1, 2, 31, 23, 59, 59, 999);
+          return dateVal >= fyStart && dateVal <= fyEnd;
+        }
+        if (exportDuration === "calendar_year") {
+          const calStart = new Date(now.getFullYear(), 0, 1);
+          const calEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+          return dateVal >= calStart && dateVal <= calEnd;
+        }
         if (exportDuration === "custom") {
           const start = parseDateInputStart(exportCustomStart);
           const end = parseDateInputEnd(exportCustomEnd);
@@ -1699,19 +1761,6 @@ export default function Dashboard({
           if (end && dateVal > end) return false;
           return true;
         }
-
-        const durationDays = {
-          "past-3-days": 3,
-          "past-week": 7,
-          "past-month": 30,
-          "past-3-months": 90,
-          "past-6-months": 180,
-          "past-year": 365,
-        }[exportDuration];
-        if (!durationDays) return true;
-
-        const cutoff = addDays(now, -durationDays);
-        return dateVal >= cutoff && dateVal <= now;
       });
     }
 
@@ -2524,7 +2573,7 @@ export default function Dashboard({
                     e.currentTarget.style.color = "#475569";
                   }}
                 >
-                  <X size={18} />
+                  <X size={18} style={{ width: "18px", height: "18px", minWidth: "18px", minHeight: "18px" }} strokeWidth={1.75} />
                 </button>
               </div>
 
@@ -2551,18 +2600,22 @@ export default function Dashboard({
                       <button
                         key={fmt.value}
                         type="button"
-                        onClick={() => setExportFormat(fmt.value)}
+                        onClick={(e) => {
+                          setExportFormat(fmt.value);
+                          e.currentTarget.blur();
+                        }}
                         style={{
                           padding: "12px 10px",
                           borderRadius: "10px",
-                          border: exportFormat === fmt.value ? "2px solid #0f172a" : "1px solid #e2e8f0",
-                          backgroundColor: "#ffffff",
+                          border: "1px solid #e2e8f0",
+                          backgroundColor: exportFormat === fmt.value ? "#f1f5f9" : "#ffffff",
                           color: exportFormat === fmt.value ? "#0f172a" : "#64748b",
                           fontWeight: exportFormat === fmt.value ? "800" : "600",
                           fontSize: "13px",
                           cursor: "pointer",
-                          transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                          boxShadow: exportFormat === fmt.value ? "0 2px 8px rgba(15, 23, 42, 0.1)" : "0 1px 3px rgba(0, 0, 0, 0.02)",
+                          outline: "none",
+                          transition: "none",
+                          boxShadow: exportFormat === fmt.value ? "0 2px 6px rgba(15, 23, 42, 0.06)" : "0 1px 3px rgba(0, 0, 0, 0.02)",
                         }}
                       >
                         {fmt.label}
@@ -2574,78 +2627,254 @@ export default function Dashboard({
                 {/* 2-Column Controls: Category Preset & Time Duration */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   {/* Category selection */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label
-                      htmlFor="export-category-select"
-                      style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}
-                    >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>
                       Policy Category Preset
-                    </label>
-                    <select
-                      id="export-category-select"
-                      value={exportCategory}
-                      onChange={(e) => {
-                        const cat = e.target.value;
-                        setExportCategory(cat);
-                        setExportSelectedFields(getCategoryDefaultFieldKeys(cat));
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCategoryOpen((prev) => !prev);
+                        setIsDurationOpen(false);
                       }}
                       style={{
                         width: "100%",
-                        padding: "10px 14px",
+                        height: "42px",
+                        padding: "0 14px",
+                        boxSizing: "border-box",
                         borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
+                        border: isCategoryOpen ? "1.5px solid #0f172a" : "1px solid #cbd5e1",
                         backgroundColor: "#ffffff",
                         fontSize: "13.5px",
                         color: "#0f172a",
                         fontWeight: "600",
-                        outline: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
                         boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                        outline: "none",
+                        transition: "all 0.15s ease",
                       }}
                     >
-                      <option value="all">All Categories (All Fields)</option>
-                      <option value="fire">Fire Policy Preset</option>
-                      <option value="warehouse">Warehouse Policy Preset</option>
-                      <option value="motor">Motor Policy Preset</option>
-                      <option value="health">Health Policy Preset</option>
-                      <option value="non-motor">Non Motor Policy Preset</option>
-                    </select>
+                      <span>
+                        {[
+                          { value: "all", label: "All Categories (All Fields)" },
+                          { value: "fire", label: "Fire Policy Preset" },
+                          { value: "warehouse", label: "Warehouse Policy Preset" },
+                          { value: "motor", label: "Motor Policy Preset" },
+                          { value: "health", label: "Health Policy Preset" },
+                          { value: "non-motor", label: "Non Motor Policy Preset" },
+                        ].find((o) => o.value === exportCategory)?.label || "All Categories (All Fields)"}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          color: "#64748b",
+                          transform: isCategoryOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.2s ease",
+                        }}
+                      />
+                    </button>
+
+                    {isCategoryOpen && (
+                      <>
+                        <div
+                          style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 90 }}
+                          onClick={() => setIsCategoryOpen(false)}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "calc(100% + 6px)",
+                            left: 0,
+                            right: 0,
+                            backgroundColor: "#ffffff",
+                            borderRadius: "12px",
+                            border: "1px solid #e2e8f0",
+                            boxShadow: "0 12px 32px -4px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.04)",
+                            padding: "6px",
+                            zIndex: 100,
+                            maxHeight: "260px",
+                            overflowY: "auto",
+                          }}
+                        >
+                          {[
+                            { value: "all", label: "All Categories (All Fields)" },
+                            { value: "fire", label: "Fire Policy Preset" },
+                            { value: "warehouse", label: "Warehouse Policy Preset" },
+                            { value: "motor", label: "Motor Policy Preset" },
+                            { value: "health", label: "Health Policy Preset" },
+                            { value: "non-motor", label: "Non Motor Policy Preset" },
+                          ].map((opt) => {
+                            const isSelected = exportCategory === opt.value;
+                            return (
+                              <div
+                                key={opt.value}
+                                onClick={() => {
+                                  setExportCategory(opt.value);
+                                  setExportSelectedFields(getCategoryDefaultFieldKeys(opt.value));
+                                  setIsCategoryOpen(false);
+                                }}
+                                style={{
+                                  padding: "9px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "13px",
+                                  fontWeight: isSelected ? "700" : "500",
+                                  color: isSelected ? "#0f172a" : "#334155",
+                                  backgroundColor: isSelected ? "#f1f5f9" : "transparent",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  cursor: "pointer",
+                                  transition: "all 0.1s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = "#f8fafc";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                              >
+                                <span>{opt.label}</span>
+                                {isSelected && <Check size={14} style={{ color: "#0f172a" }} strokeWidth={2.5} />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Time duration selection */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label
-                      htmlFor="export-duration-select"
-                      style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}
-                    >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>
                       Time Duration
-                    </label>
-                    <select
-                      id="export-duration-select"
-                      value={exportDuration}
-                      onChange={(e) => setExportDuration(e.target.value)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDurationOpen((prev) => !prev);
+                        setIsCategoryOpen(false);
+                      }}
                       style={{
                         width: "100%",
-                        padding: "10px 14px",
+                        height: "42px",
+                        padding: "0 14px",
+                        boxSizing: "border-box",
                         borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
+                        border: isDurationOpen ? "1.5px solid #0f172a" : "1px solid #cbd5e1",
                         backgroundColor: "#ffffff",
                         fontSize: "13.5px",
                         color: "#0f172a",
                         fontWeight: "600",
-                        outline: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
                         boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                        outline: "none",
+                        transition: "all 0.15s ease",
                       }}
                     >
-                      <option value="all">All Time</option>
-                      <option value="today">Today</option>
-                      <option value="past-3-days">Past 3 Days</option>
-                      <option value="past-week">Past Week</option>
-                      <option value="past-month">Past Month</option>
-                      <option value="past-3-months">Past 3 Months</option>
-                      <option value="past-6-months">Past 6 Months</option>
-                      <option value="past-year">Past Year</option>
-                      <option value="custom">Custom Range...</option>
-                    </select>
+                      <span>
+                        {[
+                          { value: "all", label: "All Time" },
+                          { value: "today", label: "Today" },
+                          { value: "yesterday", label: "Yesterday" },
+                          { value: "7days", label: "Last 7 Days" },
+                          { value: "30days", label: "Last 30 Days" },
+                          { value: "this_month", label: "This Month" },
+                          { value: "last_month", label: "Last Month" },
+                          { value: "3months", label: "Last 3 Months" },
+                          { value: "6months", label: "Last 6 Months" },
+                          { value: "financial_year", label: "This Financial Year" },
+                          { value: "calendar_year", label: "This Calendar Year" },
+                          { value: "custom", label: "Custom Range..." },
+                        ].find((o) => o.value === exportDuration)?.label || "All Time"}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          color: "#64748b",
+                          transform: isDurationOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.2s ease",
+                        }}
+                      />
+                    </button>
+
+                    {isDurationOpen && (
+                      <>
+                        <div
+                          style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 90 }}
+                          onClick={() => setIsDurationOpen(false)}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "calc(100% + 6px)",
+                            left: 0,
+                            right: 0,
+                            backgroundColor: "#ffffff",
+                            borderRadius: "12px",
+                            border: "1px solid #e2e8f0",
+                            boxShadow: "0 12px 32px -4px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.04)",
+                            padding: "6px",
+                            zIndex: 100,
+                            maxHeight: "260px",
+                            overflowY: "auto",
+                          }}
+                        >
+                          {[
+                            { value: "all", label: "All Time" },
+                            { value: "today", label: "Today" },
+                            { value: "yesterday", label: "Yesterday" },
+                            { value: "7days", label: "Last 7 Days" },
+                            { value: "30days", label: "Last 30 Days" },
+                            { value: "this_month", label: "This Month" },
+                            { value: "last_month", label: "Last Month" },
+                            { value: "3months", label: "Last 3 Months" },
+                            { value: "6months", label: "Last 6 Months" },
+                            { value: "financial_year", label: "This Financial Year" },
+                            { value: "calendar_year", label: "This Calendar Year" },
+                            { value: "custom", label: "Custom Range..." },
+                          ].map((opt) => {
+                            const isSelected = exportDuration === opt.value;
+                            return (
+                              <div
+                                key={opt.value}
+                                onClick={() => {
+                                  setExportDuration(opt.value);
+                                  setIsDurationOpen(false);
+                                }}
+                                style={{
+                                  padding: "9px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "13px",
+                                  fontWeight: isSelected ? "700" : "500",
+                                  color: isSelected ? "#0f172a" : "#334155",
+                                  backgroundColor: isSelected ? "#f1f5f9" : "transparent",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  cursor: "pointer",
+                                  transition: "all 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = "#f8fafc";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                              >
+                                <span>{opt.label}</span>
+                                {isSelected && <Check size={14} style={{ color: "#0f172a" }} strokeWidth={2.5} />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -2735,16 +2964,27 @@ export default function Dashboard({
                             userSelect: "none",
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
+                          <div
+                            onClick={() => {
                               setExportSelectedMetadata((prev) =>
                                 isChecked ? prev.filter((k) => k !== key) : [...prev, key],
                               );
                             }}
-                            style={{ accentColor: "#0f172a", width: "15px", height: "15px", cursor: "pointer" }}
-                          />
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              borderRadius: "4px",
+                              border: isChecked ? "1.5px solid #0f172a" : "1px solid #cbd5e1",
+                              backgroundColor: "#ffffff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "all 0.15s ease",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {isChecked && <Check size={12} style={{ color: "#0f172a" }} strokeWidth={3} />}
+                          </div>
                           {label}
                         </label>
                       );
@@ -2766,132 +3006,254 @@ export default function Dashboard({
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button
                         type="button"
-                        onClick={() => setExportSelectedFields(FIELD_SETUP.map(([, key]) => key))}
+                        onClick={() => setShowManualFields((prev) => !prev)}
                         style={{
-                          padding: "6px 12px",
-                          fontSize: "11.5px",
+                          padding: "8px 14px",
+                          fontSize: "12px",
                           fontWeight: "700",
-                          borderRadius: "8px",
-                          border: "1px solid #e2e8f0",
-                          backgroundColor: "#ffffff",
+                          borderRadius: "10px",
+                          border: showManualFields ? "1px solid #0f172a" : "1px solid #e2e8f0",
+                          backgroundColor: showManualFields ? "#f1f5f9" : "#ffffff",
                           color: "#0f172a",
                           boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                           cursor: "pointer",
                           transition: "all 0.15s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                       >
-                        Select All
+                        <SlidersHorizontal size={14} />
+                        {showManualFields ? "Hide Customization" : "Manual Field Selection"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setExportSelectedFields([])}
-                        style={{
-                          padding: "6px 12px",
-                          fontSize: "11.5px",
-                          fontWeight: "700",
-                          borderRadius: "8px",
-                          border: "1px solid #e2e8f0",
-                          backgroundColor: "#ffffff",
-                          color: "#64748b",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-                      >
-                        Deselect All
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setExportSelectedFields(getCategoryDefaultFieldKeys(exportCategory))}
-                        style={{
-                          padding: "6px 12px",
-                          fontSize: "11.5px",
-                          fontWeight: "700",
-                          borderRadius: "8px",
-                          border: "1px solid #e2e8f0",
-                          backgroundColor: "#ffffff",
-                          color: "#0f172a",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-                      >
-                        Reset Preset
-                      </button>
+                      {showManualFields && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setExportSelectedFields(FIELD_SETUP.map(([, key]) => key))}
+                            style={{
+                              padding: "6px 12px",
+                              fontSize: "11.5px",
+                              fontWeight: "700",
+                              borderRadius: "8px",
+                              border: "1px solid #e2e8f0",
+                              backgroundColor: "#ffffff",
+                              color: "#0f172a",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setExportSelectedFields([])}
+                            style={{
+                              padding: "6px 12px",
+                              fontSize: "11.5px",
+                              fontWeight: "700",
+                              borderRadius: "8px",
+                              border: "1px solid #e2e8f0",
+                              backgroundColor: "#ffffff",
+                              color: "#64748b",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Deselect All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setExportSelectedFields(getCategoryDefaultFieldKeys(exportCategory))}
+                            style={{
+                              padding: "6px 12px",
+                              fontSize: "11.5px",
+                              fontWeight: "700",
+                              borderRadius: "8px",
+                              border: "1px solid #e2e8f0",
+                              backgroundColor: "#ffffff",
+                              color: "#0f172a",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Reset Preset
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      padding: "18px 22px",
-                      backgroundColor: "#ffffff",
-                      borderRadius: "14px",
-                      border: "1px solid #e2e8f0",
-                      boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "18px",
-                    }}
-                  >
-                    {FIELD_GROUPS.map((group) => {
-                      const groupFields = group.fields.map((key) => {
-                        const tuple = FIELD_SETUP.find(([, k]) => k === key);
-                        return tuple || [getFieldLabel(key), key];
-                      });
-                      const selectedInGroupCount = groupFields.filter(([, key]) => exportSelectedFields.includes(key)).length;
-
-                      return (
-                        <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>
-                            <span style={{ fontSize: "11.5px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#0f172a" }}>
-                              {group.title}
-                            </span>
-                            <span style={{ fontSize: "10.5px", fontWeight: "700", color: "#0f172a", background: "#ffffff", border: "1px solid #e2e8f0", padding: "2px 8px", borderRadius: "999px" }}>
-                              {selectedInGroupCount}/{groupFields.length}
-                            </span>
-                          </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px 16px", paddingTop: "2px" }}>
-                            {groupFields.map(([label, key]) => {
-                              const isChecked = exportSelectedFields.includes(key);
-                              return (
-                                <label
-                                  key={key}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    fontSize: "12.5px",
-                                    fontWeight: isChecked ? "700" : "500",
-                                    color: isChecked ? "#0f172a" : "#475569",
-                                    cursor: "pointer",
-                                    userSelect: "none",
-                                  }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => {
-                                      setExportSelectedFields((prev) =>
-                                        isChecked ? prev.filter((k) => k !== key) : [...prev, key],
-                                      );
-                                    }}
-                                    style={{ accentColor: "#0f172a", width: "15px", height: "15px", cursor: "pointer" }}
-                                  />
-                                  {label}
-                                </label>
-                              );
-                            })}
-                          </div>
+                  {!showManualFields ? (
+                    <div
+                      style={{
+                        padding: "16px 20px",
+                        backgroundColor: "#ffffff",
+                        borderRadius: "14px",
+                        border: "1px solid #e2e8f0",
+                        boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              backgroundColor: "#f1f5f9",
+                              color: "#0f172a",
+                              fontSize: "12px",
+                              fontWeight: "800",
+                            }}
+                          >
+                            ✓
+                          </span>
+                          <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>
+                            Preset Lock Active: {exportCategory === "all" ? "All Policy Fields" : exportCategory === "motor" ? "Motor Policy Fields" : exportCategory === "fire" ? "Fire / Property Fields" : exportCategory === "warehouse" ? "Warehouse Storage Fields" : exportCategory === "health" ? "Health / Mediclaim Fields" : "Default Policy Fields"}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowManualFields(true)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "6px 14px",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            color: "#0f172a",
+                            backgroundColor: "#ffffff",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f8fafc";
+                            e.currentTarget.style.borderColor = "#94a3b8";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "#ffffff";
+                            e.currentTarget.style.borderColor = "#cbd5e1";
+                          }}
+                        >
+                          <SlidersHorizontal size={13} />
+                          <span>Manual Field Selection</span>
+                        </button>
+                      </div>
+
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "2px" }}>
+                        {FIELD_GROUPS.map((group) => {
+                          const groupFields = group.fields.map((key) => {
+                            const tuple = FIELD_SETUP.find(([, k]) => k === key);
+                            return tuple || [getFieldLabel(key), key];
+                          });
+                          const selectedInGroupCount = groupFields.filter(([, key]) => exportSelectedFields.includes(key)).length;
+                          if (selectedInGroupCount === 0) return null;
+
+                          return (
+                            <span
+                              key={group.title}
+                              style={{
+                                fontSize: "11.5px",
+                                fontWeight: "600",
+                                padding: "4px 10px",
+                                borderRadius: "8px",
+                                backgroundColor: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                                color: "#334155",
+                              }}
+                            >
+                              <strong>{group.title}</strong>: {selectedInGroupCount}/{groupFields.length} active
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: "18px 22px",
+                        backgroundColor: "#ffffff",
+                        borderRadius: "14px",
+                        border: "1px solid #e2e8f0",
+                        boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "18px",
+                      }}
+                    >
+                      {FIELD_GROUPS.map((group) => {
+                        const groupFields = group.fields.map((key) => {
+                          const tuple = FIELD_SETUP.find(([, k]) => k === key);
+                          return tuple || [getFieldLabel(key), key];
+                        });
+                        const selectedInGroupCount = groupFields.filter(([, key]) => exportSelectedFields.includes(key)).length;
+
+                        return (
+                          <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>
+                              <span style={{ fontSize: "11.5px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#0f172a" }}>
+                                {group.title}
+                              </span>
+                              <span style={{ fontSize: "10.5px", fontWeight: "700", color: "#0f172a", background: "#ffffff", border: "1px solid #e2e8f0", padding: "2px 8px", borderRadius: "999px" }}>
+                                {selectedInGroupCount}/{groupFields.length}
+                              </span>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px 16px", paddingTop: "2px" }}>
+                              {groupFields.map(([label, key]) => {
+                                const isChecked = exportSelectedFields.includes(key);
+                                return (
+                                  <label
+                                    key={key}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px",
+                                      fontSize: "12.5px",
+                                      fontWeight: isChecked ? "700" : "500",
+                                      color: isChecked ? "#0f172a" : "#475569",
+                                      cursor: "pointer",
+                                      userSelect: "none",
+                                    }}
+                                  >
+                                    <div
+                                      onClick={() => {
+                                        setExportSelectedFields((prev) =>
+                                          isChecked ? prev.filter((k) => k !== key) : [...prev, key],
+                                        );
+                                      }}
+                                      style={{
+                                        width: "16px",
+                                        height: "16px",
+                                        borderRadius: "4px",
+                                        border: isChecked ? "1.5px solid #0f172a" : "1.5px solid #cbd5e1",
+                                        backgroundColor: "#ffffff",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        transition: "all 0.15s ease",
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      {isChecked && <Check size={12} style={{ color: "#0f172a" }} strokeWidth={3} />}
+                                    </div>
+                                    {label}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2902,39 +3264,33 @@ export default function Dashboard({
                   justifyContent: "flex-end",
                   alignItems: "center",
                   gap: "12px",
-                  padding: "18px 32px",
+                  padding: "16px 32px",
                   borderTop: "1px solid #e2e8f0",
                   backgroundColor: "#ffffff",
-                  boxShadow: "0 -4px 16px -2px rgba(15, 23, 42, 0.05)",
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(false)}
                   style={{
-                    height: "42px",
-                    padding: "0 22px",
+                    height: "40px",
+                    padding: "0 20px",
                     borderRadius: "10px",
-                    border: "1px solid #cbd5e1",
+                    border: "1px solid #e2e8f0",
                     backgroundColor: "#ffffff",
-                    color: "#334155",
+                    color: "#0f172a",
                     cursor: "pointer",
                     fontWeight: "700",
-                    fontSize: "13.5px",
-                    boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.06)",
-                    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                    fontSize: "13px",
+                    transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#ffffff";
-                    e.currentTarget.style.borderColor = "#94a3b8";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px -2px rgba(15, 23, 42, 0.1)";
+                    e.currentTarget.style.backgroundColor = "#f8fafc";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "#ffffff";
-                    e.currentTarget.style.borderColor = "#cbd5e1";
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 6px -1px rgba(15, 23, 42, 0.06)";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
                   }}
                 >
                   Cancel
@@ -2944,36 +3300,38 @@ export default function Dashboard({
                   onClick={handleExportSubmit}
                   disabled={isExporting}
                   style={{
-                    height: "42px",
-                    padding: "0 24px",
+                    height: "40px",
+                    padding: "0 22px",
                     borderRadius: "10px",
-                    border: "1px solid #0f172a",
-                    background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
-                    color: "#ffffff",
+                    border: "1.5px solid #0f172a",
+                    backgroundColor: "#ffffff",
+                    color: "#0f172a",
                     cursor: isExporting ? "not-allowed" : "pointer",
-                    fontWeight: "700",
-                    fontSize: "13.5px",
+                    fontWeight: "800",
+                    fontSize: "13px",
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
                     opacity: isExporting ? 0.7 : 1,
-                    boxShadow: "0 4px 14px -2px rgba(15, 23, 42, 0.25)",
-                    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+                    transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
                     if (!isExporting) {
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow = "0 8px 22px -4px rgba(15, 23, 42, 0.32)";
+                      e.currentTarget.style.backgroundColor = "#f1f5f9";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isExporting) {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.boxShadow = "0 4px 14px -2px rgba(15, 23, 42, 0.25)";
+                      e.currentTarget.style.backgroundColor = "#ffffff";
                     }
                   }}
                 >
-                  {isExporting ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />}
+                  {isExporting ? (
+                    <LoaderCircle size={16} className="spin" style={{ color: "#0f172a" }} />
+                  ) : (
+                    <Download size={16} style={{ color: "#0f172a" }} strokeWidth={2.5} />
+                  )}
                   {isExporting ? "Exporting..." : "Download Export"}
                 </button>
               </div>
