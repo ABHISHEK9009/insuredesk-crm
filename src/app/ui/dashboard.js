@@ -1981,7 +1981,7 @@ export default function Dashboard({
                           <div className="queue-line">
                             <p>{file.name}</p>
                             <div className="queue-card-actions">
-                              <span>{queueLabel(file.status)}</span>
+                              <span className="queue-status-tag">{queueLabel(file.status)}</span>
                               <button
                                 aria-label={`Remove ${file.name} from queue`}
                                 className="queue-remove"
