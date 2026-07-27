@@ -1386,7 +1386,7 @@ export default function CustomerProfilePage(props) {
           </div>
 
           {/* Associated Policies Table */}
-          <div className="rn-table-container" style={{ borderRadius: "12px", border: "1px solid var(--rn-border)", backgroundColor: "#ffffff", overflow: "hidden" }}>
+          <div className="rn-card-shell">
             <div
               style={{
                 padding: "16px 20px",
@@ -1550,7 +1550,7 @@ export default function CustomerProfilePage(props) {
               </div>
             )}
 
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div className="rn-table-scroll-wrap">
 
             <table
               className="rn-table"
@@ -1602,6 +1602,7 @@ export default function CustomerProfilePage(props) {
                     return String(str).replace(/(\d{10})/g, " ($1) ").replace(/:\s*$/, "").replace(/\s+/g, " ").trim();
                   };
 
+                  const insuredNameClean = cleanContactStr(p.insuredName);
                   const contactPersonClean = cleanContactStr(p.contactPerson);
                   const renewalPersonClean = cleanContactStr(p.renewalRecipientName);
 
@@ -1617,7 +1618,7 @@ export default function CustomerProfilePage(props) {
                       {/* 2. Company Name */}
                       <td style={{ width: colWidths[1] + "px" }}>
                         <div style={{ fontWeight: "600", color: "#0f172a", marginBottom: "4px" }}>
-                          {p.insuredName || "-"}
+                          {insuredNameClean || "-"}
                         </div>
                         {contactPersonClean && (
                           <div style={{ fontSize: "11.5px", color: "#475569", lineHeight: "1.4", marginTop: "2px" }}>

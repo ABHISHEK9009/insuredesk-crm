@@ -149,6 +149,20 @@
 }
 
 /* Spacious Table Styling */
+.rn-card-shell {
+  background: var(--rn-card-bg);
+  border: 1px solid var(--rn-border);
+  border-radius: var(--rn-radius);
+  box-shadow: var(--rn-shadow);
+  overflow: hidden;
+}
+
+.rn-table-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .rn-table-container {
   background: var(--rn-card-bg);
   border: 1px solid var(--rn-border);
