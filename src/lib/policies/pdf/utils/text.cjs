@@ -51,6 +51,8 @@ function cleanHdfcValue(value) {
 // Start of cleanInsuredName (Lines 3286-3292)
 function cleanInsuredName(value) {
   return String(value || "")
+    .replace(/\bCustomer\s+ID\b.*$/i, "")
+    .replace(/\bPAN\s+No\b.*$/i, "")
     .replace(/\bUnique\s+Invoice\s+No\b.*$/i, "")
     .replace(/\bUnique\b\s*$/i, "")
     .replace(/\s+/g, " ")
