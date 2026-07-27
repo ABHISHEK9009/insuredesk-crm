@@ -2430,7 +2430,7 @@ export default function Dashboard({
         isExportModalOpen &&
         createPortal(
           <div
-            className="tb-modal-backdrop"
+            className="tb-modal-overlay"
             onClick={() => setIsExportModalOpen(false)}
             style={{
               position: "fixed",
@@ -2438,9 +2438,9 @@ export default function Dashboard({
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: "rgba(15, 23, 42, 0.25)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
+              backgroundColor: "rgba(15, 23, 42, 0.45)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
               zIndex: 2000,
               display: "flex",
               alignItems: "center",
@@ -2453,12 +2453,12 @@ export default function Dashboard({
               onClick={(e) => e.stopPropagation()}
               style={{
                 background: "#ffffff",
-                borderRadius: "24px",
+                borderRadius: "20px",
                 boxShadow:
-                  "0 25px 70px -10px rgba(0, 0, 0, 0.08), 0 10px 30px -15px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.03)",
+                  "0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08)",
                 width: "100%",
-                maxWidth: "640px",
-                maxHeight: "90vh",
+                maxWidth: "680px",
+                maxHeight: "86vh",
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
@@ -2472,8 +2472,8 @@ export default function Dashboard({
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  padding: "20px 24px",
-                  borderBottom: "1px solid #f1f5f9",
+                  padding: "20px 28px",
+                  borderBottom: "1px solid #e2e8f0",
                   backgroundColor: "#ffffff",
                   color: "#0f172a",
                 }}
@@ -2486,11 +2486,12 @@ export default function Dashboard({
                       textTransform: "uppercase",
                       letterSpacing: "1px",
                       color: "#64748b",
+                      display: "block",
                     }}
                   >
                     Data Export Settings
                   </span>
-                  <h2 style={{ margin: "4px 0 0", fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
+                  <h2 style={{ margin: "2px 0 0", fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
                     Export Policy Records
                   </h2>
                 </div>
@@ -2498,40 +2499,49 @@ export default function Dashboard({
                   onClick={() => setIsExportModalOpen(false)}
                   aria-label="Close export dialog"
                   style={{
-                    background: "rgba(15, 23, 42, 0.05)",
-                    border: "none",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
                     color: "#64748b",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
+                    width: "36px",
+                    height: "36px",
                     borderRadius: "50%",
-                    transition: "background-color 0.2s",
+                    transition: "all 0.15s ease",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(15, 23, 42, 0.1)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(15, 23, 42, 0.05)")}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#f1f5f9";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
+                    e.currentTarget.style.color = "#0f172a";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "#f8fafc";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
+                    e.currentTarget.style.color = "#64748b";
+                  }}
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
               {/* Modal Body */}
               <div
                 style={{
-                  padding: "24px",
+                  padding: "24px 28px",
                   overflowY: "auto",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "20px",
+                  gap: "22px",
                   backgroundColor: "#ffffff",
                 }}
               >
                 {/* Format selection */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>Export Format</span>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                     {[
                       { value: "xlsx", label: "Excel (.xlsx)" },
                       { value: "csv", label: "CSV (.csv)" },
@@ -2542,15 +2552,16 @@ export default function Dashboard({
                         type="button"
                         onClick={() => setExportFormat(fmt.value)}
                         style={{
-                          padding: "12px 8px",
-                          borderRadius: "12px",
+                          padding: "12px 10px",
+                          borderRadius: "10px",
                           border: exportFormat === fmt.value ? "2px solid #0f172a" : "1px solid #cbd5e1",
-                          backgroundColor: exportFormat === fmt.value ? "#f8fafc" : "#ffffff",
-                          color: exportFormat === fmt.value ? "#0f172a" : "#475569",
+                          backgroundColor: exportFormat === fmt.value ? "#0f172a" : "#ffffff",
+                          color: exportFormat === fmt.value ? "#ffffff" : "#334155",
                           fontWeight: "700",
                           fontSize: "13px",
                           cursor: "pointer",
-                          transition: "all 0.2s",
+                          transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                          boxShadow: exportFormat === fmt.value ? "0 4px 12px -2px rgba(15, 23, 42, 0.25)" : "0 1px 3px rgba(0, 0, 0, 0.04)",
                         }}
                       >
                         {fmt.label}
@@ -2577,13 +2588,15 @@ export default function Dashboard({
                     }}
                     style={{
                       width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "12px",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
                       border: "1px solid #cbd5e1",
-                      fontSize: "14px",
+                      backgroundColor: "#ffffff",
+                      fontSize: "13.5px",
                       color: "#0f172a",
                       fontWeight: "600",
                       outline: "none",
+                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
                     }}
                   >
                     <option value="all">All Categories (All Fields)</option>
@@ -2609,13 +2622,15 @@ export default function Dashboard({
                     onChange={(e) => setExportDuration(e.target.value)}
                     style={{
                       width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "12px",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
                       border: "1px solid #cbd5e1",
-                      fontSize: "14px",
+                      backgroundColor: "#ffffff",
+                      fontSize: "13.5px",
                       color: "#0f172a",
                       fontWeight: "600",
                       outline: "none",
+                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
                     }}
                   >
                     <option value="all">All Time</option>
@@ -2655,6 +2670,7 @@ export default function Dashboard({
                           fontSize: "13px",
                           color: "#0f172a",
                           fontWeight: "600",
+                          boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
                         }}
                       />
                     </label>
@@ -2671,6 +2687,7 @@ export default function Dashboard({
                           fontSize: "13px",
                           color: "#0f172a",
                           fontWeight: "600",
+                          boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
                         }}
                       />
                     </label>
@@ -2683,7 +2700,7 @@ export default function Dashboard({
                     <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>
                       Audit Metadata Columns
                     </span>
-                    <span style={{ fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b" }}>
                       {exportSelectedMetadata.length} of {EXPORT_METADATA_FIELDS.length} selected
                     </span>
                   </div>
@@ -2691,11 +2708,12 @@ export default function Dashboard({
                     style={{
                       display: "grid",
                       gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                      gap: "8px",
-                      padding: "12px",
+                      gap: "10px",
+                      padding: "14px 16px",
                       backgroundColor: "#f8fafc",
                       borderRadius: "12px",
                       border: "1px solid #e2e8f0",
+                      boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
                     }}
                   >
                     {EXPORT_METADATA_FIELDS.map(([label, key]) => {
@@ -2708,7 +2726,7 @@ export default function Dashboard({
                             alignItems: "center",
                             gap: "8px",
                             fontSize: "12px",
-                            fontWeight: "600",
+                            fontWeight: isChecked ? "700" : "500",
                             color: isChecked ? "#0f172a" : "#64748b",
                             cursor: "pointer",
                             userSelect: "none",
@@ -2722,7 +2740,7 @@ export default function Dashboard({
                                 isChecked ? prev.filter((k) => k !== key) : [...prev, key],
                               );
                             }}
-                            style={{ accentColor: "#0f172a", width: "15px", height: "15px" }}
+                            style={{ accentColor: "#0f172a", width: "15px", height: "15px", cursor: "pointer" }}
                           />
                           {label}
                         </label>
@@ -2738,7 +2756,7 @@ export default function Dashboard({
                       <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155", display: "block" }}>
                         PDF Extraction Fields to Include
                       </span>
-                      <span style={{ fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b" }}>
                         {exportSelectedFields.length} of {FIELD_SETUP.length} fields active (Hidden fields excluded)
                       </span>
                     </div>
@@ -2747,15 +2765,19 @@ export default function Dashboard({
                         type="button"
                         onClick={() => setExportSelectedFields(FIELD_SETUP.map(([, key]) => key))}
                         style={{
-                          padding: "4px 8px",
-                          fontSize: "11px",
+                          padding: "5px 10px",
+                          fontSize: "11.5px",
                           fontWeight: "700",
-                          borderRadius: "6px",
+                          borderRadius: "8px",
                           border: "1px solid #cbd5e1",
                           backgroundColor: "#ffffff",
                           color: "#334155",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                           cursor: "pointer",
+                          transition: "all 0.15s ease",
                         }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#94a3b8")}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
                       >
                         Select All
                       </button>
@@ -2763,15 +2785,19 @@ export default function Dashboard({
                         type="button"
                         onClick={() => setExportSelectedFields([])}
                         style={{
-                          padding: "4px 8px",
-                          fontSize: "11px",
+                          padding: "5px 10px",
+                          fontSize: "11.5px",
                           fontWeight: "700",
-                          borderRadius: "6px",
+                          borderRadius: "8px",
                           border: "1px solid #cbd5e1",
                           backgroundColor: "#ffffff",
                           color: "#64748b",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                           cursor: "pointer",
+                          transition: "all 0.15s ease",
                         }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#94a3b8")}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
                       >
                         Deselect All
                       </button>
@@ -2779,15 +2805,19 @@ export default function Dashboard({
                         type="button"
                         onClick={() => setExportSelectedFields(getCategoryDefaultFieldKeys(exportCategory))}
                         style={{
-                          padding: "4px 8px",
-                          fontSize: "11px",
+                          padding: "5px 10px",
+                          fontSize: "11.5px",
                           fontWeight: "700",
-                          borderRadius: "6px",
+                          borderRadius: "8px",
                           border: "1px solid #cbd5e1",
                           backgroundColor: "#ffffff",
                           color: "#0f172a",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                           cursor: "pointer",
+                          transition: "all 0.15s ease",
                         }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0f172a")}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
                       >
                         Reset Preset
                       </button>
@@ -2798,10 +2828,11 @@ export default function Dashboard({
                     style={{
                       maxHeight: "220px",
                       overflowY: "auto",
-                      padding: "12px",
+                      padding: "14px 16px",
                       backgroundColor: "#f8fafc",
                       borderRadius: "12px",
                       border: "1px solid #e2e8f0",
+                      boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
                       display: "flex",
                       flexDirection: "column",
                       gap: "14px",
@@ -2815,16 +2846,16 @@ export default function Dashboard({
                       const selectedInGroupCount = groupFields.filter(([, key]) => exportSelectedFields.includes(key)).length;
 
                       return (
-                        <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px" }}>
+                        <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "4px" }}>
                             <span style={{ fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#475569" }}>
                               {group.title}
                             </span>
-                            <span style={{ fontSize: "10px", fontWeight: "700", color: "#94a3b8" }}>
+                            <span style={{ fontSize: "10.5px", fontWeight: "700", color: "#94a3b8" }}>
                               {selectedInGroupCount}/{groupFields.length}
                             </span>
                           </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "6px", paddingTop: "2px" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "8px", paddingTop: "2px" }}>
                             {groupFields.map(([label, key]) => {
                               const isChecked = exportSelectedFields.includes(key);
                               return (
@@ -2833,8 +2864,8 @@ export default function Dashboard({
                                   style={{
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: "6px",
-                                    fontSize: "11px",
+                                    gap: "8px",
+                                    fontSize: "11.5px",
                                     fontWeight: isChecked ? "700" : "500",
                                     color: isChecked ? "#0f172a" : "#64748b",
                                     cursor: "pointer",
@@ -2849,7 +2880,7 @@ export default function Dashboard({
                                         isChecked ? prev.filter((k) => k !== key) : [...prev, key],
                                       );
                                     }}
-                                    style={{ accentColor: "#0f172a", width: "14px", height: "14px" }}
+                                    style={{ accentColor: "#0f172a", width: "14px", height: "14px", cursor: "pointer" }}
                                   />
                                   {label}
                                 </label>
@@ -2870,27 +2901,40 @@ export default function Dashboard({
                   justifyContent: "flex-end",
                   alignItems: "center",
                   gap: "12px",
-                  padding: "16px 24px",
-                  borderTop: "1px solid #f1f5f9",
+                  padding: "18px 28px",
+                  borderTop: "1px solid #e2e8f0",
                   backgroundColor: "#ffffff",
+                  boxShadow: "0 -4px 16px -2px rgba(15, 23, 42, 0.05)",
                 }}
               >
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(false)}
                   style={{
-                    padding: "10px 20px",
-                    borderRadius: "12px",
+                    height: "42px",
+                    padding: "0 20px",
+                    borderRadius: "10px",
                     border: "1px solid #cbd5e1",
                     backgroundColor: "#ffffff",
-                    color: "#475569",
+                    color: "#334155",
                     cursor: "pointer",
-                    fontWeight: "600",
-                    fontSize: "14px",
-                    transition: "background-color 0.2s",
+                    fontWeight: "700",
+                    fontSize: "13.5px",
+                    boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.06)",
+                    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#ffffff";
+                    e.currentTarget.style.borderColor = "#94a3b8";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px -2px rgba(15, 23, 42, 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "#ffffff";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
+                    e.currentTarget.style.transform = "none";
+                    e.currentTarget.style.boxShadow = "0 2px 6px -1px rgba(15, 23, 42, 0.06)";
+                  }}
                 >
                   Cancel
                 </button>
@@ -2899,30 +2943,32 @@ export default function Dashboard({
                   onClick={handleExportSubmit}
                   disabled={isExporting}
                   style={{
-                    padding: "10px 24px",
-                    borderRadius: "12px",
-                    border: "1px solid #cbd5e1",
-                    backgroundColor: "#ffffff",
-                    color: "#0f172a",
-                    cursor: "pointer",
+                    height: "42px",
+                    padding: "0 22px",
+                    borderRadius: "10px",
+                    border: "1px solid #0f172a",
+                    background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+                    color: "#ffffff",
+                    cursor: isExporting ? "not-allowed" : "pointer",
                     fontWeight: "700",
-                    fontSize: "14px",
+                    fontSize: "13.5px",
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
                     opacity: isExporting ? 0.7 : 1,
-                    transition: "background-color 0.2s, border-color 0.2s",
+                    boxShadow: "0 4px 14px -2px rgba(15, 23, 42, 0.25)",
+                    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                   }}
                   onMouseEnter={(e) => {
                     if (!isExporting) {
-                      e.currentTarget.style.backgroundColor = "#f8fafc";
-                      e.currentTarget.style.borderColor = "#0f172a";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.boxShadow = "0 8px 22px -4px rgba(15, 23, 42, 0.32)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isExporting) {
-                      e.currentTarget.style.backgroundColor = "#ffffff";
-                      e.currentTarget.style.borderColor = "#cbd5e1";
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.boxShadow = "0 4px 14px -2px rgba(15, 23, 42, 0.25)";
                     }
                   }}
                 >
