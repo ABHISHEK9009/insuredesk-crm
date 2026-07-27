@@ -252,10 +252,6 @@ export default function FixedPolicyPreview({
           )}
           <div className="detection-summary">
             <div>
-              <span>Source File</span>
-              <strong>{upload.sourceFile || "-"}</strong>
-            </div>
-            <div>
               <span>Policy Type</span>
               <strong>{upload.extractedData?.policyType || "-"}</strong>
             </div>
@@ -264,18 +260,6 @@ export default function FixedPolicyPreview({
               <strong>
                 <InsurerLogo company={upload.extractedData?.insuranceCompany} />
               </strong>
-            </div>
-            <div>
-              <span>Schema</span>
-              <strong>
-                {resolvedSchema
-                  ? `${resolvedSchema.groupLabel} / ${resolvedSchema.policyName}`
-                  : "General Review"}
-              </strong>
-            </div>
-            <div>
-              <span>Extraction</span>
-              <strong>{upload.extractionMethod || "unknown"}</strong>
             </div>
             <div>
               <span>Fields Filled</span>
