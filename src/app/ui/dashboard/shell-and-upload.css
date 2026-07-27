@@ -973,6 +973,16 @@
   grid-column: 1 / -1;
 }
 
+.detection-summary div.company-card {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .detection-summary div.company-card {
+    grid-column: 1 / -1;
+  }
+}
+
 .detection-summary span,
 .detection-summary strong {
   min-width: 0;
@@ -991,6 +1001,36 @@
   font-size: var(--font-size-md);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.detection-summary div.company-card strong {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.detection-summary .insurer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.detection-summary .insurer-logo img,
+.detection-summary .insurer-logo > span:first-child {
+  flex: 0 0 34px;
+  width: 34px !important;
+  height: 34px !important;
+  object-fit: contain;
+}
+
+.detection-summary .insurer-logo span:last-child {
+  white-space: normal;
+  word-break: break-word;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--primary, #0f172a);
 }
 
 .override-grid,

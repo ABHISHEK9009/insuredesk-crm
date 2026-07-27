@@ -259,7 +259,7 @@ export default function FixedPolicyPreview({
               <span>Policy Type</span>
               <strong>{upload.extractedData?.policyType || "-"}</strong>
             </div>
-            <div>
+            <div className="company-card">
               <span>Insurance Company</span>
               <strong>
                 <InsurerLogo company={upload.extractedData?.insuranceCompany} />
