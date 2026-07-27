@@ -125,6 +125,29 @@ export default function CustomerProfilePage(props) {
   const [loading, setLoading] = useState(true);
   const [timelineFilters, setTimelineFilters] = useState({ q: "", status: "", policy: "", date: "" });
 
+  // Single vs Multi Policy toggle mode
+  const [policyViewMode, setPolicyViewMode] = useState(() => (requestedPolicyId ? "single" : "all"));
+  const [selectedSinglePolicyId, setSelectedSinglePolicyId] = useState(requestedPolicyId || "");
+
+  useEffect(() => {
+    if (requestedPolicyId) {
+      setSelectedSinglePolicyId(requestedPolicyId);
+      setPolicyViewMode("single");
+    }
+  }, [requestedPolicyId]);
+
+  const displayedPolicies = useMemo(() => {
+    if (policyViewMode === "single" && policies.length > 0) {
+      const targetId = selectedSinglePolicyId || requestedPolicyId;
+      if (targetId) {
+        const matched = policies.filter((p) => String(p.id) === String(targetId));
+        if (matched.length > 0) return matched;
+      }
+      return [policies[0]];
+    }
+    return policies;
+  }, [policies, policyViewMode, selectedSinglePolicyId, requestedPolicyId]);
+
   // Modals state
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [remarkModalOpen, setRemarkModalOpen] = useState(false);
@@ -1364,11 +1387,145 @@ export default function CustomerProfilePage(props) {
 
           {/* Associated Policies Table */}
           <div className="rn-table-container">
-            <div style={{ padding: "16px", borderBottom: "1px solid var(--rn-border)" }}>
-              <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--rn-text-primary)", margin: 0 }}>
-                Associated Policies
-              </h3>
+            <div
+              style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--rn-border)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+                flexWrap: "wrap",
+                backgroundColor: "#ffffff",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--rn-text-primary)", margin: 0 }}>
+                  Associated Policies
+                </h3>
+                <span
+                  style={{
+                    backgroundColor: "#f1f5f9",
+                    color: "#475569",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  {displayedPolicies.length} of {policies.length} {policies.length === 1 ? "Policy" : "Policies"}
+                </span>
+              </div>
+
+              {/* Single / Multi Policy Toggle */}
+              {policies.length > 1 && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "3px",
+                    backgroundColor: "#f1f5f9",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    gap: "2px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setPolicyViewMode("single")}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "5px 12px",
+                      fontSize: "12px",
+                      fontWeight: policyViewMode === "single" ? "600" : "500",
+                      color: policyViewMode === "single" ? "#0f172a" : "#64748b",
+                      backgroundColor: policyViewMode === "single" ? "#ffffff" : "transparent",
+                      borderRadius: "6px",
+                      boxShadow: policyViewMode === "single" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <Shield size={13} />
+                    Single Policy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPolicyViewMode("all")}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "5px 12px",
+                      fontSize: "12px",
+                      fontWeight: policyViewMode === "all" ? "600" : "500",
+                      color: policyViewMode === "all" ? "#0f172a" : "#64748b",
+                      backgroundColor: policyViewMode === "all" ? "#ffffff" : "transparent",
+                      borderRadius: "6px",
+                      boxShadow: policyViewMode === "all" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <LayoutGrid size={13} />
+                    Multi Policy ({policies.length})
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Single Policy View Target Banner & Switcher if multiple policies exist */}
+            {policies.length > 1 && policyViewMode === "single" && (
+              <div
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#eff6ff",
+                  borderBottom: "1px solid #dbeafe",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: "12px",
+                  color: "#1e40af",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                }}
+              >
+                <span>
+                  <strong>Single Policy View:</strong> Showing target policy{" "}
+                  <strong style={{ fontFamily: "monospace" }}>{displayedPolicies[0]?.policyNumber || "N/A"}</strong> ({displayedPolicies[0]?.insuranceCompany || ""}).
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <label htmlFor="single-policy-select" style={{ fontWeight: "500" }}>Switch Target Policy:</label>
+                  <select
+                    id="single-policy-select"
+                    aria-label="Switch Target Policy"
+                    value={displayedPolicies[0]?.id || ""}
+                    onChange={(e) => setSelectedSinglePolicyId(e.target.value)}
+                    style={{
+                      fontSize: "12px",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid #93c5fd",
+                      backgroundColor: "#ffffff",
+                      color: "#1e3a8a",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {policies.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.policyNumber || "No Number"} - {p.policyType || p.insuranceCompany || "Policy"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             <table
               className="rn-table"
@@ -1389,7 +1546,7 @@ export default function CustomerProfilePage(props) {
                 </tr>
               </thead>
               <tbody>
-                {policies.map((p) => {
+                {displayedPolicies.map((p) => {
                   const daysLeft = p.daysRemaining !== undefined ? p.daysRemaining : null;
                   const makeModel = [p.vehicleMake, p.vehicleModel].map((value) => String(value || "").trim()).filter(Boolean).join(" ") || String(p.makeModel || "").trim().replace(/\s*,\s*/g, " ") || "-";
 
