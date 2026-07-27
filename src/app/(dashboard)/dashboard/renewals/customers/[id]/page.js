@@ -1496,22 +1496,8 @@ export default function CustomerProfilePage(props) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "5px 12px",
-                      borderRadius: "6px",
-                      backgroundColor: "#1e3a8a",
-                      color: "#ffffff",
-                      fontWeight: "700",
-                      fontSize: "11.5px",
-                      letterSpacing: "0.01em",
-                      boxShadow: "0 1px 3px rgba(30, 58, 138, 0.3)",
-                    }}
-                  >
-                    <Shield size={13} style={{ color: "#ffffff", strokeWidth: 2.5 }} /> Single Policy View
+                  <span className="rn-pill-single-view">
+                    <Shield size={13} /> Single Policy View
                   </span>
                   <span style={{ color: "#334155" }}>
                     Showing target policy{" "}
