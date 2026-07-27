@@ -77,9 +77,9 @@ function train({ text = "", result = {} }) {
   }
 
   // 9. Insured / Customer Email
-  const insuredEmailMatch = text.match(/INSURED\s+DETAILS[\s\S]*?Email\s+([a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9\s.-]+\s*\.\s*[a-zA-Z\s]{2,4})/i);
+  const insuredEmailMatch = text.match(/INSURED\s+DETAILS[\s\S]*?Email\s+([a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9\s.-]+?)(?=\s*GSTIN|\s*POLICY|POLICY\s+DETAILS|$)/i);
   if (insuredEmailMatch) {
-    const cleanEmail = insuredEmailMatch[1].replace(/\s+/g, "").trim();
+    const cleanEmail = insuredEmailMatch[1].replace(/[\r\n\s]+/g, "").replace(/\.+$/, "").trim();
     patch.customerEmail = cleanEmail;
     patch.email = cleanEmail;
   }
@@ -111,6 +111,13 @@ function train({ text = "", result = {} }) {
   if (basicTpMatch) {
     patch.basicThirdPartyLiability = normalizeAmount(basicTpMatch[1]);
     patch.tpPremium = normalizeAmount(basicTpMatch[1]);
+  }
+
+  // 14. Period of Cover (Start Date & Expiry Date)
+  const periodMatch = text.match(/Period\s+of\s+(?:cover|insurance)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4})(?:\s+[0-9:]+\s*(?:AM|PM)?)?\s+to\s+(\d{1,2}[/-]\d{1,2}[/-]\d{4})/i);
+  if (periodMatch) {
+    patch.startDate = periodMatch[1].trim();
+    patch.expiryDate = periodMatch[2].trim();
   }
 
   patch.extractionTrainingVersion = "NEW_INDIA_MOTOR_V1";

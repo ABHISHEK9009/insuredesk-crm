@@ -1,4 +1,4 @@
-const { describe, it, expect } = require("vitest");
+/* global describe, it, expect */
 const { extractPolicyFromText } = require("../../extractor.cjs");
 const { selectScopedTraining } = require("../registry.cjs");
 
@@ -120,6 +120,8 @@ Total Payable in Rs(in words): RUPEES EIGHTEEN THOUSAND EIGHT HUNDRED THIRTY-ONE
       netPremium: "17,733.00",
       gstAmount: "1,098.00",
       totalPremium: "18,831.00",
+      startDate: "24/07/2026",
+      expiryDate: "23/07/2027",
       extractionTrainingVersion: "NEW_INDIA_MOTOR_V1",
     });
     expect(result.customerEmail).toBe("insuredeskbhopal@gmail.com");
