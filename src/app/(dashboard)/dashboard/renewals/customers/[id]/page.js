@@ -1484,43 +1484,56 @@ export default function CustomerProfilePage(props) {
               <div
                 style={{
                   padding: "12px 20px",
-                  backgroundColor: "#f0f9ff",
-                  borderBottom: "1px solid #bae6fd",
+                  background: "linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)",
+                  borderBottom: "1px solid #1e293b",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   fontSize: "13px",
-                  color: "#0369a1",
+                  color: "#f8fafc",
                   flexWrap: "wrap",
                   gap: "12px",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "4px",
-                      padding: "3px 10px",
+                      gap: "5px",
+                      padding: "4px 10px",
                       borderRadius: "6px",
-                      backgroundColor: "#0284c7",
+                      backgroundColor: "#2563eb",
                       color: "#ffffff",
                       fontWeight: "600",
                       fontSize: "11.5px",
+                      letterSpacing: "0.02em",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
                     }}
                   >
-                    Single Policy View
+                    <Shield size={13} /> Single Policy View
                   </span>
-                  <span>
+                  <span style={{ color: "#e2e8f0" }}>
                     Showing target policy{" "}
-                    <strong style={{ fontFamily: "monospace", color: "#0c4a6e", fontSize: "13px" }}>
+                    <strong
+                      style={{
+                        fontFamily: "monospace",
+                        color: "#38bdf8",
+                        backgroundColor: "rgba(15, 23, 42, 0.6)",
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid rgba(56, 189, 248, 0.3)",
+                        fontSize: "13px",
+                      }}
+                    >
                       {String(displayedPolicies[0]?.policyNumber || "N/A").replace(/:\s*$/, "").trim()}
                     </strong>{" "}
-                    ({displayedPolicies[0]?.insuranceCompany || ""}).
+                    <span style={{ color: "#94a3b8" }}>({displayedPolicies[0]?.insuranceCompany || ""})</span>
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#0369a1" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#93c5fd", fontSize: "12.5px" }}>
                     Switch Target Policy:
                   </label>
                   <select
@@ -1530,14 +1543,14 @@ export default function CustomerProfilePage(props) {
                     onChange={(e) => setSelectedSinglePolicyId(e.target.value)}
                     style={{
                       fontSize: "12.5px",
-                      padding: "5px 12px",
+                      padding: "6px 12px",
                       borderRadius: "6px",
-                      border: "1px solid #7dd3fc",
+                      border: "1px solid #3b82f6",
                       backgroundColor: "#ffffff",
-                      color: "#0c4a6e",
+                      color: "#0f172a",
                       fontWeight: "600",
                       cursor: "pointer",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     }}
                   >
                     {policies.map((p) => (
