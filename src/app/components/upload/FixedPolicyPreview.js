@@ -296,15 +296,11 @@ export default function FixedPolicyPreview({
           </div>
 
           {displayedMissingRequired.length ? (
-            <section className="alert-card warning">
-              <div className="alert-icon">
-                <ShieldCheck size={18} />
-              </div>
-              <div>
-                <strong>Manual details needed.</strong>
-                <p>{displayedMissingRequired.join(", ")}</p>
-              </div>
-            </section>
+            <div className="preview-missing-alert">
+              <ShieldCheck size={14} className="missing-alert-icon" />
+              <span className="missing-alert-label">Manual details needed:</span>
+              <span className="missing-alert-fields">{displayedMissingRequired.join(", ")}</span>
+            </div>
           ) : null}
 
           <div className="preview-body">
