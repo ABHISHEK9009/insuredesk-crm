@@ -1386,7 +1386,7 @@ export default function CustomerProfilePage(props) {
           </div>
 
           {/* Associated Policies Table */}
-          <div className="rn-table-container" style={{ overflowX: "auto", width: "100%" }}>
+          <div className="rn-table-container" style={{ borderRadius: "12px", border: "1px solid var(--rn-border)", backgroundColor: "#ffffff", overflow: "hidden" }}>
             <div
               style={{
                 padding: "16px 20px",
@@ -1549,6 +1549,8 @@ export default function CustomerProfilePage(props) {
                 </div>
               </div>
             )}
+
+            <div style={{ overflowX: "auto", width: "100%" }}>
 
             <table
               className="rn-table"
@@ -1825,6 +1827,7 @@ export default function CustomerProfilePage(props) {
               </tbody>
             </table>
           </div>
+        </div>
 
           {/* Timeline Feed Panel */}
           <div className="rn-table-container" style={{ padding: "24px" }}>
