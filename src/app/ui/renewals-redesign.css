@@ -167,13 +167,16 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  padding: 5px 12px !important;
-  border-radius: 6px !important;
-  background-color: #1e3a8a !important;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
   color: #ffffff !important;
-  font-weight: 700 !important;
-  font-size: 11.5px !important;
-  box-shadow: 0 1px 3px rgba(30, 58, 138, 0.3) !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.25) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
 .rn-pill-single-view,
