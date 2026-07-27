@@ -825,12 +825,12 @@ export function getReviewCounts(uploads = []) {
 }
 
 export function queueSummaryLabel(counts) {
-  if (counts.needsInputCount > 0) return `${counts.needsInputCount} need manual input`;
-  if (counts.readyCount > 0) return `${counts.readyCount} ready to save`;
-  if (counts.pendingCount > 0) return `${counts.pendingCount} extracting`;
-  if (counts.savedCount > 0) return `${counts.savedCount} saved to policy records`;
-  if (counts.failedCount > 0) return `${counts.failedCount} failed`;
-  return "Upload queue is empty";
+  if (counts.needsInputCount > 0) return `${counts.needsInputCount} Needs Input`;
+  if (counts.readyCount > 0) return `${counts.readyCount} Ready to Save`;
+  if (counts.pendingCount > 0) return `${counts.pendingCount} Extracting`;
+  if (counts.savedCount > 0) return `${counts.savedCount} Saved`;
+  if (counts.failedCount > 0) return `${counts.failedCount} Failed`;
+  return "Queue Empty";
 }
 
 export function uniqueValues(values) {
