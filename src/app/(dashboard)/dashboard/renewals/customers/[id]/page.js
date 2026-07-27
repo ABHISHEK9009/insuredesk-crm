@@ -1386,10 +1386,10 @@ export default function CustomerProfilePage(props) {
           </div>
 
           {/* Associated Policies Table */}
-          <div className="rn-table-container">
+          <div className="rn-table-container" style={{ overflowX: "auto", width: "100%" }}>
             <div
               style={{
-                padding: "12px 16px",
+                padding: "16px 20px",
                 borderBottom: "1px solid var(--rn-border)",
                 display: "flex",
                 alignItems: "center",
@@ -1400,7 +1400,7 @@ export default function CustomerProfilePage(props) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--rn-text-primary)", margin: 0 }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "var(--rn-text-primary)", margin: 0 }}>
                   Associated Policies
                 </h3>
                 <span
@@ -1409,7 +1409,7 @@ export default function CustomerProfilePage(props) {
                     color: "#475569",
                     fontWeight: "600",
                     fontSize: "12px",
-                    padding: "2px 8px",
+                    padding: "3px 10px",
                     borderRadius: "12px",
                     border: "1px solid #e2e8f0",
                   }}
@@ -1438,8 +1438,8 @@ export default function CustomerProfilePage(props) {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
-                      padding: "5px 12px",
-                      fontSize: "12px",
+                      padding: "6px 14px",
+                      fontSize: "12.5px",
                       fontWeight: policyViewMode === "single" ? "600" : "500",
                       color: policyViewMode === "single" ? "#0f172a" : "#64748b",
                       backgroundColor: policyViewMode === "single" ? "#ffffff" : "transparent",
@@ -1450,7 +1450,7 @@ export default function CustomerProfilePage(props) {
                       transition: "all 0.15s ease",
                     }}
                   >
-                    <Shield size={13} />
+                    <Shield size={14} />
                     Single Policy
                   </button>
                   <button
@@ -1460,8 +1460,8 @@ export default function CustomerProfilePage(props) {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
-                      padding: "5px 12px",
-                      fontSize: "12px",
+                      padding: "6px 14px",
+                      fontSize: "12.5px",
                       fontWeight: policyViewMode === "all" ? "600" : "500",
                       color: policyViewMode === "all" ? "#0f172a" : "#64748b",
                       backgroundColor: policyViewMode === "all" ? "#ffffff" : "transparent",
@@ -1472,7 +1472,7 @@ export default function CustomerProfilePage(props) {
                       transition: "all 0.15s ease",
                     }}
                   >
-                    <LayoutGrid size={13} />
+                    <LayoutGrid size={14} />
                     Multi Policy ({policies.length})
                   </button>
                 </div>
@@ -1483,16 +1483,16 @@ export default function CustomerProfilePage(props) {
             {policies.length > 1 && policyViewMode === "single" && (
               <div
                 style={{
-                  padding: "10px 16px",
-                  backgroundColor: "#f8fafc",
-                  borderBottom: "1px solid #e2e8f0",
+                  padding: "12px 20px",
+                  backgroundColor: "#f0f9ff",
+                  borderBottom: "1px solid #bae6fd",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  fontSize: "12.5px",
-                  color: "#334155",
+                  fontSize: "13px",
+                  color: "#0369a1",
                   flexWrap: "wrap",
-                  gap: "10px",
+                  gap: "12px",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1501,10 +1501,10 @@ export default function CustomerProfilePage(props) {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "4px",
-                      padding: "2px 8px",
+                      padding: "3px 10px",
                       borderRadius: "6px",
-                      backgroundColor: "#e0f2fe",
-                      color: "#0369a1",
+                      backgroundColor: "#0284c7",
+                      color: "#ffffff",
                       fontWeight: "600",
                       fontSize: "11.5px",
                     }}
@@ -1513,14 +1513,14 @@ export default function CustomerProfilePage(props) {
                   </span>
                   <span>
                     Showing target policy{" "}
-                    <strong style={{ fontFamily: "monospace", color: "#0f172a" }}>
+                    <strong style={{ fontFamily: "monospace", color: "#0c4a6e", fontSize: "13px" }}>
                       {String(displayedPolicies[0]?.policyNumber || "N/A").replace(/:\s*$/, "").trim()}
                     </strong>{" "}
                     ({displayedPolicies[0]?.insuranceCompany || ""}).
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#475569" }}>
+                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#0369a1" }}>
                     Switch Target Policy:
                   </label>
                   <select
@@ -1529,15 +1529,15 @@ export default function CustomerProfilePage(props) {
                     value={displayedPolicies[0]?.id || ""}
                     onChange={(e) => setSelectedSinglePolicyId(e.target.value)}
                     style={{
-                      fontSize: "12px",
-                      padding: "4px 10px",
+                      fontSize: "12.5px",
+                      padding: "5px 12px",
                       borderRadius: "6px",
-                      border: "1px solid #cbd5e1",
+                      border: "1px solid #7dd3fc",
                       backgroundColor: "#ffffff",
-                      color: "#0f172a",
+                      color: "#0c4a6e",
                       fontWeight: "600",
                       cursor: "pointer",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                     }}
                   >
                     {policies.map((p) => (
@@ -1575,7 +1575,7 @@ export default function CustomerProfilePage(props) {
                   const cleanPolicyNo = String(p.policyNumber || "N/A").replace(/:\s*$/, "").trim();
                   const statusLower = String(p.renewalStatus || "").toLowerCase();
                   const statusDisplay =
-                    statusLower === "expiry_soon" || statusLower === "expiry soon"
+                    statusLower === "expiry_soon" || statusLower === "expiry soon" || statusLower === "expiring_soon"
                       ? "Expiry Soon"
                       : statusLower === "expired"
                       ? "Expired"
@@ -1593,7 +1593,15 @@ export default function CustomerProfilePage(props) {
                       ? "Not Interested"
                       : statusLower === "renewed_elsewhere"
                       ? "Renewed Elsewhere"
-                      : p.renewalStatus || "Active";
+                      : String(p.renewalStatus || "Active").replace(/_/g, " ");
+
+                  const cleanContactStr = (str) => {
+                    if (!str) return "";
+                    return String(str).replace(/(\d{10})/g, " ($1) ").replace(/:\s*$/, "").replace(/\s+/g, " ").trim();
+                  };
+
+                  const contactPersonClean = cleanContactStr(p.contactPerson);
+                  const renewalPersonClean = cleanContactStr(p.renewalRecipientName);
 
                   return (
                     <tr key={p.id}>
@@ -1609,14 +1617,14 @@ export default function CustomerProfilePage(props) {
                         <div style={{ fontWeight: "600", color: "#0f172a", marginBottom: "4px" }}>
                           {p.insuredName || "-"}
                         </div>
-                        {p.contactPerson && (
-                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: "1.3" }}>
-                            Contact: {p.contactPerson} {p.contactNumber ? `(${p.contactNumber})` : ""}
+                        {contactPersonClean && (
+                          <div style={{ fontSize: "11.5px", color: "#475569", lineHeight: "1.4", marginTop: "2px" }}>
+                            <strong>Contact:</strong> {contactPersonClean} {p.contactNumber && !contactPersonClean.includes(p.contactNumber) ? `(${p.contactNumber})` : ""}
                           </div>
                         )}
-                        {(p.renewalRecipientName || p.renewalRecipientMobile) && (
-                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: "1.3", marginTop: "2px" }}>
-                            Renewal: {p.renewalRecipientName || p.contactPerson || "-"} {p.renewalRecipientMobile ? `(${p.renewalRecipientMobile})` : ""}
+                        {(renewalPersonClean || p.renewalRecipientMobile) && (
+                          <div style={{ fontSize: "11.5px", color: "#475569", lineHeight: "1.4", marginTop: "2px" }}>
+                            <strong>Renewal:</strong> {renewalPersonClean || contactPersonClean || "-"} {p.renewalRecipientMobile && !renewalPersonClean.includes(p.renewalRecipientMobile) ? `(${p.renewalRecipientMobile})` : ""}
                           </div>
                         )}
                         {p.renewalRecipientMobile && p.renewalRecipientMobile !== profile.phone ? (
