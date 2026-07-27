@@ -983,6 +983,8 @@
 }
 
 .insurer-brand-box .insurer-logo {
+  --insurer-logo-width: 28px !important;
+  --insurer-logo-height: 28px !important;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -991,9 +993,10 @@
 
 .insurer-brand-box .insurer-logo img,
 .insurer-brand-box .insurer-logo > span:first-child {
-  flex-shrink: 0;
+  flex: 0 0 28px !important;
   width: 28px !important;
   height: 28px !important;
+  max-width: 28px !important;
   object-fit: contain;
 }
 
