@@ -1692,7 +1692,6 @@ export default function Dashboard({
         if (exportCategory === "motor") return isMotor;
         if (exportCategory === "non-motor") return !isMotor;
 
-        const policyType = (record.policyType || "").toLowerCase();
         const remark = (record.remark || "").toLowerCase();
         const riskLocation = (record.riskLocation || "").toLowerCase();
         const description = (record.description || "").toLowerCase();
@@ -1709,18 +1708,29 @@ export default function Dashboard({
             Boolean(record.insuredMembers || record.numberOfInsuredMembers)
           );
         }
-        if (exportCategory === "fire") {
+        if (exportCategory === "fire" || exportCategory === "warehouse") {
+          const typeStr = (record.policyType || record.documentCategory || "").toLowerCase();
+          const sourceStr = (record.sourceFile || "").toLowerCase();
           return (
-            policyType.includes("fire") || policyType.includes("sfsp") || policyType.includes("burglary")
-          );
-        }
-        if (exportCategory === "warehouse") {
-          return (
-            policyType.includes("warehouse") ||
+            typeStr.includes("warehouse") ||
+            typeStr.includes("fire") ||
+            typeStr.includes("sfsp") ||
+            typeStr.includes("burglary") ||
+            typeStr.includes("msme") ||
+            typeStr.includes("stock") ||
+            typeStr.includes("property") ||
+            typeStr.includes("fidelity") ||
+            typeStr.includes("guarantee") ||
+            typeStr.includes("house breaking") ||
+            typeStr.includes("flexi") ||
+            typeStr.includes("suraksha") ||
+            typeStr.includes("laghu") ||
+            typeStr.includes("sookshma") ||
             remark.includes("warehouse") ||
             riskLocation.includes("warehouse") ||
             description.includes("warehouse") ||
-            insuredName.includes("warehouse")
+            insuredName.includes("warehouse") ||
+            sourceStr.includes("warehouse")
           );
         }
         return true;
