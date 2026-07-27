@@ -24,10 +24,13 @@ export default function PreviewField({
 }) {
   const metaClass = meta ? `meta-${meta.toLowerCase().replace(" ", "-")}` : "";
   const hasSuggestion = Boolean(suggestion?.suggestedValue);
+  const isRequired = meta === "Required";
+  const isEmptyRequired = isRequired && !String(value || "").trim();
+
   const labelEl = (
     <span>
       {label}
-      {meta ? <em className={metaClass}>{meta}</em> : null}
+      {meta && !isRequired ? <em className={metaClass}>{meta}</em> : null}
       {hasSuggestion ? <em className="meta-ai-suggestion">AI suggestion available</em> : null}
     </span>
   );
@@ -69,7 +72,12 @@ export default function PreviewField({
     );
   }
 
-  const classes = [wide ? "wide" : "", error ? "has-error" : "", disabled ? "is-disabled" : ""]
+  const classes = [
+    wide ? "wide" : "",
+    error ? "has-error" : "",
+    isEmptyRequired ? "is-required-empty" : "",
+    disabled ? "is-disabled" : "",
+  ]
     .filter(Boolean)
     .join(" ");
 

@@ -499,9 +499,21 @@ label span em.meta-ai-suggestion {
 
 label.has-error input,
 label.has-error select,
-label.has-error textarea {
-  border-color: rgba(211, 47, 47, 0.72);
-  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.08);
+label.has-error textarea,
+label.is-required-empty input,
+label.is-required-empty select,
+label.is-required-empty textarea {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+label.is-required-empty input:focus,
+label.is-required-empty select:focus,
+label.is-required-empty textarea:focus {
+  border-color: #dc2626 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22) !important;
 }
 
 label.is-disabled input,
