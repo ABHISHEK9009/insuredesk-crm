@@ -2448,6 +2448,7 @@ export default function Dashboard({
               padding: "24px",
             }}
           >
+            {/* Modal Card */}
             <div
               className="tb-modal-card"
               onClick={(e) => e.stopPropagation()}
@@ -2455,10 +2456,10 @@ export default function Dashboard({
                 background: "#ffffff",
                 borderRadius: "20px",
                 boxShadow:
-                  "0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08)",
-                width: "100%",
-                maxWidth: "840px",
-                maxHeight: "90vh",
+                  "0 25px 60px -15px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.08)",
+                width: "92vw",
+                maxWidth: "960px",
+                maxHeight: "92vh",
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
@@ -2472,7 +2473,7 @@ export default function Dashboard({
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  padding: "20px 28px",
+                  padding: "20px 32px",
                   borderBottom: "1px solid #e2e8f0",
                   backgroundColor: "#ffffff",
                   color: "#0f172a",
@@ -2500,8 +2501,8 @@ export default function Dashboard({
                   aria-label="Close export dialog"
                   style={{
                     background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    color: "#64748b",
+                    border: "1px solid #cbd5e1",
+                    color: "#475569",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -2514,13 +2515,13 @@ export default function Dashboard({
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = "#f1f5f9";
-                    e.currentTarget.style.borderColor = "#cbd5e1";
+                    e.currentTarget.style.borderColor = "#94a3b8";
                     e.currentTarget.style.color = "#0f172a";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "#f8fafc";
-                    e.currentTarget.style.borderColor = "#e2e8f0";
-                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
+                    e.currentTarget.style.color = "#475569";
                   }}
                 >
                   <X size={18} />
@@ -2530,7 +2531,7 @@ export default function Dashboard({
               {/* Modal Body */}
               <div
                 style={{
-                  padding: "24px 28px",
+                  padding: "24px 32px",
                   overflowY: "auto",
                   display: "flex",
                   flexDirection: "column",
@@ -2540,8 +2541,8 @@ export default function Dashboard({
               >
                 {/* Format selection */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>Export Format</span>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>Export Format</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
                     {[
                       { value: "xlsx", label: "Excel (.xlsx)" },
                       { value: "csv", label: "CSV (.csv)" },
@@ -2554,14 +2555,14 @@ export default function Dashboard({
                         style={{
                           padding: "12px 10px",
                           borderRadius: "10px",
-                          border: exportFormat === fmt.value ? "2px solid #0f172a" : "1px solid #cbd5e1",
-                          backgroundColor: exportFormat === fmt.value ? "#0f172a" : "#ffffff",
-                          color: exportFormat === fmt.value ? "#ffffff" : "#334155",
-                          fontWeight: "700",
+                          border: exportFormat === fmt.value ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                          backgroundColor: "#ffffff",
+                          color: exportFormat === fmt.value ? "#0f172a" : "#64748b",
+                          fontWeight: exportFormat === fmt.value ? "800" : "600",
                           fontSize: "13px",
                           cursor: "pointer",
                           transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                          boxShadow: exportFormat === fmt.value ? "0 4px 12px -2px rgba(15, 23, 42, 0.25)" : "0 1px 3px rgba(0, 0, 0, 0.04)",
+                          boxShadow: exportFormat === fmt.value ? "0 2px 8px rgba(15, 23, 42, 0.1)" : "0 1px 3px rgba(0, 0, 0, 0.02)",
                         }}
                       >
                         {fmt.label}
@@ -2570,79 +2571,82 @@ export default function Dashboard({
                   </div>
                 </div>
 
-                {/* Category selection */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label
-                    htmlFor="export-category-select"
-                    style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}
-                  >
-                    Policy Category Preset
-                  </label>
-                  <select
-                    id="export-category-select"
-                    value={exportCategory}
-                    onChange={(e) => {
-                      const cat = e.target.value;
-                      setExportCategory(cat);
-                      setExportSelectedFields(getCategoryDefaultFieldKeys(cat));
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: "#ffffff",
-                      fontSize: "13.5px",
-                      color: "#0f172a",
-                      fontWeight: "600",
-                      outline: "none",
-                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
-                    }}
-                  >
-                    <option value="all">All Categories (All Fields)</option>
-                    <option value="fire">Fire Policy Preset</option>
-                    <option value="warehouse">Warehouse Policy Preset</option>
-                    <option value="motor">Motor Policy Preset</option>
-                    <option value="health">Health Policy Preset</option>
-                    <option value="non-motor">Non Motor Policy Preset</option>
-                  </select>
-                </div>
+                {/* 2-Column Controls: Category Preset & Time Duration */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  {/* Category selection */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label
+                      htmlFor="export-category-select"
+                      style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}
+                    >
+                      Policy Category Preset
+                    </label>
+                    <select
+                      id="export-category-select"
+                      value={exportCategory}
+                      onChange={(e) => {
+                        const cat = e.target.value;
+                        setExportCategory(cat);
+                        setExportSelectedFields(getCategoryDefaultFieldKeys(cat));
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        border: "1px solid #e2e8f0",
+                        backgroundColor: "#ffffff",
+                        fontSize: "13.5px",
+                        color: "#0f172a",
+                        fontWeight: "600",
+                        outline: "none",
+                        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                      }}
+                    >
+                      <option value="all">All Categories (All Fields)</option>
+                      <option value="fire">Fire Policy Preset</option>
+                      <option value="warehouse">Warehouse Policy Preset</option>
+                      <option value="motor">Motor Policy Preset</option>
+                      <option value="health">Health Policy Preset</option>
+                      <option value="non-motor">Non Motor Policy Preset</option>
+                    </select>
+                  </div>
 
-                {/* Time duration selection */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label
-                    htmlFor="export-duration-select"
-                    style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}
-                  >
-                    Time Duration
-                  </label>
-                  <select
-                    id="export-duration-select"
-                    value={exportDuration}
-                    onChange={(e) => setExportDuration(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: "#ffffff",
-                      fontSize: "13.5px",
-                      color: "#0f172a",
-                      fontWeight: "600",
-                      outline: "none",
-                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
-                    }}
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="past-3-days">Past 3 Days</option>
-                    <option value="past-week">Past Week</option>
-                    <option value="past-month">Past Month</option>
-                    <option value="past-3-months">Past 3 Months</option>
-                    <option value="past-6-months">Past 6 Months</option>
-                    <option value="past-year">Past Year</option>
-                    <option value="custom">Custom Range...</option>
-                  </select>
+                  {/* Time duration selection */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label
+                      htmlFor="export-duration-select"
+                      style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}
+                    >
+                      Time Duration
+                    </label>
+                    <select
+                      id="export-duration-select"
+                      value={exportDuration}
+                      onChange={(e) => setExportDuration(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        border: "1px solid #e2e8f0",
+                        backgroundColor: "#ffffff",
+                        fontSize: "13.5px",
+                        color: "#0f172a",
+                        fontWeight: "600",
+                        outline: "none",
+                        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                      }}
+                    >
+                      <option value="all">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="past-3-days">Past 3 Days</option>
+                      <option value="past-week">Past Week</option>
+                      <option value="past-month">Past Month</option>
+                      <option value="past-3-months">Past 3 Months</option>
+                      <option value="past-6-months">Past 6 Months</option>
+                      <option value="past-year">Past Year</option>
+                      <option value="custom">Custom Range...</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Custom date pickers */}
@@ -2651,7 +2655,7 @@ export default function Dashboard({
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: "12px",
+                      gap: "16px",
                       animation: "fade-in 0.2s ease-out",
                     }}
                   >
@@ -2666,7 +2670,7 @@ export default function Dashboard({
                         style={{
                           padding: "8px 12px",
                           borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
+                          border: "1px solid #e2e8f0",
                           fontSize: "13px",
                           color: "#0f172a",
                           fontWeight: "600",
@@ -2683,7 +2687,7 @@ export default function Dashboard({
                         style={{
                           padding: "8px 12px",
                           borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
+                          border: "1px solid #e2e8f0",
                           fontSize: "13px",
                           color: "#0f172a",
                           fontWeight: "600",
@@ -2693,25 +2697,24 @@ export default function Dashboard({
                     </label>
                   </div>
                 )}
-
                 {/* Metadata Columns Selection */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>
+                    <span style={{ fontSize: "13.5px", fontWeight: "700", color: "#0f172a" }}>
                       Audit Metadata Columns
                     </span>
-                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b" }}>
+                    <span style={{ fontSize: "11.5px", fontWeight: "700", color: "#64748b" }}>
                       {exportSelectedMetadata.length} of {EXPORT_METADATA_FIELDS.length} selected
                     </span>
                   </div>
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                      gap: "10px",
-                      padding: "14px 16px",
-                      backgroundColor: "#f8fafc",
-                      borderRadius: "12px",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+                      gap: "12px 16px",
+                      padding: "16px 20px",
+                      backgroundColor: "#ffffff",
+                      borderRadius: "14px",
                       border: "1px solid #e2e8f0",
                       boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
                     }}
@@ -2725,9 +2728,9 @@ export default function Dashboard({
                             display: "flex",
                             alignItems: "center",
                             gap: "8px",
-                            fontSize: "12px",
+                            fontSize: "12.5px",
                             fontWeight: isChecked ? "700" : "500",
-                            color: isChecked ? "#0f172a" : "#64748b",
+                            color: isChecked ? "#0f172a" : "#475569",
                             cursor: "pointer",
                             userSelect: "none",
                           }}
@@ -2753,31 +2756,31 @@ export default function Dashboard({
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                     <div>
-                      <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155", display: "block" }}>
+                      <span style={{ fontSize: "13.5px", fontWeight: "700", color: "#0f172a", display: "block" }}>
                         PDF Extraction Fields to Include
                       </span>
-                      <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b" }}>
+                      <span style={{ fontSize: "11.5px", fontWeight: "700", color: "#64748b" }}>
                         {exportSelectedFields.length} of {FIELD_SETUP.length} fields active (Hidden fields excluded)
                       </span>
                     </div>
-                    <div style={{ display: "flex", gap: "6px" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
                       <button
                         type="button"
                         onClick={() => setExportSelectedFields(FIELD_SETUP.map(([, key]) => key))}
                         style={{
-                          padding: "5px 10px",
+                          padding: "6px 12px",
                           fontSize: "11.5px",
                           fontWeight: "700",
                           borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
+                          border: "1px solid #e2e8f0",
                           backgroundColor: "#ffffff",
-                          color: "#334155",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                          color: "#0f172a",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                           cursor: "pointer",
                           transition: "all 0.15s ease",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#94a3b8")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                       >
                         Select All
                       </button>
@@ -2785,19 +2788,19 @@ export default function Dashboard({
                         type="button"
                         onClick={() => setExportSelectedFields([])}
                         style={{
-                          padding: "5px 10px",
+                          padding: "6px 12px",
                           fontSize: "11.5px",
                           fontWeight: "700",
                           borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
+                          border: "1px solid #e2e8f0",
                           backgroundColor: "#ffffff",
                           color: "#64748b",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                           cursor: "pointer",
                           transition: "all 0.15s ease",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#94a3b8")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                       >
                         Deselect All
                       </button>
@@ -2805,19 +2808,19 @@ export default function Dashboard({
                         type="button"
                         onClick={() => setExportSelectedFields(getCategoryDefaultFieldKeys(exportCategory))}
                         style={{
-                          padding: "5px 10px",
+                          padding: "6px 12px",
                           fontSize: "11.5px",
                           fontWeight: "700",
                           borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
+                          border: "1px solid #e2e8f0",
                           backgroundColor: "#ffffff",
                           color: "#0f172a",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                           cursor: "pointer",
                           transition: "all 0.15s ease",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0f172a")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                       >
                         Reset Preset
                       </button>
@@ -2826,16 +2829,14 @@ export default function Dashboard({
 
                   <div
                     style={{
-                      maxHeight: "320px",
-                      overflowY: "auto",
-                      padding: "14px 16px",
-                      backgroundColor: "#f8fafc",
-                      borderRadius: "12px",
+                      padding: "18px 22px",
+                      backgroundColor: "#ffffff",
+                      borderRadius: "14px",
                       border: "1px solid #e2e8f0",
                       boxShadow: "0 2px 6px -1px rgba(15, 23, 42, 0.04)",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "14px",
+                      gap: "18px",
                     }}
                   >
                     {FIELD_GROUPS.map((group) => {
@@ -2846,16 +2847,16 @@ export default function Dashboard({
                       const selectedInGroupCount = groupFields.filter(([, key]) => exportSelectedFields.includes(key)).length;
 
                       return (
-                        <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "4px" }}>
-                            <span style={{ fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#475569" }}>
+                        <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "6px" }}>
+                            <span style={{ fontSize: "11.5px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#0f172a" }}>
                               {group.title}
                             </span>
-                            <span style={{ fontSize: "10.5px", fontWeight: "700", color: "#94a3b8" }}>
+                            <span style={{ fontSize: "10.5px", fontWeight: "700", color: "#0f172a", background: "#ffffff", border: "1px solid #e2e8f0", padding: "2px 8px", borderRadius: "999px" }}>
                               {selectedInGroupCount}/{groupFields.length}
                             </span>
                           </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "8px", paddingTop: "2px" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px 16px", paddingTop: "2px" }}>
                             {groupFields.map(([label, key]) => {
                               const isChecked = exportSelectedFields.includes(key);
                               return (
@@ -2865,9 +2866,9 @@ export default function Dashboard({
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "8px",
-                                    fontSize: "11.5px",
+                                    fontSize: "12.5px",
                                     fontWeight: isChecked ? "700" : "500",
-                                    color: isChecked ? "#0f172a" : "#64748b",
+                                    color: isChecked ? "#0f172a" : "#475569",
                                     cursor: "pointer",
                                     userSelect: "none",
                                   }}
@@ -2880,7 +2881,7 @@ export default function Dashboard({
                                         isChecked ? prev.filter((k) => k !== key) : [...prev, key],
                                       );
                                     }}
-                                    style={{ accentColor: "#0f172a", width: "14px", height: "14px", cursor: "pointer" }}
+                                    style={{ accentColor: "#0f172a", width: "15px", height: "15px", cursor: "pointer" }}
                                   />
                                   {label}
                                 </label>
@@ -2901,7 +2902,7 @@ export default function Dashboard({
                   justifyContent: "flex-end",
                   alignItems: "center",
                   gap: "12px",
-                  padding: "18px 28px",
+                  padding: "18px 32px",
                   borderTop: "1px solid #e2e8f0",
                   backgroundColor: "#ffffff",
                   boxShadow: "0 -4px 16px -2px rgba(15, 23, 42, 0.05)",
@@ -2912,7 +2913,7 @@ export default function Dashboard({
                   onClick={() => setIsExportModalOpen(false)}
                   style={{
                     height: "42px",
-                    padding: "0 20px",
+                    padding: "0 22px",
                     borderRadius: "10px",
                     border: "1px solid #cbd5e1",
                     backgroundColor: "#ffffff",
@@ -2944,7 +2945,7 @@ export default function Dashboard({
                   disabled={isExporting}
                   style={{
                     height: "42px",
-                    padding: "0 22px",
+                    padding: "0 24px",
                     borderRadius: "10px",
                     border: "1px solid #0f172a",
                     background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
