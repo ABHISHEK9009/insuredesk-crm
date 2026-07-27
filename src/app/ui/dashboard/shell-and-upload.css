@@ -751,14 +751,13 @@
 .queue-head .status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 700;
-  background: #fffdf5;
-  border: 1px solid #fef08a;
+  background: #fefce8;
+  border: 1px solid #fde68a;
   color: #b45309;
-  transition: all 0.2s ease;
 }
 
 .queue-card {
@@ -766,11 +765,11 @@
   grid-template-columns: 40px minmax(0, 1fr);
   width: 100%;
   gap: 12px;
-  border: 1px solid rgba(233, 236, 239, 0.94);
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   background: #ffffff;
   color: inherit;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   padding: 12px 14px;
   text-align: left;
   white-space: normal;
@@ -778,13 +777,13 @@
 }
 
 .queue-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  border-color: #94a3b8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .queue-card.active {
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.35);
+  border: 1.5px solid #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
   background: #ffffff;
 }
 
@@ -793,10 +792,10 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+  border-radius: 8px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #2563eb;
   transition: transform var(--motion-fast);
 }
 
@@ -890,18 +889,17 @@
 }
 
 .mini-progress {
-  height: 5px;
+  height: 4px;
   overflow: hidden;
   border-radius: 999px;
   background: #f1f5f9;
-  border: 1px solid #e2e8f0;
 }
 
 .mini-progress i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #64748b, #334155);
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
   transition: width 0.3s ease;
 }
 
