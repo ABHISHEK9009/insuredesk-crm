@@ -959,10 +959,11 @@
 
 .detection-summary {
   display: grid;
-  grid-template-columns: 1.2fr 2fr 0.8fr 1fr;
-  gap: 6px;
-  border-bottom: 1px solid rgba(233, 236, 239, 0.86);
-  padding: 6px 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 16px;
+  background: #f8fafc;
 }
 
 .detection-summary div,
@@ -970,11 +971,18 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1px;
-  border: 1px solid rgba(233, 236, 239, 0.92);
-  border-radius: 6px;
+  gap: 2px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   background: #ffffff;
-  padding: 4px 8px;
+  padding: 6px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.detection-summary div:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .detection-summary div.wide {
@@ -982,12 +990,12 @@
 }
 
 .detection-summary div.company-card {
-  grid-column: span 1;
+  grid-column: span 2;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .detection-summary {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .detection-summary div.company-card {
     grid-column: 1 / -1;
@@ -1000,18 +1008,20 @@
 }
 
 .detection-summary span {
-  color: var(--on-surface-variant);
-  font-size: 9px;
-  font-weight: 800;
+  color: #64748b;
+  font-size: 9.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
 }
 
 .detection-summary strong {
   overflow: hidden;
-  color: var(--primary);
-  font-size: 11px;
-  line-height: 1.2;
+  color: #0f172a;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1025,25 +1035,25 @@
 .detection-summary .insurer-logo {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   max-width: 100%;
 }
 
 .detection-summary .insurer-logo img,
 .detection-summary .insurer-logo > span:first-child {
-  flex: 0 0 24px;
-  width: 24px !important;
-  height: 24px !important;
+  flex: 0 0 26px;
+  width: 26px !important;
+  height: 26px !important;
   object-fit: contain;
 }
 
 .detection-summary .insurer-logo span:last-child {
   white-space: normal;
   word-break: break-word;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
-  line-height: 1.15;
-  color: var(--primary, #0f172a);
+  line-height: 1.2;
+  color: #0f172a;
 }
 
 .override-grid,
