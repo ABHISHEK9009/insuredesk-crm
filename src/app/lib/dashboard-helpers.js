@@ -941,3 +941,140 @@ export function download(filename, content, type) {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export const EXPORT_METADATA_FIELDS = [
+  ["Uploaded By", "uploadedBy"],
+  ["Uploaded Time", "uploadedAt"],
+  ["Saved Time", "savedAt"],
+  ["Client ID", "clientId"],
+  ["PDF Source File", "sourceFile"],
+  ["Extraction Method", "extractionMethod"],
+];
+
+export function getCategoryDefaultFieldKeys(category = "all") {
+  const cat = String(category || "all").toLowerCase();
+  if (cat === "all") {
+    return FIELD_SETUP.map(([, key]) => key);
+  }
+  if (cat === "motor") {
+    const motorGroup = FIELD_GROUPS.find((g) => g.title === "Vehicle Details");
+    const commonFields = [
+      "insuredName",
+      "policyNumber",
+      "insuranceCompany",
+      "startDate",
+      "expiryDate",
+      "premium",
+      "netPremium",
+      "totalPremium",
+      "idv",
+      "ncb",
+      "newOrRenewal",
+      "policyCoverType",
+      "contactPerson",
+      "contactNumber",
+      "whatsappGroupName",
+    ];
+    return Array.from(new Set([...commonFields, ...(motorGroup?.fields || [])]));
+  }
+  if (cat === "fire" || cat === "warehouse") {
+    const propertyGroup = FIELD_GROUPS.find((g) => g.title === "Warehouse & Property");
+    const commonFields = [
+      "insuredName",
+      "policyNumber",
+      "insuranceCompany",
+      "startDate",
+      "expiryDate",
+      "premium",
+      "sumInsured",
+      "occupancy",
+      "riskLocation",
+      "contactPerson",
+      "contactNumber",
+      "whatsappGroupName",
+    ];
+    return Array.from(new Set([...commonFields, ...(propertyGroup?.fields || [])]));
+  }
+  if (cat === "health") {
+    const commonFields = [
+      "insuredName",
+      "policyNumber",
+      "insuranceCompany",
+      "startDate",
+      "expiryDate",
+      "premium",
+      "sumInsured",
+      "numberOfInsuredMembers",
+      "productName",
+      "contactPerson",
+      "contactNumber",
+      "whatsappGroupName",
+    ];
+    return commonFields;
+  }
+  if (cat === "non-motor") {
+    const vehicleGroup = new Set(FIELD_GROUPS.find((g) => g.title === "Vehicle Details")?.fields || []);
+    return FIELD_SETUP.map(([, key]) => key).filter((key) => !vehicleGroup.has(key));
+  }
+  return FIELD_SETUP.map(([, key]) => key);
+}
+
+export function getExportValueForRecord(record = {}, key = "") {
+  if (!record || typeof record !== "object") return "";
+
+  if (key === "uploadedBy") {
+    return record.uploadedBy || record.createdBy || record.uploaderName || record.createdByName || "-";
+  }
+  if (key === "uploadedAt") {
+    const raw = record.uploadedAt || record.createdAt;
+    if (!raw) return "-";
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime())
+      ? String(raw)
+      : d.toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  }
+  if (key === "savedAt") {
+    const raw = record.savedAt;
+    if (!raw) return "-";
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime())
+      ? String(raw)
+      : d.toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  }
+  if (key === "clientId") {
+    return record.clientId || record.customerId || "-";
+  }
+  if (key === "sourceFile") {
+    return record.sourceFile || record.pdfFileName || "-";
+  }
+  if (key === "extractionMethod") {
+    return record.extractionMethod || "-";
+  }
+
+  const rawVal = record[key] ?? record?.extractedData?.[key] ?? "";
+  if (["startDate", "expiryDate", "registrationDate", "invoiceDate"].includes(key) && rawVal) {
+    const d = new Date(rawVal);
+    if (!Number.isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+  }
+
+  return rawVal ?? "";
+}
+
+

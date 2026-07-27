@@ -1,3 +1,4 @@
+const { describe, it, expect } = require("vitest");
 const { extractPolicyFromText } = require("../src/lib/policies/pdf/extractor.cjs");
 const { selectScopedTraining } = require("../src/lib/policies/pdf/training/registry.cjs");
 

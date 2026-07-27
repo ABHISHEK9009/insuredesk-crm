@@ -39,6 +39,10 @@ import {
   PAYMENT_MODE_OPTIONS,
   POLICY_SCHEMA_LIBRARY,
   FIELD_GROUPS,
+  EXPORT_METADATA_FIELDS,
+  getCategoryDefaultFieldKeys,
+  getExportValueForRecord,
+  getFieldLabel,
   getReviewCounts,
   queueSummaryLabel,
   getReviewValidation,
@@ -357,6 +361,14 @@ export default function Dashboard({
   const [exportDuration, setExportDuration] = useState("all");
   const [exportCustomStart, setExportCustomStart] = useState("");
   const [exportCustomEnd, setExportCustomEnd] = useState("");
+  const [exportSelectedFields, setExportSelectedFields] = useState(() => FIELD_SETUP.map(([, key]) => key));
+  const [exportSelectedMetadata, setExportSelectedMetadata] = useState(() => [
+    "uploadedBy",
+    "uploadedAt",
+    "savedAt",
+    "clientId",
+    "sourceFile",
+  ]);
   const [isExporting, setIsExporting] = useState(false);
   const [recordFilterField, setRecordFilterField] = useState(initialFilterField);
   const [recordFilterValue, setRecordFilterValue] = useState(initialFilterValue);
@@ -1471,6 +1483,20 @@ export default function Dashboard({
       setToast("Export restricted");
       return;
     }
+
+    const activeMetadataTuples = EXPORT_METADATA_FIELDS.filter(([, key]) => exportSelectedMetadata.includes(key));
+    const activeExtractionTuples = FIELD_SETUP.filter(([, key]) => exportSelectedFields.includes(key));
+    const exportColumns = [...activeMetadataTuples, ...activeExtractionTuples];
+
+    if (!exportColumns.length) {
+      setAlert({
+        type: "error",
+        title: "No fields selected",
+        message: "Please select at least one metadata column or PDF extraction field to export.",
+      });
+      return;
+    }
+
     setIsExporting(true);
     try {
       const exportSource = activePage === "records" ? await fetchAllPolicyRecordsForExport() : records;
@@ -1487,14 +1513,13 @@ export default function Dashboard({
       }
 
       if (exportFormat === "csv") {
-        const headers = FIELD_SETUP.map(([label]) => label);
-        const keys = FIELD_SETUP.map(([, key]) => key);
+        const headers = exportColumns.map(([label]) => label);
         const csvRows = [headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(",")];
 
         list.forEach((record) => {
-          const rowValues = keys.map((key) => {
-            const val = record[key] ?? "";
-            if (key === "policyNumber" && val) {
+          const rowValues = exportColumns.map(([, key]) => {
+            const val = getExportValueForRecord(record, key);
+            if ((key === "policyNumber" || key === "registrationNumber" || key === "vehicleNumber" || key === "clientId") && val) {
               return `="` + String(val).replace(/"/g, '""') + `"`;
             }
             return `"${String(val).replace(/"/g, '""')}"`;
@@ -1508,30 +1533,34 @@ export default function Dashboard({
       } else if (exportFormat === "xlsx") {
         const XLSXModule = await import("xlsx");
         const XLSX = XLSXModule.default || XLSXModule;
+
         const data = list.map((record) => {
           const obj = {};
-          FIELD_SETUP.forEach(([label, key]) => {
-            obj[label] = record[key] ?? "";
+          exportColumns.forEach(([label, key]) => {
+            obj[label] = getExportValueForRecord(record, key);
           });
           return obj;
         });
 
         const worksheet = XLSX.utils.json_to_sheet(data);
 
-        // Force Policy Number column to treat values as text/string cells
-        let policyNumberColIndex = -1;
-        const headersList = FIELD_SETUP.map(([label]) => label);
-        policyNumberColIndex = headersList.indexOf("Policy Number");
+        // Force string formatting on text/number columns
+        const textKeys = ["policyNumber", "vehicleNumber", "registrationNumber", "clientId", "contactNumber", "engineNumber", "chassisNumber"];
+        const textColIndices = exportColumns
+          .map(([label, key], index) => (textKeys.includes(key) || label.toLowerCase().includes("number") ? index : -1))
+          .filter((idx) => idx !== -1);
 
-        if (policyNumberColIndex !== -1) {
+        if (textColIndices.length && worksheet["!ref"]) {
           const range = XLSX.utils.decode_range(worksheet["!ref"]);
           for (let r = range.s.r + 1; r <= range.e.r; r++) {
-            const cellAddress = XLSX.utils.encode_cell({ r, c: policyNumberColIndex });
-            if (worksheet[cellAddress]) {
-              worksheet[cellAddress].t = "s";
-              worksheet[cellAddress].v = String(worksheet[cellAddress].v);
-              delete worksheet[cellAddress].z;
-            }
+            textColIndices.forEach((c) => {
+              const cellAddress = XLSX.utils.encode_cell({ r, c });
+              if (worksheet[cellAddress]) {
+                worksheet[cellAddress].t = "s";
+                worksheet[cellAddress].v = String(worksheet[cellAddress].v);
+                delete worksheet[cellAddress].z;
+              }
+            });
           }
         }
 
@@ -1563,7 +1592,7 @@ export default function Dashboard({
         doc.setFontSize(10);
         doc.text(`Generated on: ${new Date().toLocaleString("en-IN")}`, 14, 22);
 
-        const selectedColumns = FIELD_SETUP.map(([label, key]) => ({
+        const selectedColumns = exportColumns.map(([label, key]) => ({
           header: label,
           dataKey: key,
         }));
@@ -1571,14 +1600,7 @@ export default function Dashboard({
         const tableData = list.map((record) => {
           const row = {};
           selectedColumns.forEach((col) => {
-            let val = record[col.dataKey] ?? "";
-            if (["startDate", "expiryDate"].includes(col.dataKey) && val) {
-              const d = new Date(val);
-              if (!Number.isNaN(d.getTime())) {
-                val = d.toLocaleDateString("en-IN");
-              }
-            }
-            row[col.dataKey] = val;
+            row[col.dataKey] = getExportValueForRecord(record, col.dataKey);
           });
           return row;
         });
@@ -1591,7 +1613,7 @@ export default function Dashboard({
           styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" },
           margin: { top: 25, bottom: 20 },
           horizontalPageBreak: true,
-          horizontalPageBreakRepeat: "customerId",
+          horizontalPageBreakRepeat: "clientId",
         });
 
         doc.save("policy-records-export.pdf");
@@ -2435,7 +2457,7 @@ export default function Dashboard({
                 boxShadow:
                   "0 25px 70px -10px rgba(0, 0, 0, 0.08), 0 10px 30px -15px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.03)",
                 width: "100%",
-                maxWidth: "480px",
+                maxWidth: "640px",
                 maxHeight: "90vh",
                 display: "flex",
                 flexDirection: "column",
@@ -2466,7 +2488,7 @@ export default function Dashboard({
                       color: "#64748b",
                     }}
                   >
-                    Data Export
+                    Data Export Settings
                   </span>
                   <h2 style={{ margin: "4px 0 0", fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
                     Export Policy Records
@@ -2543,12 +2565,16 @@ export default function Dashboard({
                     htmlFor="export-category-select"
                     style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}
                   >
-                    Policy Category
+                    Policy Category Preset
                   </label>
                   <select
                     id="export-category-select"
                     value={exportCategory}
-                    onChange={(e) => setExportCategory(e.target.value)}
+                    onChange={(e) => {
+                      const cat = e.target.value;
+                      setExportCategory(cat);
+                      setExportSelectedFields(getCategoryDefaultFieldKeys(cat));
+                    }}
                     style={{
                       width: "100%",
                       padding: "10px 12px",
@@ -2560,11 +2586,12 @@ export default function Dashboard({
                       outline: "none",
                     }}
                   >
-                    <option value="all">All Categories</option>
-                    <option value="fire">Fire Policy</option>
-                    <option value="warehouse">Warehouse Policy</option>
-                    <option value="motor">Motor Policy</option>
-                    <option value="non-motor">Non Motor Policy</option>
+                    <option value="all">All Categories (All Fields)</option>
+                    <option value="fire">Fire Policy Preset</option>
+                    <option value="warehouse">Warehouse Policy Preset</option>
+                    <option value="motor">Motor Policy Preset</option>
+                    <option value="health">Health Policy Preset</option>
+                    <option value="non-motor">Non Motor Policy Preset</option>
                   </select>
                 </div>
 
@@ -2649,6 +2676,191 @@ export default function Dashboard({
                     </label>
                   </div>
                 )}
+
+                {/* Metadata Columns Selection */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>
+                      Audit Metadata Columns
+                    </span>
+                    <span style={{ fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                      {exportSelectedMetadata.length} of {EXPORT_METADATA_FIELDS.length} selected
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                      gap: "8px",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    {EXPORT_METADATA_FIELDS.map(([label, key]) => {
+                      const isChecked = exportSelectedMetadata.includes(key);
+                      return (
+                        <label
+                          key={key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            color: isChecked ? "#0f172a" : "#64748b",
+                            cursor: "pointer",
+                            userSelect: "none",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setExportSelectedMetadata((prev) =>
+                                isChecked ? prev.filter((k) => k !== key) : [...prev, key],
+                              );
+                            }}
+                            style={{ accentColor: "#0f172a", width: "15px", height: "15px" }}
+                          />
+                          {label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* PDF Extraction Fields Selection */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                    <div>
+                      <span style={{ fontSize: "13px", fontWeight: "700", color: "#334155", display: "block" }}>
+                        PDF Extraction Fields to Include
+                      </span>
+                      <span style={{ fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                        {exportSelectedFields.length} of {FIELD_SETUP.length} fields active (Hidden fields excluded)
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        type="button"
+                        onClick={() => setExportSelectedFields(FIELD_SETUP.map(([, key]) => key))}
+                        style={{
+                          padding: "4px 8px",
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          borderRadius: "6px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#ffffff",
+                          color: "#334155",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExportSelectedFields([])}
+                        style={{
+                          padding: "4px 8px",
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          borderRadius: "6px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#ffffff",
+                          color: "#64748b",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Deselect All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExportSelectedFields(getCategoryDefaultFieldKeys(exportCategory))}
+                        style={{
+                          padding: "4px 8px",
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          borderRadius: "6px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#ffffff",
+                          color: "#0f172a",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Reset Preset
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      maxHeight: "220px",
+                      overflowY: "auto",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "14px",
+                    }}
+                  >
+                    {FIELD_GROUPS.map((group) => {
+                      const groupFields = group.fields.map((key) => {
+                        const tuple = FIELD_SETUP.find(([, k]) => k === key);
+                        return tuple || [getFieldLabel(key), key];
+                      });
+                      const selectedInGroupCount = groupFields.filter(([, key]) => exportSelectedFields.includes(key)).length;
+
+                      return (
+                        <div key={group.title} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px" }}>
+                            <span style={{ fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#475569" }}>
+                              {group.title}
+                            </span>
+                            <span style={{ fontSize: "10px", fontWeight: "700", color: "#94a3b8" }}>
+                              {selectedInGroupCount}/{groupFields.length}
+                            </span>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "6px", paddingTop: "2px" }}>
+                            {groupFields.map(([label, key]) => {
+                              const isChecked = exportSelectedFields.includes(key);
+                              return (
+                                <label
+                                  key={key}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    fontSize: "11px",
+                                    fontWeight: isChecked ? "700" : "500",
+                                    color: isChecked ? "#0f172a" : "#64748b",
+                                    cursor: "pointer",
+                                    userSelect: "none",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      setExportSelectedFields((prev) =>
+                                        isChecked ? prev.filter((k) => k !== key) : [...prev, key],
+                                      );
+                                    }}
+                                    style={{ accentColor: "#0f172a", width: "14px", height: "14px" }}
+                                  />
+                                  {label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Modal Footer */}

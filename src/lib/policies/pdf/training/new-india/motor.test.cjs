@@ -1,6 +1,6 @@
+const { describe, it, expect } = require("vitest");
 const { extractPolicyFromText } = require("../../extractor.cjs");
 const { selectScopedTraining } = require("../registry.cjs");
-const newIndiaMotorTrainer = require("./motor.cjs");
 
 describe("New India Motor PDF Training Module", () => {
   const sampleText = `
