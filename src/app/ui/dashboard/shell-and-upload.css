@@ -1080,27 +1080,31 @@
 }
 
 .preview-sub-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
+}
+
+@media (max-width: 900px) {
+  .preview-sub-toolbar {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sub-meta-pill {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 11.5px;
   color: #475569;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  padding: 0 10px;
-  height: 26px;
+  padding: 0 12px;
+  height: 28px;
   border-radius: 6px;
-  white-space: nowrap;
-  max-width: 320px;
+  min-width: 0;
+  width: 100%;
 }
 
 .sub-meta-pill svg {
@@ -1112,6 +1116,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .preview-inline-warning-bar {
