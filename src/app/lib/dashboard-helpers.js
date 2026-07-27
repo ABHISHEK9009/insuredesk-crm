@@ -806,7 +806,7 @@ export function getReviewCounts(uploads = []) {
       pendingCount += 1;
     } else {
       const validation = getReviewValidation(upload);
-      if (validation.missingRequired.length) {
+      if (validation.missingRequired.length || validation.contactErrors.length) {
         needsInputCount += 1;
       } else {
         readyCount += 1;

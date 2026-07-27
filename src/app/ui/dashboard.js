@@ -1949,7 +1949,7 @@ export default function Dashboard({
                   </h4>
                   <div>
                     <span className="status-pill">
-                      {queueSummaryLabel({ isUploading, selectedFiles, reviewCounts })}
+                      {isUploading ? "Uploading files..." : queueSummaryLabel(reviewCounts)}
                     </span>
                   </div>
                 </div>
