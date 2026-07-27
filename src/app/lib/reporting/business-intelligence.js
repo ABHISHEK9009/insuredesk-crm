@@ -1174,8 +1174,19 @@ function getDateRange(range = "this_month", from = "", to = "") {
 
 function applyPolicyFilters(where, filters, dateRange) {
   Object.assign(where, withoutManualRenewalSources(where));
-  where.savedAt = { gte: dateRange.start, lte: dateRange.end };
-  const and = [];
+  const and = [
+    {
+      OR: [
+        { savedAt: { gte: dateRange.start, lte: dateRange.end } },
+        {
+          AND: [
+            { savedAt: null },
+            { createdAt: { gte: dateRange.start, lte: dateRange.end } },
+          ],
+        },
+      ],
+    },
+  ];
   if (filters.company) {
     and.push({
       OR: [
