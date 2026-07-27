@@ -766,11 +766,11 @@
   grid-template-columns: 40px minmax(0, 1fr);
   width: 100%;
   gap: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(233, 236, 239, 0.94);
   border-radius: 12px;
   background: #ffffff;
   color: inherit;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   padding: 12px 14px;
   text-align: left;
   white-space: normal;
@@ -778,15 +778,13 @@
 }
 
 .queue-card:hover {
-  transform: translateY(-1px);
   border-color: #cbd5e1;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .queue-card.active {
-  transform: translateY(-1px);
-  border: 1.5px solid #64748b;
-  box-shadow: 0 4px 14px rgba(100, 116, 139, 0.12);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.35);
   background: #ffffff;
 }
 
