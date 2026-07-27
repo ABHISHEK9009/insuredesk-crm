@@ -287,14 +287,19 @@ function extractNewIndiaMotorDetails(text = "") {
 // Start of extractNewIndiaPolicyPeriod (Lines 4185-4197)
 function extractNewIndiaPolicyPeriod(text = "") {
   const bundled = text.match(
-    /Period\s+of\s+cover\s+OD\s+Cover\s*(\d{1,2}\/\d{1,2}\/\d{4})[\s\S]{0,80}?to\s+(\d{1,2}\/\d{1,2}\/\d{4})/i,
+    /Period\s+of\s+cover\s+OD\s+Cover\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4}|[0-9A-Za-z-]{9,11})[\s\S]{0,80}?to\s+(\d{1,2}[/-]\d{1,2}[/-]\d{4}|[0-9A-Za-z-]{9,11})/i,
   );
   if (bundled) return { startDate: bundled[1], endDate: bundled[2] };
 
   const regular = text.match(
-    /Period\s+of\s+cover\s*(\d{1,2}\/\d{1,2}\/\d{4})[\s\S]{0,80}?to\s*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+    /Period\s+of\s+(?:cover|insurance|policy)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4}|[0-9A-Za-z-]{9,11})[\s\S]{0,120}?to\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4}|[0-9A-Za-z-]{9,11})/i,
   );
   if (regular) return { startDate: regular[1], endDate: regular[2] };
+
+  const fromTo = text.match(
+    /(?:From|Effective\s+From)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4})[\s\S]{0,100}?(?:To|Expiry|Expiring\s+on)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4})/i,
+  );
+  if (fromTo) return { startDate: fromTo[1], endDate: fromTo[2] };
 
   return { startDate: "", endDate: "" };
 }
