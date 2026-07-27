@@ -1500,17 +1500,18 @@ export default function CustomerProfilePage(props) {
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "5px",
-                      padding: "4px 10px",
+                      gap: "6px",
+                      padding: "5px 12px",
                       borderRadius: "6px",
-                      backgroundColor: "#0284c7",
+                      backgroundColor: "#1e3a8a",
                       color: "#ffffff",
-                      fontWeight: "600",
+                      fontWeight: "700",
                       fontSize: "11.5px",
-                      boxShadow: "0 1px 2px rgba(2, 132, 199, 0.2)",
+                      letterSpacing: "0.01em",
+                      boxShadow: "0 1px 3px rgba(30, 58, 138, 0.3)",
                     }}
                   >
-                    <Shield size={13} /> Single Policy View
+                    <Shield size={13} style={{ color: "#ffffff", strokeWidth: 2.5 }} /> Single Policy View
                   </span>
                   <span style={{ color: "#334155" }}>
                     Showing target policy{" "}
