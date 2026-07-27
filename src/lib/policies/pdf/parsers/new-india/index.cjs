@@ -271,13 +271,21 @@ function extractNewIndiaMotorDetails(text = "") {
   if (/cover note/i.test(result.financerName)) result.financerName = "";
 
   const idvBlock = sliceText(text, /INSURED DECLARED VALUE/i, /ENHANCED COVER|SCHEDULE OF PREMIUM/i) || "";
-  const idvRow = idvBlock.match(
-    /Vehicle\s+Trailer[\s\S]{0,160}?\n\s*([0-9,]+)\s+[0-9,]+\s+(?:N\/A|0)\s+(?:N\/A|0)\s+[0-9,]*\s+([0-9,]+)/i,
-  );
+  const idvRow =
+    idvBlock.match(
+      /Vehicle\s+Trailer[\s\S]{0,220}?\n\s*([0-9,]{4,8})\s+[0-9,]+\s+[0-9,]+\s+[0-9,]+\s+[0-9,]+\s+([0-9,]{4,8})/i,
+    ) ||
+    idvBlock.match(
+      /Vehicle\s+Trailer[\s\S]{0,160}?\n\s*([0-9,]+)\s+[0-9,]+\s+(?:N\/A|0)\s+(?:N\/A|0)\s+[0-9,]*\s+([0-9,]+)/i,
+    );
   result.totalIdv =
+    normalizeAmount(idvRow?.[1]) ||
     normalizeAmount(idvRow?.[2]) ||
     normalizeAmount(matchGroup(text, /For individual covers \(OD\) in RS\s*:?\s*([0-9,]+)/i)) ||
     extractIDV(text);
+  if (result.totalIdv && Number(result.totalIdv.replace(/,/g, "")) > 50000000) {
+    result.totalIdv = normalizeAmount(idvRow?.[1] || idvRow?.[2] || "");
+  }
   result.idv = result.totalIdv;
   result.enhancedCovers = extractNewIndiaEnhancedCovers(text);
 

@@ -47,36 +47,60 @@ function train({ text = "", result = {} }) {
   }
 
   // 4. Type of Fuel
-  const fuelMatch = text.match(/Type\s+of\s+fuel\s*:\s*([A-Z0-9/]+)/i);
+  const fuelMatch = text.match(/Type\s+of\s+fuel\s*:?\s*([A-Z0-9/]+)/i);
   if (fuelMatch) {
-    patch.fuelType = fuelMatch[1].trim();
+    const rawFuel = fuelMatch[1].trim().toUpperCase();
+    if (rawFuel.includes("CNG")) patch.fuelType = "CNG";
+    else if (rawFuel.includes("PETROL")) patch.fuelType = "Petrol";
+    else if (rawFuel.includes("DIESEL")) patch.fuelType = "Diesel";
+    else if (rawFuel.includes("LPG")) patch.fuelType = "LPG";
+    else if (rawFuel.includes("ELECTRIC") || rawFuel.includes("EV")) patch.fuelType = "Electric";
+    else patch.fuelType = fuelMatch[1].trim();
   }
 
-  // 5. Type of body
+  // 5. Cubic Capacity
+  const ccMatch = text.match(/Cubic\s+capacity(?:\(cc\)\/Wattage\(kW\))?\s*:?\s*(\d+)\s*cc?/i);
+  if (ccMatch) {
+    patch.cubicCapacity = ccMatch[1].trim();
+  }
+
+  // 6. Variant
+  const variantMatch = text.match(/Variant\s*:\s*([^\n\r]+?)(?=\s+Automobile|\s+Colour|\s+Cover|\n|$)/i);
+  if (variantMatch) {
+    patch.variant = variantMatch[1].trim();
+  }
+
+  // 7. RTO Location
+  const rtoMatch = text.match(/Name\s+of\s+registration\s+authority\s*:\s*([^\n\r]+?)(?=\s+FASTag|\s+INSURED|\n|$)/i);
+  if (rtoMatch) {
+    patch.rtoLocation = rtoMatch[1].trim();
+  }
+
+  // 8. Type of body
   const bodyMatch = text.match(/Type\s+of\s+body\s*:\s*([A-Z0-9/]+)/i);
   if (bodyMatch) {
     patch.bodyType = bodyMatch[1].trim();
   }
 
-  // 6. Gross Vehicle Weight (GVW)
+  // 9. Gross Vehicle Weight (GVW)
   const gvwMatch = text.match(/Gross\s+Vehicle\s+Weight\s*(?:\(GVW\))?\s*:\s*(\d+)/i);
   if (gvwMatch) {
     patch.grossVehicleWeight = gvwMatch[1].trim();
   }
 
-  // 7. Seating capacity
+  // 10. Seating capacity
   const seatingMatch = text.match(/Seating\s+capacity\s*(?:including\s+Driver)?\s*:\s*(\d+)/i);
   if (seatingMatch) {
     patch.seatingCapacity = seatingMatch[1].trim();
   }
 
-  // 8. Commercial Vehicle Sub Type
+  // 11. Commercial Vehicle Sub Type
   const subTypeMatch = text.match(/Sub\s+Type\s*:\s*([\s\S]*?)(?=Name\s+of\s+the\s+Financier|Chassis\s+no|Type\s+of\s+fuel|$)/i);
   if (subTypeMatch) {
     patch.commercialVehicleSubType = subTypeMatch[1].replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
   }
 
-  // 9. Insured / Customer Email
+  // 12. Insured / Customer Email
   const insuredEmailMatch = text.match(/INSURED\s+DETAILS[\s\S]*?Email\s+([a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9\s.-]+?)(?=\s*GSTIN|\s*POLICY|POLICY\s+DETAILS|$)/i);
   if (insuredEmailMatch) {
     const cleanEmail = insuredEmailMatch[1].replace(/[\r\n\s]+/g, "").replace(/\.+$/, "").trim();
@@ -84,7 +108,13 @@ function train({ text = "", result = {} }) {
     patch.email = cleanEmail;
   }
 
-  // 10. Policy Type
+  // 13. GSTIN
+  const gstinMatch = text.match(/GSTIN\(Issuing\s+Office\)\s*([0-9A-Z]{15})/i) || text.match(/GSTIN\s+([0-9A-Z]{15}|NA)/i);
+  if (gstinMatch) {
+    patch.gstin = gstinMatch[1].trim();
+  }
+
+  // 14. Policy Type
   const policyTypeMatch = text.match(/POLICY\s+SCHEDULE\s+CUM\s+CERTIFICATE\s+OF\s+INSURANCE\s*\n\s*([^\n\r]+)/i);
   if (policyTypeMatch) {
     const rawType = policyTypeMatch[1].replace(/UIN\s+Number.*/i, "").trim();
@@ -93,27 +123,47 @@ function train({ text = "", result = {} }) {
     }
   }
 
-  // 11. Previous Insurer
+  // 15. Previous Insurer
   const prevInsurerMatch = text.match(/Previous\s+Insurer\s+([^\n\r]+?)(?=\s+Previous\s+Policy\s+Number|$)/i);
   if (prevInsurerMatch) {
     patch.previousInsurer = prevInsurerMatch[1].trim();
   }
 
-  // 12. Basic OD Premium
+  // 16. IDV (Insured Declared Value) Table
+  const idvMatch = text.match(/INSURED\s+DECLARED\s+VALUE[\s\S]*?\n\s*([0-9,]{4,8})\s+[0-9,]+\s+[0-9,]+\s+[0-9,]+\s+[0-9,]+\s+([0-9,]{4,8})/i);
+  if (idvMatch) {
+    const vehicleIdv = normalizeAmount(idvMatch[1]);
+    const totalIdv = normalizeAmount(idvMatch[2]);
+    patch.idv = vehicleIdv || totalIdv;
+    patch.totalIdv = totalIdv || vehicleIdv;
+    patch.sumInsured = patch.idv;
+  }
+
+  // 17. Premium Breakdown (OD, TP, Net, GST, Total)
   const basicOdMatch = text.match(/Basic\s+OD\s+Premium\s+(\d+(?:\.\d+)?)/i);
   if (basicOdMatch) {
     patch.basicOwnDamage = normalizeAmount(basicOdMatch[1]);
-    patch.basicPremium = normalizeAmount(basicOdMatch[1]);
   }
 
-  // 13. Basic TP Premium
   const basicTpMatch = text.match(/Basic\s+TP\s+Premium\s+(\d+(?:\.\d+)?)/i);
   if (basicTpMatch) {
     patch.basicThirdPartyLiability = normalizeAmount(basicTpMatch[1]);
-    patch.tpPremium = normalizeAmount(basicTpMatch[1]);
   }
 
-  // 14. Period of Cover (Start Date & Expiry Date)
+  const calcOdMatch = text.match(/(?:Calculated|Total)\s+OD\s+Premium\s+([0-9,]+(?:\.\d+)?)/i);
+  if (calcOdMatch) {
+    patch.odPremium = normalizeAmount(calcOdMatch[1]);
+    patch.netOwnDamagePremium = patch.odPremium;
+  }
+
+  const calcTpMatch = text.match(/(?:Calculated|Total)\s+TP\s+Premium\s+([0-9,]+(?:\.\d+)?)/i);
+  if (calcTpMatch) {
+    patch.tpPremium = normalizeAmount(calcTpMatch[1]);
+    patch.netLiabilityPremium = patch.tpPremium;
+    patch.tpDriverOwner = patch.tpPremium;
+  }
+
+  // 18. Period of Cover (Start Date & Expiry Date)
   const periodMatch = text.match(/Period\s+of\s+(?:cover|insurance)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{4})(?:\s+[0-9:]+\s*(?:AM|PM)?)?\s+to\s+(\d{1,2}[/-]\d{1,2}[/-]\d{4})/i);
   if (periodMatch) {
     patch.startDate = periodMatch[1].trim();
