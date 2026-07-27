@@ -2457,8 +2457,8 @@ export default function Dashboard({
                 boxShadow:
                   "0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08)",
                 width: "100%",
-                maxWidth: "680px",
-                maxHeight: "86vh",
+                maxWidth: "840px",
+                maxHeight: "90vh",
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
@@ -2826,7 +2826,7 @@ export default function Dashboard({
 
                   <div
                     style={{
-                      maxHeight: "220px",
+                      maxHeight: "320px",
                       overflowY: "auto",
                       padding: "14px 16px",
                       backgroundColor: "#f8fafc",
