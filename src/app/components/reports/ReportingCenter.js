@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useId, useState, useEffect, useTransition } from "react";
 import {
   Activity,
   ArrowLeft,
   BarChart3,
   BriefcaseBusiness,
   CalendarRange,
+  ChevronLeft,
   ChevronRight,
   ClipboardList,
   Download,
@@ -720,6 +721,19 @@ function polarPoint(cx, cy, radius, angle) {
 }
 
 function ReportTable({ table }) {
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [table?.rows]);
+
+  const totalRows = table?.rows?.length || 0;
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, totalRows);
+  const displayedRows = table?.rows ? table.rows.slice(startIndex, endIndex) : [];
+
   return (
     <section className="glass-panel bi-table-card">
       <div className="panel-head">
@@ -727,6 +741,11 @@ function ReportTable({ table }) {
           <p className="eyebrow">Table</p>
           <h2>{table.title}</h2>
         </div>
+        {totalRows > PAGE_SIZE && (
+          <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b" }}>
+            Showing {startIndex + 1}-{endIndex} of {totalRows} records (20 per page)
+          </span>
+        )}
       </div>
       <div className="table-wrap">
         <table>
@@ -738,11 +757,11 @@ function ReportTable({ table }) {
             </tr>
           </thead>
           <tbody>
-            {table.rows.length ? (
-              table.rows.map((row, index) => (
-                <tr key={`${table.title}-${index}`}>
+            {displayedRows.length ? (
+              displayedRows.map((row, index) => (
+                <tr key={`${table.title}-${startIndex + index}`}>
                   {row.map((cell, cellIndex) => (
-                    <td key={`${table.title}-${index}-${cellIndex}`}>{cell}</td>
+                    <td key={`${table.title}-${startIndex + index}-${cellIndex}`}>{cell}</td>
                   ))}
                 </tr>
               ))
@@ -754,6 +773,75 @@ function ReportTable({ table }) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div
+          className="table-pagination"
+          aria-label="Table pagination"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "12px 20px",
+            borderTop: "1px solid #e2e8f0",
+            backgroundColor: "#ffffff",
+            borderRadius: "0 0 12px 12px",
+          }}
+        >
+          <span style={{ fontSize: "12.5px", fontWeight: "600", color: "#64748b" }}>
+            Showing {startIndex + 1} to {endIndex} of {totalRows} records
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "6px 12px",
+                fontSize: "12.5px",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#ffffff",
+                color: currentPage === 1 ? "#94a3b8" : "#0f172a",
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                opacity: currentPage === 1 ? 0.6 : 1,
+                transition: "all 0.15s ease",
+              }}
+            >
+              <ChevronLeft size={15} /> Previous
+            </button>
+            <span style={{ fontSize: "12.5px", fontWeight: "700", color: "#0f172a", padding: "0 4px" }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "6px 12px",
+                fontSize: "12.5px",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#ffffff",
+                color: currentPage === totalPages ? "#94a3b8" : "#0f172a",
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                opacity: currentPage === totalPages ? 0.6 : 1,
+                transition: "all 0.15s ease",
+              }}
+            >
+              Next <ChevronRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
