@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, LoaderCircle, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, FileText, Layers, LoaderCircle, ShieldCheck, Trash2, X, Zap } from "lucide-react";
 import { normalizeUploadStatus, UPLOAD_STATUS } from "@/lib/uploads/status";
 import PreviewField from "../shared/PreviewField";
 import { applyAiSuggestionToReviewField, getEligibleAiSuggestion } from "./aiSuggestionHelpers";
@@ -106,14 +106,8 @@ export default function FixedPolicyPreview({
     <section className="glass-panel preview-panel">
       <div className="preview-head">
         <div>
-          <h4>Data Preview</h4>
-          <p>
-            Editing: <span>{upload?.sourceFile || "No file selected"}</span>
-          </p>
+          <h4>Policy Intake Data Preview</h4>
         </div>
-        <strong>
-          <CheckCircle size={15} /> {reviewStatusLabel(upload, displayedMissingRequired)}
-        </strong>
       </div>
 
       {!upload ? (
@@ -250,58 +244,62 @@ export default function FixedPolicyPreview({
               </div>
             </div>
           )}
-          <div className="detection-summary">
-            <div>
-              <span>Source File</span>
-              <strong title={upload.sourceFile}>{upload.sourceFile || "-"}</strong>
-            </div>
-            <div>
-              <span>Policy Type</span>
-              <strong title={upload.extractedData?.policyType}>{upload.extractedData?.policyType || "-"}</strong>
-            </div>
-            <div className="company-card">
-              <span>Insurance Company</span>
-              <strong>
+          <div className="preview-toolbar-redesign">
+            <div className="preview-top-hero">
+              <div className="insurer-brand-box">
                 <InsurerLogo company={upload.extractedData?.insuranceCompany} />
-              </strong>
+                {upload.extractedData?.policyType && (
+                  <span className="hero-policy-type-pill">{upload.extractedData.policyType}</span>
+                )}
+              </div>
+              <div className="preview-status-box">
+                <div className="progress-mini-pill" title={`${filledFieldCount} of ${visibleFields.length} fields filled`}>
+                  <span className="progress-num">{filledFieldCount}/{visibleFields.length} Filled</span>
+                  <div className="progress-track">
+                    <div
+                      className="progress-bar"
+                      style={{ width: `${Math.round((filledFieldCount / visibleFields.length) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <strong className={`status-pill status-${uploadStatus}`}>
+                  <CheckCircle size={13} /> {reviewStatusLabel(upload, displayedMissingRequired)}
+                </strong>
+              </div>
             </div>
-            <div>
-              <span>Schema</span>
-              <strong
+
+            <div className="preview-sub-toolbar">
+              <span className="sub-meta-pill" title={upload.sourceFile}>
+                <FileText size={12} /> <span>{upload.sourceFile || "No file"}</span>
+              </span>
+              <span
+                className="sub-meta-pill"
                 title={
                   resolvedSchema
                     ? `${resolvedSchema.groupLabel} / ${resolvedSchema.policyName}`
                     : "General Review"
                 }
               >
-                {resolvedSchema
-                  ? `${resolvedSchema.groupLabel} / ${resolvedSchema.policyName}`
-                  : "General Review"}
-              </strong>
+                <Layers size={12} />{" "}
+                <span>
+                  {resolvedSchema
+                    ? `${resolvedSchema.groupLabel} / ${resolvedSchema.policyName}`
+                    : "General Review"}
+                </span>
+              </span>
+              <span className="sub-meta-pill" title={upload.extractionMethod}>
+                <Zap size={12} /> <span>{upload.extractionMethod || "standard"}</span>
+              </span>
             </div>
-            <div>
-              <span>Extraction</span>
-              <strong title={upload.extractionMethod}>{upload.extractionMethod || "unknown"}</strong>
-            </div>
-            <div>
-              <span>Fields Filled</span>
-              <strong>{`${filledFieldCount}/${visibleFields.length}`}</strong>
-            </div>
-            <div>
-              <span>Status</span>
-              <strong>
-                {uploadStatus === UPLOAD_STATUS.APPROVED ? "Database Ready" : "Ready for Review"}
-              </strong>
-            </div>
-          </div>
 
-          {displayedMissingRequired.length ? (
-            <div className="preview-missing-alert">
-              <ShieldCheck size={14} className="missing-alert-icon" />
-              <span className="missing-alert-label">Manual details needed:</span>
-              <span className="missing-alert-fields">{displayedMissingRequired.join(", ")}</span>
-            </div>
-          ) : null}
+            {displayedMissingRequired.length ? (
+              <div className="preview-inline-warning-bar">
+                <ShieldCheck size={13} className="warning-bar-icon" />
+                <span className="warning-bar-title">Required inputs needed:</span>
+                <span className="warning-bar-list">{displayedMissingRequired.join(", ")}</span>
+              </div>
+            ) : null}
+          </div>
 
           <div className="preview-body">
             {reviewError ? (
