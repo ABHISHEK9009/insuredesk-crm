@@ -34,7 +34,7 @@ describe("New India Commercial Vehicle Motor Policy extraction", () => {
   MOBILE NUMBER:
   Email: ch45@newindia.co.in
   INSURED DETAILS
-  Insured's Name RAJ KUMAR SONI Customer ID POD2591963 (PAN No :NA)
+  Insured's Name RAJ KUMAR SONICustomer IDPOD2591963 (PAN No :NA)
   Insured's Address HOUSE NO- 156, PURANI BASTI HUZUR,
   BAGSEWANIYA, CHANDEL DUDH DAIRY KE PASS,
   BHOPAL,,,

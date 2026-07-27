@@ -1407,24 +1407,28 @@ function extractPolicyFromTextBase(text, sourceFile = "") {
     startDate:
       hdfcErgoMotor.policyStartDate ||
       generaliMotor.policyStartDate ||
+      newIndiaMotor.startDate ||
       newIndiaMotor.policyStartDate ||
       iffcoMotor.policyStartDate ||
       startDate,
     expiryDate:
       hdfcErgoMotor.policyEndDate ||
       generaliMotor.policyEndDate ||
+      newIndiaMotor.expiryDate ||
       newIndiaMotor.policyEndDate ||
       iffcoMotor.policyEndDate ||
       expiryDate,
     policyStartDate:
       hdfcErgoMotor.policyStartDate ||
       generaliMotor.policyStartDate ||
+      newIndiaMotor.startDate ||
       newIndiaMotor.policyStartDate ||
       iffcoMotor.policyStartDate ||
       startDate,
     policyEndDate:
       hdfcErgoMotor.policyEndDate ||
       generaliMotor.policyEndDate ||
+      newIndiaMotor.expiryDate ||
       newIndiaMotor.policyEndDate ||
       iffcoMotor.policyEndDate ||
       expiryDate,
@@ -1432,11 +1436,13 @@ function extractPolicyFromTextBase(text, sourceFile = "") {
       buildDuration(
         hdfcErgoMotor.policyStartDate ||
           generaliMotor.policyStartDate ||
+          newIndiaMotor.startDate ||
           newIndiaMotor.policyStartDate ||
           iffcoMotor.policyStartDate ||
           startDate,
         hdfcErgoMotor.policyEndDate ||
           generaliMotor.policyEndDate ||
+          newIndiaMotor.expiryDate ||
           newIndiaMotor.policyEndDate ||
           iffcoMotor.policyEndDate ||
           expiryDate,
