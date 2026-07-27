@@ -105,12 +105,26 @@ function formatClientVehicleNumbers(client) {
 }
 
 function isMotorPolicyData(data) {
+  if (!data) return false;
+  const typeStr = (data.policyType || data.documentCategory || "").toLowerCase();
+  const sourceStr = (data.sourceFile || "").toLowerCase();
+  if (
+    typeStr.includes("health") ||
+    typeStr.includes("mediclaim") ||
+    typeStr.includes("gmc") ||
+    sourceStr.includes("health policy") ||
+    typeStr.includes("fire") ||
+    typeStr.includes("warehouse") ||
+    typeStr.includes("burglary")
+  ) {
+    return false;
+  }
   return Boolean(
     data.vehicleNumber ||
     data.registrationNumber ||
     data.engineNumber ||
     data.chassisNumber ||
-    /\b(motor|private\s+car|two\s+wheeler|commercial\s+vehicle)\b/i.test(data.policyType || ""),
+    /\b(motor|private\s+car|two\s+wheeler|commercial\s+vehicle)\b/i.test(typeStr),
   );
 }
 
@@ -1684,6 +1698,17 @@ export default function Dashboard({
         const description = (record.description || "").toLowerCase();
         const insuredName = (record.insuredName || "").toLowerCase();
 
+        if (exportCategory === "health") {
+          const typeStr = (record.policyType || record.documentCategory || "").toLowerCase();
+          const sourceStr = (record.sourceFile || "").toLowerCase();
+          return (
+            typeStr.includes("health") ||
+            typeStr.includes("mediclaim") ||
+            typeStr.includes("gmc") ||
+            sourceStr.includes("health policy") ||
+            Boolean(record.insuredMembers || record.numberOfInsuredMembers)
+          );
+        }
         if (exportCategory === "fire") {
           return (
             policyType.includes("fire") || policyType.includes("sfsp") || policyType.includes("burglary")
