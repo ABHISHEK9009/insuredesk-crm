@@ -1483,24 +1483,46 @@ export default function CustomerProfilePage(props) {
             {policies.length > 1 && policyViewMode === "single" && (
               <div
                 style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#eff6ff",
-                  borderBottom: "1px solid #dbeafe",
+                  padding: "10px 16px",
+                  backgroundColor: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  fontSize: "12px",
-                  color: "#1e40af",
+                  fontSize: "12.5px",
+                  color: "#334155",
                   flexWrap: "wrap",
-                  gap: "8px",
+                  gap: "10px",
                 }}
               >
-                <span>
-                  <strong>Single Policy View:</strong> Showing target policy{" "}
-                  <strong style={{ fontFamily: "monospace" }}>{displayedPolicies[0]?.policyNumber || "N/A"}</strong> ({displayedPolicies[0]?.insuranceCompany || ""}).
-                </span>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <label htmlFor="single-policy-select" style={{ fontWeight: "500" }}>Switch Target Policy:</label>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      backgroundColor: "#e0f2fe",
+                      color: "#0369a1",
+                      fontWeight: "600",
+                      fontSize: "11.5px",
+                    }}
+                  >
+                    Single Policy View
+                  </span>
+                  <span>
+                    Showing target policy{" "}
+                    <strong style={{ fontFamily: "monospace", color: "#0f172a" }}>
+                      {String(displayedPolicies[0]?.policyNumber || "N/A").replace(/:\s*$/, "").trim()}
+                    </strong>{" "}
+                    ({displayedPolicies[0]?.insuranceCompany || ""}).
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#475569" }}>
+                    Switch Target Policy:
+                  </label>
                   <select
                     id="single-policy-select"
                     aria-label="Switch Target Policy"
@@ -1508,18 +1530,19 @@ export default function CustomerProfilePage(props) {
                     onChange={(e) => setSelectedSinglePolicyId(e.target.value)}
                     style={{
                       fontSize: "12px",
-                      padding: "2px 8px",
+                      padding: "4px 10px",
                       borderRadius: "6px",
-                      border: "1px solid #93c5fd",
+                      border: "1px solid #cbd5e1",
                       backgroundColor: "#ffffff",
-                      color: "#1e3a8a",
+                      color: "#0f172a",
                       fontWeight: "600",
                       cursor: "pointer",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                     }}
                   >
                     {policies.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.policyNumber || "No Number"} - {p.policyType || p.insuranceCompany || "Policy"}
+                        {String(p.policyNumber || "No Number").replace(/:\s*$/, "").trim()} - {p.policyType || p.insuranceCompany || "Policy"}
                       </option>
                     ))}
                   </select>
@@ -1549,25 +1572,57 @@ export default function CustomerProfilePage(props) {
                 {displayedPolicies.map((p) => {
                   const daysLeft = p.daysRemaining !== undefined ? p.daysRemaining : null;
                   const makeModel = [p.vehicleMake, p.vehicleModel].map((value) => String(value || "").trim()).filter(Boolean).join(" ") || String(p.makeModel || "").trim().replace(/\s*,\s*/g, " ") || "-";
+                  const cleanPolicyNo = String(p.policyNumber || "N/A").replace(/:\s*$/, "").trim();
+                  const statusLower = String(p.renewalStatus || "").toLowerCase();
+                  const statusDisplay =
+                    statusLower === "expiry_soon" || statusLower === "expiry soon"
+                      ? "Expiry Soon"
+                      : statusLower === "expired"
+                      ? "Expired"
+                      : statusLower === "renewed"
+                      ? "Renewed"
+                      : statusLower === "lost"
+                      ? "Lost"
+                      : statusLower === "active"
+                      ? "Active"
+                      : statusLower === "follow-up" || statusLower === "follow_up"
+                      ? "Follow-Up"
+                      : statusLower === "wrong_number"
+                      ? "Wrong Number"
+                      : statusLower === "not_interested"
+                      ? "Not Interested"
+                      : statusLower === "renewed_elsewhere"
+                      ? "Renewed Elsewhere"
+                      : p.renewalStatus || "Active";
 
                   return (
                     <tr key={p.id}>
                       {/* 1. Policy Number */}
                       <td style={{ width: colWidths[0] + "px", fontWeight: "600" }}>
                         <span className="rn-cell-link" onClick={() => handleViewPolicyDrawer(p)}>
-                          {p.policyNumber || "N/A"}
+                          {cleanPolicyNo}
                         </span>
                       </td>
 
                       {/* 2. Company Name */}
                       <td style={{ width: colWidths[1] + "px" }}>
-                        <div>{p.insuredName || "-"}</div>
-                        <small>Contact: {p.contactPerson || "-"}</small>
-                        {p.contactNumber ? <small>{p.contactNumber}</small> : null}
-                        <small>Renewal: {p.renewalRecipientName || p.contactPerson || "-"}</small>
-                        {p.renewalRecipientMobile ? <small>{p.renewalRecipientMobile}</small> : null}
+                        <div style={{ fontWeight: "600", color: "#0f172a", marginBottom: "4px" }}>
+                          {p.insuredName || "-"}
+                        </div>
+                        {p.contactPerson && (
+                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: "1.3" }}>
+                            Contact: {p.contactPerson} {p.contactNumber ? `(${p.contactNumber})` : ""}
+                          </div>
+                        )}
+                        {(p.renewalRecipientName || p.renewalRecipientMobile) && (
+                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: "1.3", marginTop: "2px" }}>
+                            Renewal: {p.renewalRecipientName || p.contactPerson || "-"} {p.renewalRecipientMobile ? `(${p.renewalRecipientMobile})` : ""}
+                          </div>
+                        )}
                         {p.renewalRecipientMobile && p.renewalRecipientMobile !== profile.phone ? (
-                          <span className="rn-badge rn-badge-active">Alternate Contact</span>
+                          <span className="rn-badge rn-badge-active" style={{ marginTop: "4px", display: "inline-block" }}>
+                            Alternate Contact
+                          </span>
                         ) : null}
                       </td>
 
@@ -1617,35 +1672,17 @@ export default function CustomerProfilePage(props) {
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span
                             className={`rn-badge ${
-                              p.renewalStatus === "RENEWED" || p.renewalStatus === "renewed"
+                              statusLower.includes("renewed")
                                 ? "rn-badge-success"
-                                : [
-                                      "LOST",
-                                      "lost",
-                                      "NOT_INTERESTED",
-                                      "WRONG_NUMBER",
-                                      "RENEWED_ELSEWHERE",
-                                    ].includes(p.renewalStatus)
-                                  ? "rn-badge-danger"
-                                  : p.renewalStatus === "Follow-Up" || p.renewalStatus === "expiry_soon"
-                                    ? "rn-badge-warning"
-                                    : p.renewalStatus === "EXPIRED" || p.renewalStatus === "expired"
-                                      ? "rn-badge-danger"
-                                      : "rn-badge-active"
+                                : ["lost", "wrong_number", "not_interested", "renewed_elsewhere", "expired"].includes(statusLower)
+                                ? "rn-badge-danger"
+                                : statusLower.includes("follow") || statusLower.includes("expiry") || statusLower.includes("due")
+                                ? "rn-badge-warning"
+                                : "rn-badge-active"
                             }`}
-                            style={{ alignSelf: "flex-start" }}
+                            style={{ alignSelf: "flex-start", whiteSpace: "nowrap" }}
                           >
-                            {p.renewalStatus === "expiry_soon"
-                              ? "Expiry Soon"
-                              : p.renewalStatus === "expired"
-                                ? "Expired"
-                                : p.renewalStatus === "renewed"
-                                  ? "Renewed"
-                                  : p.renewalStatus === "lost"
-                                    ? "Lost"
-                                    : p.renewalStatus === "active"
-                                      ? "Active"
-                                      : p.renewalStatus || "ACTIVE"}
+                            {statusDisplay}
                           </span>
                           {p.renewedDetails && (
                             <div style={{ display: "flex", flexDirection: "column", fontSize: "11px", color: "var(--rn-text-muted)", marginTop: "2px", gap: "2px" }}>
