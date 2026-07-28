@@ -729,6 +729,9 @@ export function getReviewValidation(upload, options = {}) {
       "cgst",
       "sgst",
       "igst",
+      "placeOfSupply",
+      "collectedAmount",
+      "dueCollection",
     ]);
     visibleFields = visibleFields.filter(([, key]) => !nonMotorFields.has(key));
   }

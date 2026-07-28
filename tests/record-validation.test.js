@@ -115,6 +115,26 @@ describe("sanitizeRecordPayload", () => {
     expect(validation.valid).toBe(true);
   });
 
+  it("hides collection and place-of-supply fields from motor PDF reviews", () => {
+    const validation = getReviewValidation({
+      sourceFile: "motor-policy.pdf",
+      extractedData: {
+        documentCategory: "Motor Insurance",
+        insuredName: "LEENA SAJWANI",
+        policyNumber: "3001/393418852/01/000",
+        vehicleNumber: "MP04CR2712",
+        placeOfSupply: "Madhya Pradesh",
+        collectedAmount: "10000.00",
+        dueCollection: "18191.00",
+      },
+    });
+    const visibleKeys = validation.visibleFields.map(([, key]) => key);
+
+    expect(visibleKeys).not.toEqual(
+      expect.arrayContaining(["placeOfSupply", "collectedAmount", "dueCollection"]),
+    );
+  });
+
   it("never requires Motor identifiers when an authoritative Health category is present", () => {
     const record = sanitizeRecordPayload({
       documentCategory: "Health Insurance",
