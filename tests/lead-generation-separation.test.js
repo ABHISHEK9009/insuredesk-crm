@@ -67,6 +67,7 @@ describe("lead generation data separation", () => {
     expect(leadPage).toContain('updateFilter("status", status)');
     expect(leadPage).toContain('scrollIntoView({');
     expect(leadPage).toContain('aria-pressed={active}');
+    expect(leadPage).toContain('const [limit] = useState(8)');
   });
 
   it("allows an agent to deselect a policy source", () => {

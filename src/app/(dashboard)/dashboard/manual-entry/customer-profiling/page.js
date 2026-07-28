@@ -837,7 +837,7 @@ export default function CustomerProfilingPage() {
   const [counters, setCounters] = useState(EMPTY_COUNTERS);
   const [filterOptions, setFilterOptions] = useState({ assignedTo: [], lobs: [] });
   const [page, setPage] = useState(urlPage);
-  const [limit] = useState(20);
+  const [limit] = useState(8);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
