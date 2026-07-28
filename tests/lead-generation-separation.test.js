@@ -50,4 +50,13 @@ describe("lead generation data separation", () => {
     expect(detailPage).toContain("sendWhatsAppMessage");
     expect(detailPage).not.toContain("wa.me");
   });
+
+  it("adds the agent signature in the shared WhatsApp sender", () => {
+    const senderRoute = read("src/app/api/operations/whatsapp/test-message/route.js");
+
+    expect(senderRoute).toContain("buildDefaultAgentSignature(session)");
+    expect(senderRoute).toContain("withAgentSignature(message");
+    expect(senderRoute).toContain("*Comprehensive Insurance Solutions*");
+    expect(senderRoute).toContain("sendWhatsAppText(recipient, signedMessage)");
+  });
 });

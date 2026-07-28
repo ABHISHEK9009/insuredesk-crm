@@ -278,7 +278,7 @@ export default function CustomerProfileDetailPage({ params }) {
   }
 
   async function sendWhatsAppMessage() {
-    const message = [whatsappMessage.trim(), whatsappSignature.trim()].filter(Boolean).join("\n\n");
+    const message = whatsappMessage.trim();
     if (!message || !whatsappPhone) return;
 
     try {
@@ -287,7 +287,7 @@ export default function CustomerProfileDetailPage({ params }) {
       const res = await fetch("/api/operations/whatsapp/test-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: whatsappPhone, message }),
+        body: JSON.stringify({ phone: whatsappPhone, message, signature: whatsappSignature }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

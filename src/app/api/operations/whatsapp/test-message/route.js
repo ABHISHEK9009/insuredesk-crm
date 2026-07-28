@@ -4,6 +4,32 @@ import { sendWhatsAppText } from "@/lib/whatsapp/whatsapp-client";
 
 export const runtime = "nodejs";
 
+function buildDefaultAgentSignature(session) {
+  return [
+    "*Warm regards,*",
+    "",
+    `*${session.name || session.email || "CRM Team"}*`,
+    "Insurance Advisor",
+    "",
+    "*Bima Headquarter*",
+    "by *InsureDesk IMF Pvt. Ltd.*",
+    "",
+    "Phone: +91 88188 89660",
+    "Email: insuredeskbhopal@gmail.com",
+    "Website: www.bimaheadquarter.com",
+    "",
+    "*Comprehensive Insurance Solutions*",
+    "Motor Insurance • Health Insurance • Life Insurance • Commercial Insurance • Marine Insurance • Policy Renewals • Claims Assistance",
+  ].join("\n");
+}
+
+function withAgentSignature(message, signature) {
+  const text = String(message || "").trim();
+  const signOff = String(signature || "").trim();
+  if (!signOff || text.includes("*Comprehensive Insurance Solutions*")) return text;
+  return `${text}\n\n${signOff}`;
+}
+
 async function requireSession(request) {
   const token = request.cookies.get("token")?.value;
   if (!token) return { errorResponse: NextResponse.json({ error: "Not authenticated" }, { status: 401 }) };
@@ -31,8 +57,9 @@ export async function POST(request) {
       return NextResponse.json({ error: "Recipient and message are required" }, { status: 400 });
     }
 
+    const signedMessage = withAgentSignature(message, body.signature || buildDefaultAgentSignature(session));
     console.log(`Sending WhatsApp test message to ${String(recipient).endsWith("@g.us") ? "a group" : "an individual"}...`);
-    const openwaResponse = await sendWhatsAppText(recipient, message);
+    const openwaResponse = await sendWhatsAppText(recipient, signedMessage);
 
     const msgId = typeof openwaResponse === 'object' ? openwaResponse.id || openwaResponse.response : openwaResponse;
 
