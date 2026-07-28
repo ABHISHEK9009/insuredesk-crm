@@ -59,4 +59,44 @@ describe("lead generation data separation", () => {
     expect(senderRoute).toContain("*Comprehensive Insurance Solutions*");
     expect(senderRoute).toContain("sendWhatsAppText(recipient, signedMessage)");
   });
+
+  it("filters lead profiles from clickable KPI cards", () => {
+    const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
+
+    expect(leadPage).toContain('function filterFromCounter(status)');
+    expect(leadPage).toContain('updateFilter("status", status)');
+    expect(leadPage).toContain('scrollIntoView({');
+    expect(leadPage).toContain('aria-pressed={active}');
+  });
+
+  it("allows an agent to deselect a policy source", () => {
+    const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
+
+    expect(leadPage).toContain("function clearPolicyLead()");
+    expect(leadPage).toContain('aria-label="Deselect policy source"');
+    expect(leadPage).toContain("phone: current.phone");
+  });
+
+  it("uses the compact required lead form with optional contact details", () => {
+    const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
+
+    expect(leadPage).toContain('label="Lead Type"');
+    expect(leadPage).toContain('label="Interested Product"');
+    expect(leadPage).toContain('label="Lead Source"');
+    expect(leadPage).toContain("LEAD_SOURCE_OPTIONS");
+    expect(leadPage).toContain('placeholder="Select lead source"');
+    expect(leadPage).toContain('label="Follow-up Date"');
+    expect(leadPage).toContain('className="lead-optional-toggle"');
+    expect(leadPage).toContain("optionalFieldsOpen ? (");
+  });
+
+  it("separates current products from an existing customer's new requirement", () => {
+    const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
+
+    expect(leadPage).toContain("const currentProducts = useMemo");
+    expect(leadPage).toContain("Current Products");
+    expect(leadPage).toContain("New Requirement (Interested In)");
+    expect(leadPage).toContain("Select new requirement");
+    expect(leadPage).toContain('selectedLOBs: []');
+  });
 });

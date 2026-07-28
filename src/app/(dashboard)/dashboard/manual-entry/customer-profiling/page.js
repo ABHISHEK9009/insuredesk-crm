@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, BarChart3, CheckCircle, Eye, MoreVertical, Search, Trash2, UserPlus, X } from "lucide-react";
+import { AlertTriangle, BarChart3, CheckCircle, ChevronDown, Eye, MoreVertical, Search, Trash2, UserPlus, X } from "lucide-react";
 import PageHeader from "@/app/components/layout/PageHeader";
 import { normalizeIndianPhone, formatPhoneForWhatsapp } from "@/lib/customer-profiles/utils";
 
@@ -47,6 +47,30 @@ const PROFILE_STATUS = [
   "Lost",
 ];
 const CUSTOMER_TYPES = ["New", "Existing"];
+const LEAD_SOURCE_OPTIONS = [
+  "Referral",
+  "Existing Customer",
+  "Walk-in",
+  "Phone Call",
+  "Website",
+  "WhatsApp",
+  "Social Media",
+  "Campaign",
+  "Policy Record",
+  "Renewal Follow-up",
+  "Other",
+];
+const EXISTING_CUSTOMER_REQUIREMENTS = [
+  "Motor Insurance",
+  "Health Insurance",
+  "Life Insurance",
+  "Travel Insurance",
+  "Marine Insurance",
+  "Cyber Insurance",
+  "Warehouse Insurance",
+  "Group Health",
+  "Other",
+];
 const EMPTY_COUNTERS = {
   totalProfiles: 0,
   newLeads: 0,
@@ -828,6 +852,7 @@ export default function CustomerProfilingPage() {
   const [alert, setAlert] = useState(null);
   const [isPending, startTransition] = useTransition();
   const [conversionModalData, setConversionModalData] = useState(null);
+  const [optionalFieldsOpen, setOptionalFieldsOpen] = useState(false);
 
   const phone = normalizeIndianPhone(form.phone);
   const isValidProfilePhone = phone.length === 10;
@@ -843,6 +868,19 @@ export default function CustomerProfilingPage() {
   const assignedNames = useMemo(() => {
     return [...searchResults.profiles.map((item) => item.assignedTo || item.createdBy)].filter(Boolean);
   }, [searchResults]);
+  const currentProducts = useMemo(() => {
+    const matchingPolicies = searchResults.policyMatches.filter(
+      (record) => normalizeIndianPhone(record.phone) === normalizeIndianPhone(form.phone),
+    );
+    return [
+      ...new Set(
+        [...matchingPolicies.map((record) => record.policyType), form.sourcePolicyType]
+          .map((policyType) => inferLobFromPolicyType(policyType))
+          .filter(Boolean),
+      ),
+    ];
+  }, [searchResults.policyMatches, form.phone, form.sourcePolicyType]);
+  const isExistingCustomerLead = Boolean(form.sourcePolicyId);
 
   useEffect(() => {
     setFilters((current) => ({
@@ -932,6 +970,10 @@ export default function CustomerProfilingPage() {
     });
   }
 
+  function updateInterestedProduct(lob) {
+    setForm((current) => ({ ...current, selectedLOBs: lob ? [lob] : [] }));
+  }
+
   function updateLobField(lob, key, value) {
     setForm((current) => ({
       ...current,
@@ -963,83 +1005,9 @@ export default function CustomerProfilingPage() {
     });
   }
 
-  function mapPolicyRecordToLobDetails(record, lob) {
-    if (!lob) return {};
-    const details = {};
-
-    let expiryStr = "";
-    if (record.expiryDate) {
-      try {
-        expiryStr = new Date(record.expiryDate).toISOString().slice(0, 10);
-      } catch {
-        expiryStr = record.expiryDate;
-      }
-    }
-
-    let startStr = "";
-    if (record.startDate) {
-      try {
-        startStr = new Date(record.startDate).toISOString().slice(0, 10);
-      } catch {
-        startStr = record.startDate;
-      }
-    }
-
-    if (lob === "Motor Insurance") {
-      details.vehicleType = record.vehicleType || record.makeModel || "";
-      details.vehicleNumber = record.vehicleNumber || record.registrationNumber || "";
-      details.existingPolicyAvailable = "Yes";
-      details.renewalDate = expiryStr;
-    } else if (lob === "Warehouse Insurance") {
-      details.warehouseLocation = record.riskLocation || "";
-      details.stockValue = record.sumInsured || "";
-      details.existingInsuranceAvailable = "Yes";
-      details.renewalDate = expiryStr;
-    } else if (lob === "Life Insurance") {
-      details.existingLifeCover = "Yes";
-    } else if (lob === "Health Insurance") {
-      details.existingHealthCover = "Yes";
-      details.sumInsuredNeed = record.sumInsured || "";
-      details.renewalDate = expiryStr;
-    } else if (lob === "Fire Insurance") {
-      details.riskLocation = record.riskLocation || "";
-      details.propertyValue = record.sumInsured || "";
-      details.occupancy = record.occupancy || "";
-      details.renewalDate = expiryStr;
-    } else if (lob === "Marine Insurance") {
-      details.cargoType = record.description || "";
-      details.annualTransitValue = record.sumInsured || "";
-      details.existingInsuranceAvailable = "Yes";
-    } else if (lob === "Travel Insurance") {
-      details.destination = record.validIn || "";
-      details.travelDate = startStr;
-      details.tripDuration = record.duration || "";
-    } else if (lob === "Cyber Insurance") {
-      details.existingInsuranceAvailable = "Yes";
-    } else if (lob === "Shop / Office Insurance") {
-      details.shopLocation = record.riskLocation || "";
-      details.assetValue = record.sumInsured || "";
-      details.renewalDate = expiryStr;
-    } else if (lob === "Business Insurance") {
-      details.businessCategory = record.policyType || "";
-      details.keyRisk = record.description || "";
-    } else {
-      details.insuranceNeed = record.policyType || "";
-      details.estimatedValue = record.sumInsured || "";
-      details.notes = record.remark || "";
-    }
-    return details;
-  }
-
   function usePolicyLead(record) {
-    const inferredLob = inferLobFromPolicyType(record.policyType);
     setSelectedExistingId("");
     setConvertType("");
-
-    const lobDetails = {};
-    if (inferredLob) {
-      lobDetails[inferredLob] = mapPolicyRecordToLobDetails(record, inferredLob);
-    }
 
     setForm({
       ...EMPTY_FORM,
@@ -1053,8 +1021,8 @@ export default function CustomerProfilingPage() {
       sourcePolicyNumber: record.policyNumber || "",
       sourcePolicyType: record.policyType || "",
       sourceCompany: record.insuranceCompany || "",
-      selectedLOBs: inferredLob ? [inferredLob] : [],
-      lobDetails: lobDetails,
+      selectedLOBs: [],
+      lobDetails: {},
       remarks: [
         record.policyNumber ? `Source policy ${record.policyNumber}` : "",
         record.policyType,
@@ -1076,7 +1044,19 @@ export default function CustomerProfilingPage() {
       ...EMPTY_FORM,
       assignedTo: currentUser?.name || currentUser?.email || "",
     });
+    setOptionalFieldsOpen(false);
     setSearchResults(EMPTY_SEARCH_RESULTS);
+  }
+
+  function clearPolicyLead() {
+    setSelectedExistingId("");
+    setConvertType("");
+    setForm((current) => ({
+      ...EMPTY_FORM,
+      phone: current.phone,
+      assignedTo: currentUser?.name || currentUser?.email || "",
+    }));
+    setAlert(null);
   }
 
   async function loadProfiles(signal) {
@@ -1122,12 +1102,28 @@ export default function CustomerProfilingPage() {
     startTransition(async () => {
       setAlert(null);
       try {
+        if (!selectedExistingId && !form.name.trim()) {
+          setAlert({ type: "error", message: "Customer name is required." });
+          return;
+        }
         const normalized = normalizeIndianPhone(form.phone);
         if (!normalized) {
           setAlert({
             type: "error",
             message: "Please enter a valid 10-digit Indian mobile number (starting with 6-9).",
           });
+          return;
+        }
+        if (!selectedExistingId && !form.selectedLOBs.length) {
+          setAlert({ type: "error", message: "Please select an interested product." });
+          return;
+        }
+        if (!selectedExistingId && !form.referenceSource.trim()) {
+          setAlert({ type: "error", message: "Lead source is required." });
+          return;
+        }
+        if (!selectedExistingId && !form.followUpDate) {
+          setAlert({ type: "error", message: "Follow-up date is required." });
           return;
         }
         if (!selectedExistingId && searchResults.claimedByAnotherUser) {
@@ -1231,7 +1227,11 @@ export default function CustomerProfilingPage() {
         if (selectedExistingId) {
           openProfile(payload);
         } else {
-          setForm(EMPTY_FORM);
+          setForm({
+            ...EMPTY_FORM,
+            assignedTo: currentUser?.name || currentUser?.email || "",
+          });
+          setOptionalFieldsOpen(false);
         }
         setSearchResults(EMPTY_SEARCH_RESULTS);
         setAlert({
@@ -1642,6 +1642,16 @@ export default function CustomerProfilingPage() {
     syncProfileListUrl(nextFilters, 1);
   }
 
+  function filterFromCounter(status) {
+    updateFilter("status", status);
+    window.setTimeout(() => {
+      document.querySelector(".customer-profile-list-panel")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+  }
+
   function syncProfileListUrl(nextFilters, nextPage) {
     const params = new window.URLSearchParams();
     Object.entries(nextFilters).forEach(([key, value]) => {
@@ -1683,15 +1693,15 @@ export default function CustomerProfilingPage() {
       ) : null}
 
       <section className="profile-counter-grid">
-        <CounterCard label="Total Profiles" value={counters.totalProfiles} />
-        <CounterCard label="New Leads" value={counters.newLeads} />
-        <CounterCard label="Follow-up Required" value={counters.followUpRequired} />
-        <CounterCard label="Interested" value={counters.interested} />
-        <CounterCard label="Converted" value={counters.converted} />
-        <CounterCard label="Lost" value={counters.lost} />
+        <CounterCard label="Total Profiles" value={counters.totalProfiles} tone="total" active={!filters.status} onClick={() => filterFromCounter("")} />
+        <CounterCard label="New Leads" value={counters.newLeads} tone="new" active={filters.status === "New Lead"} onClick={() => filterFromCounter("New Lead")} />
+        <CounterCard label="Follow-up Required" value={counters.followUpRequired} tone="follow-up" active={filters.status === "Follow-up Required"} onClick={() => filterFromCounter("Follow-up Required")} />
+        <CounterCard label="Interested" value={counters.interested} tone="interested" active={filters.status === "Interested"} onClick={() => filterFromCounter("Interested")} />
+        <CounterCard label="Converted" value={counters.converted} tone="converted" active={filters.status === "Converted"} onClick={() => filterFromCounter("Converted")} />
+        <CounterCard label="Lost" value={counters.lost} tone="lost" active={filters.status === "Lost"} onClick={() => filterFromCounter("Lost")} />
       </section>
 
-      <section className="customer-profile-card">
+      <section className="customer-profile-card customer-profile-check-card">
         <div className="customer-profile-section-head">
           <div>
             <h2>Customer Profile Check</h2>
@@ -1893,14 +1903,27 @@ export default function CustomerProfilingPage() {
               <section className="customer-profile-card compact-profile-form">
                 <div className="customer-profile-section-head">
                   <div>
-                    <h2>New Customer Profile</h2>
-                    <p>Add basic client details here.</p>
+                    <h2>{isExistingCustomerLead ? "Existing Customer Lead" : "New Lead Profile"}</h2>
+                    <p>
+                      {isExistingCustomerLead
+                        ? "Capture a new requirement without mixing it with current policies."
+                        : "Add the required lead details first."}
+                    </p>
                   </div>
                   <UserPlus size={20} />
                 </div>
 
                 {form.sourcePolicyId ? (
                   <div className="source-policy-strip">
+                    <button
+                      type="button"
+                      className="source-policy-clear"
+                      onClick={clearPolicyLead}
+                      aria-label="Deselect policy source"
+                      title="Deselect policy source"
+                    >
+                      <X size={14} />
+                    </button>
                     <span>Policy source</span>
                     <strong>{form.sourcePolicyNumber || "Existing policy record"}</strong>
                     {form.sourcePolicyType ? <span>{form.sourcePolicyType}</span> : null}
@@ -1908,66 +1931,96 @@ export default function CustomerProfilingPage() {
                   </div>
                 ) : null}
 
-                <div className="customer-profile-grid">
-                  <Field
-                    label="Customer Name"
-                    value={form.name}
-                    onChange={(value) => updateField("name", value)}
-                  />
-                  <Field
-                    label="Phone Number"
-                    value={form.phone}
-                    onChange={(value) => updateField("phone", value)}
-                  />
-                  <Field
-                    label="Alternate Phone Number"
-                    value={form.alternatePhone}
-                    onChange={(value) => updateField("alternatePhone", value)}
-                  />
-                  <Field label="Email" value={form.email} onChange={(value) => updateField("email", value)} />
+                {isExistingCustomerLead ? (
+                  <div className="existing-lead-context">
+                    <div className="existing-lead-customer">
+                      <span>Customer</span>
+                      <strong><CheckCircle size={16} /> Existing Customer: {form.name || "-"}</strong>
+                      <small>Phone: {form.phone || "-"}</small>
+                    </div>
+
+                    <div className="existing-lead-products">
+                      <span>Current Products</span>
+                      <div>
+                        {currentProducts.length ? currentProducts.map((product) => (
+                          <label key={product}>
+                            <input type="checkbox" checked readOnly />
+                            <span>{product}</span>
+                          </label>
+                        )) : <small>No current products identified.</small>}
+                      </div>
+                    </div>
+
+                    <div className="existing-lead-requirement">
+                      <label>
+                        <span>New Requirement (Interested In) <b>*</b></span>
+                        <select
+                          value={form.selectedLOBs[0] || ""}
+                          required
+                          onChange={(event) => updateInterestedProduct(event.target.value)}
+                        >
+                          <option value="">Select new requirement</option>
+                        {EXISTING_CUSTOMER_REQUIREMENTS.map((product) => (
+                          <option key={product} value={product}>{product}</option>
+                        ))}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="customer-profile-grid lead-entry-grid">
+                  {!isExistingCustomerLead ? (
+                    <>
+                      <Field
+                        label="Customer Name"
+                        value={form.name}
+                        onChange={(value) => updateField("name", value)}
+                        required
+                      />
+                      <Field
+                        label="Phone Number"
+                        value={form.phone}
+                        onChange={(value) => updateField("phone", value)}
+                        required
+                      />
+                      <SelectField
+                        label="Lead Type"
+                        value={form.customerType}
+                        options={CUSTOMER_TYPES}
+                        onChange={(value) => updateField("customerType", value)}
+                        required
+                      />
+                      <SelectField
+                        label="Interested Product"
+                        value={form.selectedLOBs[0] || ""}
+                        options={["", ...LOB_OPTIONS]}
+                        placeholder="Select product"
+                        onChange={updateInterestedProduct}
+                        required
+                      />
+                    </>
+                  ) : null}
                   <SelectField
-                    label="State"
-                    value={form.state}
-                    options={STATE_OPTIONS}
-                    onChange={updateState}
-                  />
-                  <SelectField
-                    label="City"
-                    value={form.city}
-                    options={cityOptions}
-                    onChange={(value) => updateField("city", value)}
-                  />
-                  <Field
-                    label="Occupation / Business Type"
-                    value={form.occupation}
-                    onChange={(value) => updateField("occupation", value)}
-                  />
-                  <Field
-                    label="Business Type"
-                    value={form.businessType}
-                    onChange={(value) => updateField("businessType", value)}
-                  />
-                  <Field
-                    label="Contact Person Name"
-                    value={form.contactPersonName}
-                    onChange={(value) => updateField("contactPersonName", value)}
-                  />
-                  <Field
-                    label="Reference Source"
+                    label="Lead Source"
                     value={form.referenceSource}
+                    options={["", ...new Set([...LEAD_SOURCE_OPTIONS, form.referenceSource].filter(Boolean))]}
                     onChange={(value) => updateField("referenceSource", value)}
+                    placeholder="Select lead source"
+                    required
                   />
                   <Field
-                    label="Created By"
+                    label="Assigned To (Auto)"
                     value={form.assignedTo}
                     onChange={(value) => updateField("assignedTo", value)}
                     readOnly
                   />
                   <Field
-                    label="Address"
-                    wide
-                    value={form.address}
-                    onChange={(value) => updateField("address", value)}
+                    label="Follow-up Date"
+                    type="date"
+                    value={form.followUpDate}
+                    onChange={(value) => updateField("followUpDate", value)}
+                    required
                   />
                   <Field
                     label="Remark"
@@ -1976,6 +2029,39 @@ export default function CustomerProfilingPage() {
                     onChange={(value) => updateField("remarks", value)}
                   />
                 </div>
+
+                <button
+                  type="button"
+                  className="lead-optional-toggle"
+                  onClick={() => setOptionalFieldsOpen((current) => !current)}
+                  aria-expanded={optionalFieldsOpen}
+                >
+                  <span>Optional details</span>
+                  <ChevronDown size={16} />
+                </button>
+
+                {optionalFieldsOpen ? (
+                  <div className="customer-profile-grid lead-optional-grid">
+                    <Field
+                      label="Alternate Phone"
+                      value={form.alternatePhone}
+                      onChange={(value) => updateField("alternatePhone", value)}
+                    />
+                    <Field label="Email" value={form.email} onChange={(value) => updateField("email", value)} />
+                    <SelectField
+                      label="State"
+                      value={form.state}
+                      options={STATE_OPTIONS}
+                      onChange={updateState}
+                    />
+                    <SelectField
+                      label="City"
+                      value={form.city}
+                      options={cityOptions}
+                      onChange={(value) => updateField("city", value)}
+                    />
+                  </div>
+                ) : null}
               </section>
               <section className="customer-profile-actions">
                 <button type="button" onClick={submitProfile} disabled={isPending}>
@@ -2506,12 +2592,19 @@ export default function CustomerProfilingPage() {
   );
 }
 
-function CounterCard({ label, value }) {
+function CounterCard({ label, value, tone, active, onClick }) {
   return (
-    <div className="profile-counter-card">
+    <button
+      type="button"
+      className={`profile-counter-card tone-${tone}${active ? " active" : ""}`}
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`Filter lead profiles by ${label}`}
+    >
       <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+      <small>{active ? "Filter active" : "Click to filter"}</small>
+    </button>
   );
 }
 
@@ -2726,29 +2819,29 @@ function inferLobFromPolicyType(policyType = "") {
   return "Other";
 }
 
-function Field({ label, value, onChange, type = "text", wide = false, readOnly = false }) {
+function Field({ label, value, onChange, type = "text", wide = false, readOnly = false, required = false, placeholder = "" }) {
   const input = wide ? (
-    <textarea value={value || ""} readOnly={readOnly} onChange={(event) => onChange(event.target.value)} />
+    <textarea value={value || ""} readOnly={readOnly} required={required} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
   ) : (
-    <input type={type} value={value || ""} readOnly={readOnly} onChange={(event) => onChange(event.target.value)} />
+    <input type={type} value={value || ""} readOnly={readOnly} required={required} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
   );
 
   return (
     <label className={wide ? "wide" : ""}>
-      <span>{label}</span>
+      <span>{label}{required ? <b className="required-mark"> *</b> : null}</span>
       {input}
     </label>
   );
 }
 
-function SelectField({ label, value, options, onChange }) {
+function SelectField({ label, value, options, onChange, required = false, placeholder = "" }) {
   return (
     <label>
-      <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <span>{label}{required ? <b className="required-mark"> *</b> : null}</span>
+      <select value={value} required={required} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {option || placeholder}
           </option>
         ))}
       </select>
