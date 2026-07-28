@@ -2954,6 +2954,17 @@ label.is-disabled textarea {
   transition: background-color 150ms ease, box-shadow 150ms ease;
 }
 
+.customer-profile-list-panel .profile-listing-table tbody .profile-clickable-row {
+  cursor: pointer;
+}
+
+.customer-profile-list-panel .profile-listing-table tbody .profile-clickable-row:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #64748b;
+  outline-offset: -2px;
+}
+
 .customer-profile-list-panel .profile-listing-table tbody tr:nth-child(even) {
   background: #f5f8fb;
 }

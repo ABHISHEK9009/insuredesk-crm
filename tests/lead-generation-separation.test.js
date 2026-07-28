@@ -114,6 +114,16 @@ describe("lead generation data separation", () => {
     expect(leadPage).not.toContain('Use Lead');
   });
 
+  it("opens a saved lead from the complete table row", () => {
+    const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
+
+    expect(leadPage).toContain('className={`profile-clickable-row');
+    expect(leadPage).toContain('onClick={() => onEdit(profile)}');
+    expect(leadPage).toContain('role="link"');
+    expect(leadPage).toContain('tabIndex={0}');
+    expect(leadPage).toContain('onClick={(event) => event.stopPropagation()}');
+  });
+
   it("keeps lead entries private except for Super Admin", () => {
     const rbac = read("src/lib/auth/rbac.js");
     const listRoute = read("src/app/api/customer-profiles/route.js");

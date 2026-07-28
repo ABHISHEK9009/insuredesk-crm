@@ -2670,7 +2670,19 @@ function ProfileListingTable({ profiles, onEdit, onDelete, canDelete = false }) 
         <tbody>
           {profiles.length ? (
             profiles.map((profile) => (
-              <tr key={profile.id} className={openMenuId === profile.id ? "profile-row-menu-open" : ""}>
+              <tr
+                key={profile.id}
+                className={`profile-clickable-row${openMenuId === profile.id ? " profile-row-menu-open" : ""}`}
+                role="link"
+                tabIndex={0}
+                aria-label={`View lead ${profile.name || profile.phone || "details"}`}
+                onClick={() => onEdit(profile)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  onEdit(profile);
+                }}
+              >
                 <td>{profile.name || "-"}</td>
                 <td>{profile.phone || "-"}</td>
                 <td>{formatDateTime(profile.updatedAt) || "-"}</td>
@@ -2683,7 +2695,11 @@ function ProfileListingTable({ profiles, onEdit, onDelete, canDelete = false }) 
                 <td>{profile.createdBy || profile.assignedTo || "-"}</td>
                 <td>{formatDate(profile.nextFollowUpDate || profile.followUpDate)}</td>
                 <td>{profile.convertedToCustomer ? "Yes" : "No"}</td>
-                <td className="profile-actions-cell">
+                <td
+                  className="profile-actions-cell"
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
                   <div className="profile-action-menu" data-profile-action-menu>
                     <button
                       type="button"

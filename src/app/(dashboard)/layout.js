@@ -34,6 +34,11 @@ export default function DashboardLayout({ children }) {
   const urlQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(urlQuery);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    setIsSidebarCollapsed(window.localStorage.getItem("dashboard-sidebar-collapsed") === "true");
+  }, []);
 
   useEffect(() => {
     setQuery(urlQuery);
@@ -65,8 +70,16 @@ export default function DashboardLayout({ children }) {
     setQuery(newQuery);
   };
 
+  const toggleSidebarCollapsed = () => {
+    setIsSidebarCollapsed((current) => {
+      const next = !current;
+      window.localStorage.setItem("dashboard-sidebar-collapsed", String(next));
+      return next;
+    });
+  };
+
   return (
-    <AppShell>
+    <AppShell className={isSidebarCollapsed ? "sidebar-collapsed" : ""}>
       <TopBar
         query={query}
         onQueryChange={handleQueryChange}
@@ -76,6 +89,8 @@ export default function DashboardLayout({ children }) {
       <SideNav
         navItems={NAV_ITEMS}
         isSidebarOpen={isSidebarOpen}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapsed={toggleSidebarCollapsed}
         onCloseSidebar={() => setIsSidebarOpen(false)}
       />
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, CircleHelp, LayoutDashboard, LogOut } from "lucide-react";
+import { ChevronDown, CircleHelp, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import BrandLogo from "@/app/components/brand/BrandLogo";
 import ModalPortal from "@/app/components/shared/ModalPortal";
 import { cachedJson, clearClientApiCache } from "@/app/lib/client-api";
@@ -31,6 +31,8 @@ export default function SideNav({
   navItems,
   onPageChange,
   isSidebarOpen,
+  isCollapsed = false,
+  onToggleCollapsed,
   onCloseSidebar,
 }) {
   const router = useRouter();
@@ -101,7 +103,16 @@ export default function SideNav({
 
   return (
     <>
-      <aside className={`side-nav ${isSidebarOpen ? "open" : ""}`}>
+      <aside className={`side-nav${isSidebarOpen ? " open" : ""}${isCollapsed ? " collapsed" : ""}`}>
+        <button
+          type="button"
+          className="side-nav-collapse-button"
+          onClick={onToggleCollapsed}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+        </button>
         <div className="portal-title">
           <BrandLogo href="/dashboard" prefetch={false} />
           <p>Enterprise Portal</p>
@@ -111,10 +122,11 @@ export default function SideNav({
           <Link
             className={activePage === "dashboard" ? "active" : ""}
             href={ROUTE_MAP["dashboard"]}
+            title="Dashboard"
             prefetch={false}
             onClick={() => { if (onCloseSidebar) onCloseSidebar(); }}
           >
-            <LayoutDashboard size={20} /> Dashboard
+            <LayoutDashboard size={20} /> <span className="side-nav-label">Dashboard</span>
           </Link>
           {navItems
             .filter((item) => {
@@ -133,9 +145,10 @@ export default function SideNav({
                     <button
                       className={isParentActive ? "active" : ""}
                       type="button"
+                      title={item.label}
                       onClick={() => handleNavigate(item.id)}
                     >
-                      <Icon size={20} /> {item.label}
+                      <Icon size={20} /> <span className="side-nav-label">{item.label}</span>
                       <ChevronDown className="side-nav-chevron" size={14} />
                     </button>
                     {isParentActive ? (
@@ -145,10 +158,11 @@ export default function SideNav({
                             className={activePage === child.id ? "active" : ""}
                             key={child.id}
                             href={ROUTE_MAP[child.id] || "/dashboard"}
+                            title={child.label}
                             prefetch={false}
                             onClick={() => { if (onCloseSidebar) onCloseSidebar(); }}
                           >
-                            {child.label}
+                            <span className="side-nav-label">{child.label}</span>
                           </Link>
                         ))}
                       </div>
@@ -162,10 +176,11 @@ export default function SideNav({
                   <Link
                     className={activePage === item.id ? "active" : ""}
                     href={ROUTE_MAP[item.id] || "/dashboard"}
+                    title={item.label}
                     prefetch={false}
                     onClick={() => { if (onCloseSidebar) onCloseSidebar(); }}
                   >
-                    <Icon size={20} /> {item.label}
+                    <Icon size={20} /> <span className="side-nav-label">{item.label}</span>
                   </Link>
                 </div>
               );
@@ -173,11 +188,11 @@ export default function SideNav({
         </nav>
 
         <div className="side-footer">
-          <button type="button">
-            <CircleHelp size={20} /> Help Center
+          <button type="button" title="Help Center">
+            <CircleHelp size={20} /> <span className="side-nav-label">Help Center</span>
           </button>
-          <button type="button" onClick={handleLogout}>
-            <LogOut size={20} /> Logout
+          <button type="button" onClick={handleLogout} title="Logout">
+            <LogOut size={20} /> <span className="side-nav-label">Logout</span>
           </button>
         </div>
       </aside>
