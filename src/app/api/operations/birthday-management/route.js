@@ -194,3 +194,62 @@ export async function POST(request) {
     );
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const session = await requireSession(request);
+    if (session.errorResponse) return session.errorResponse;
+    if (session.role === "VIEWER") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { profileId, dob } = await request.json();
+    const sanitized = sanitizeCustomerProfilePayload({ dob });
+    if (!profileId || !sanitized.dob) {
+      return NextResponse.json({ error: "A valid customer and date of birth are required." }, { status: 400 });
+    }
+
+    const existing = await prisma.customerProfile.findFirst({
+      where: {
+        id: profileId,
+        ...getCustomerProfileScopedFilter(session),
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Customer profile not found." }, { status: 404 });
+    }
+
+    const actorId = session.userId || session.id;
+    const profile = await prisma.customerProfile.update({
+      where: { id: existing.id },
+      data: { dob: sanitized.dob, updatedById: actorId },
+      include: {
+        createdBy: { select: { name: true, email: true } },
+        updatedBy: { select: { name: true, email: true } },
+      },
+    });
+
+    const { ipAddress, userAgent } = getAuditMetadata(request);
+    await logAudit({
+      action: "CUSTOMER_PROFILE_UPDATE",
+      entityType: "CustomerProfile",
+      entityId: profile.id,
+      severity: "INFO",
+      source: "API",
+      ipAddress,
+      userAgent,
+      userId: actorId,
+      organizationId: session.organizationId,
+      metadata: { dobUpdated: sanitized.dob, isBirthdayManagement: true },
+    });
+
+    return NextResponse.json(serializeCustomerProfile(profile));
+  } catch (error) {
+    return NextResponse.json(
+      { error: getUserFacingErrorMessage(error, "Failed to update date of birth.") },
+      { status: 500 },
+    );
+  }
+}

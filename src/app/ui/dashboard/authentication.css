@@ -1225,6 +1225,321 @@ label.is-disabled textarea {
   background: #f8fafc;
 }
 
+.lead-detail-actions-cell {
+  position: relative;
+  width: 72px;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.lead-detail-row-menu-open .lead-detail-actions-cell {
+  z-index: 10;
+}
+
+.lead-detail-action-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.customer-portfolio-table .lead-detail-action-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #475569;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.customer-portfolio-table .lead-detail-action-trigger:hover {
+  background: #e9eef5;
+  color: #111827;
+  transform: translateY(-1px);
+}
+
+.customer-portfolio-table .lead-detail-action-trigger:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+.lead-detail-action-popover {
+  position: fixed;
+  z-index: 2200;
+  display: grid;
+  width: 180px;
+  padding: 6px;
+  border: 1px solid rgba(25, 28, 29, 0.12);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.lead-detail-action-popover button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.lead-detail-action-popover button:hover {
+  background: #f4f5f7;
+}
+
+.lead-whatsapp-preview-card {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border: 1px solid rgba(25, 28, 29, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+}
+
+.lead-whatsapp-preview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(25, 28, 29, 0.1);
+}
+
+.lead-whatsapp-preview-head h3,
+.lead-whatsapp-preview-head p {
+  margin: 0;
+}
+
+.lead-whatsapp-preview-head p {
+  margin-top: 5px;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.lead-whatsapp-preview-head > button {
+  display: inline-grid !important;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.lead-whatsapp-preview-head > button:hover {
+  border-color: #cbd5e1;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.lead-whatsapp-preview-head > button:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 2px;
+}
+
+.lead-whatsapp-preview-head > button svg {
+  display: block;
+  width: 14px !important;
+  height: 14px !important;
+  stroke-width: 1.6;
+}
+
+.lead-whatsapp-recipient {
+  display: grid;
+  gap: 3px;
+  margin: 18px 22px 0;
+  padding: 14px 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  background: #f0fdf4;
+}
+
+.lead-whatsapp-recipient span,
+.lead-whatsapp-recipient small,
+.lead-whatsapp-message-field > span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.lead-whatsapp-recipient strong {
+  color: #166534;
+}
+
+.lead-whatsapp-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 14px 22px 0;
+  padding: 11px 13px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lead-whatsapp-template-picker {
+  display: grid;
+  gap: 8px;
+  padding: 18px 22px 0;
+}
+
+.lead-whatsapp-template-picker > span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.lead-whatsapp-template-picker > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.lead-whatsapp-template-picker button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #dbe2ea;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.lead-whatsapp-template-picker button:hover {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.lead-whatsapp-template-picker button.active {
+  border-color: #22c55e;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.lead-whatsapp-message-field {
+  display: grid;
+  gap: 7px;
+  padding: 18px 22px;
+}
+
+.lead-whatsapp-message-field textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: 1px solid rgba(25, 28, 29, 0.16);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+
+.lead-whatsapp-message-field textarea:focus {
+  border-color: #25d366;
+  outline: 3px solid rgba(37, 211, 102, 0.14);
+}
+
+.lead-whatsapp-signature-field {
+  display: grid;
+  gap: 7px;
+  padding: 0 22px 18px;
+}
+
+.lead-whatsapp-signature-field > span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.lead-whatsapp-signature-field textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  border: 1px solid rgba(25, 28, 29, 0.16);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #111827;
+  font: inherit;
+  line-height: 1.45;
+  padding: 10px 12px;
+}
+
+.lead-whatsapp-signature-field textarea:focus {
+  border-color: #25d366;
+  outline: 3px solid rgba(37, 211, 102, 0.14);
+}
+
+.lead-whatsapp-signature-field small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.lead-whatsapp-preview-actions,
+.lead-whatsapp-preview-actions > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lead-whatsapp-preview-actions {
+  padding: 16px 22px 20px;
+  border-top: 1px solid rgba(25, 28, 29, 0.1);
+}
+
+.lead-whatsapp-preview-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid rgba(25, 28, 29, 0.14);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 750;
+}
+
+.lead-whatsapp-preview-actions .send-whatsapp {
+  border-color: #25d366;
+  background: #25d366;
+  color: #ffffff;
+}
+
+.lead-whatsapp-preview-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .customer-portfolio-update-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1451,6 +1766,121 @@ label.is-disabled textarea {
   width: 100%;
   border-collapse: collapse;
   min-width: 860px;
+}
+
+.existing-customer-table .profile-listing-table {
+  min-width: 1220px;
+}
+
+.profile-listing-table th,
+.profile-listing-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.profile-listing-table th {
+  white-space: nowrap;
+}
+
+.profile-listing-table th:nth-child(1),
+.profile-listing-table td:nth-child(1) {
+  min-width: 220px;
+}
+
+.profile-listing-table th:nth-child(2),
+.profile-listing-table td:nth-child(2) {
+  min-width: 130px;
+}
+
+.profile-listing-table th:nth-child(3),
+.profile-listing-table td:nth-child(3) {
+  min-width: 180px;
+  white-space: nowrap;
+}
+
+.profile-listing-table th:nth-child(4),
+.profile-listing-table td:nth-child(4) {
+  min-width: 160px;
+}
+
+.profile-listing-table th:nth-child(5),
+.profile-listing-table td:nth-child(5),
+.profile-listing-table th:nth-child(6),
+.profile-listing-table td:nth-child(6) {
+  min-width: 125px;
+}
+
+.profile-listing-table th:nth-child(7),
+.profile-listing-table td:nth-child(7) {
+  min-width: 135px;
+  white-space: nowrap;
+}
+
+.profile-listing-table th:nth-child(8),
+.profile-listing-table td:nth-child(8) {
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+.profile-listing-table th:nth-child(9),
+.profile-listing-table td:nth-child(9) {
+  width: 80px;
+  min-width: 80px;
+}
+
+.lead-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lead-status-badge.is-new {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.lead-status-badge.is-follow-up {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.lead-status-badge.is-interested {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.lead-status-badge.is-not-interested {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.lead-status-badge.is-converted {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.lead-status-badge.is-lost {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.lead-status-badge.is-unknown {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
 }
 
 .existing-customer-table th,
@@ -1683,6 +2113,87 @@ label.is-disabled textarea {
 
 .profile-table-actions .danger-action:hover {
   background: #fee2e2;
+}
+
+.profile-actions-cell {
+  position: relative;
+  width: 72px;
+  text-align: center !important;
+}
+
+.profile-row-menu-open .profile-actions-cell {
+  z-index: 10;
+}
+
+.profile-action-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.existing-customer-table .profile-action-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #475569;
+  box-shadow: none;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.existing-customer-table .profile-action-trigger:hover {
+  background: #f1f5f9;
+  color: #111827;
+  transform: translateY(-1px);
+}
+
+.existing-customer-table .profile-action-trigger:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+.profile-action-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  width: 150px;
+  padding: 6px;
+  border: 1px solid rgba(25, 28, 29, 0.12);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.existing-customer-table tbody tr:last-child .profile-action-popover {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.existing-customer-table .profile-action-popover button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #111827;
+  font-weight: 700;
+}
+
+.existing-customer-table .profile-action-popover button:hover {
+  background: #f4f5f7;
+}
+
+.existing-customer-table .profile-action-popover .danger-action {
+  color: #b91c1c;
 }
 
 .table-muted {
@@ -2091,4 +2602,3 @@ label.is-disabled textarea {
 .record-edit-actions button {
   min-height: 40px;
 }
-

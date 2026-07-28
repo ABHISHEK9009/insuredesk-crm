@@ -121,6 +121,7 @@ model Organization {
   uploadedFiles UploadedFile[]
   auditLogs     AuditLog[]
   customerProfiles CustomerProfile[]
+  leadGenerationRecords LeadGeneration[]
   clientAccounts ClientAccount[]
   claims        Claim[]
   endorsements  Endorsement[]
@@ -438,6 +439,7 @@ model CustomerProfile {
   updatedBy           User?        @relation("CustomerProfileUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   endorsements        Endorsement[]
   policies            PolicyRecord[]
+  leads               LeadGeneration[]
 
   @@index([phone])
   @@index([sourcePolicyNumber])
@@ -455,6 +457,60 @@ model CustomerProfile {
   @@index([deletedAt])
   @@index([googleEmail])
   @@map("customer_profiles")
+}
+
+model LeadGeneration {
+  id                  String       @id @default(uuid()) @db.Uuid
+  name                String
+  phone               String
+  alternatePhone      String?      @map("alternate_phone")
+  email               String?
+  address             String?
+  city                String?
+  state               String?
+  occupation          String?
+  businessType        String?      @map("business_type")
+  contactPersonName   String?      @map("contact_person_name")
+  customerType        String       @default("New") @map("customer_type")
+  assignedTo          String?      @map("assigned_to")
+  referenceSource     String?      @map("reference_source")
+  sourcePolicyId      String?      @map("source_policy_id") @db.Uuid
+  sourcePolicyNumber  String?      @map("source_policy_number")
+  sourcePolicyType    String?      @map("source_policy_type")
+  sourceCompany       String?      @map("source_company")
+  selectedLOBs        Json         @default("[]") @map("selected_lobs")
+  lobDetails          Json         @default("{}") @map("lob_details")
+  status              String       @default("New Lead")
+  followUpDate        DateTime?    @map("follow_up_date") @db.Timestamptz(6)
+  lastFollowUpDate    DateTime?    @map("last_follow_up_date") @db.Timestamptz(6)
+  nextFollowUpDate    DateTime?    @map("next_follow_up_date") @db.Timestamptz(6)
+  followUpRemark      String?      @map("follow_up_remark")
+  followUpOutcome     String?      @map("follow_up_outcome")
+  remarks             String?
+  convertedToCustomer Boolean      @default(false) @map("converted_to_customer")
+  convertedPolicyId   String?      @map("converted_policy_id") @db.Uuid
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime?    @map("deleted_at") @db.Timestamptz(6)
+
+  customerProfileId   String?      @map("customer_profile_id") @db.Uuid
+  customerProfile     CustomerProfile? @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  organizationId      String?      @map("organization_id") @db.Uuid
+  organization        Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  createdById         String?      @map("created_by_id") @db.Uuid
+  createdBy           User?        @relation("LeadGenerationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById         String?      @map("updated_by_id") @db.Uuid
+  updatedBy           User?        @relation("LeadGenerationUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([organizationId, deletedAt, updatedAt])
+  @@index([organizationId, status])
+  @@index([organizationId, nextFollowUpDate])
+  @@index([organizationId, createdAt])
+  @@index([createdById, deletedAt, updatedAt])
+  @@index([customerProfileId])
+  @@index([deletedAt])
+  @@map("lead_generation")
 }
 
 model ClientAccount {
@@ -749,6 +805,8 @@ model User {
   auditLogs      AuditLog[]
   createdCustomerProfiles CustomerProfile[] @relation("CustomerProfileCreatedBy")
   updatedCustomerProfiles CustomerProfile[] @relation("CustomerProfileUpdatedBy")
+  createdLeadGenerationRecords LeadGeneration[] @relation("LeadGenerationCreatedBy")
+  updatedLeadGenerationRecords LeadGeneration[] @relation("LeadGenerationUpdatedBy")
   createdClientAccounts ClientAccount[] @relation("ClientAccountCreatedBy")
   updatedClientAccounts ClientAccount[] @relation("ClientAccountUpdatedBy")
   createdClaims Claim[] @relation("ClaimCreatedBy")

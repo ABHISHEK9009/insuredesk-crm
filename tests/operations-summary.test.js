@@ -4,9 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { prismaMock, verifyJWTMock } = vi.hoisted(() => ({
   prismaMock: {
-    customerProfile: {
+    leadGeneration: {
       count: vi.fn(),
       groupBy: vi.fn(),
+      findFirst: vi.fn(),
+    },
+    customerProfile: {
+      count: vi.fn(),
       findFirst: vi.fn(),
     },
     policyRecord: {
@@ -30,11 +34,13 @@ describe("operations summary", () => {
       userId: "user-1",
       organizationId: "org-1",
     });
-    prismaMock.customerProfile.count.mockResolvedValue(4);
-    prismaMock.customerProfile.groupBy.mockResolvedValue([
+    prismaMock.leadGeneration.count.mockResolvedValue(4);
+    prismaMock.leadGeneration.groupBy.mockResolvedValue([
       { status: "New Lead", _count: { id: 2 } },
       { status: "Follow-up Required", _count: { id: 1 } },
     ]);
+    prismaMock.leadGeneration.findFirst.mockResolvedValue(null);
+    prismaMock.customerProfile.count.mockResolvedValue(2);
     prismaMock.customerProfile.findFirst.mockResolvedValue(null);
     prismaMock.policyRecord.count.mockResolvedValue(8);
     prismaMock.policyRecord.findFirst.mockResolvedValue(null);
@@ -47,9 +53,11 @@ describe("operations summary", () => {
     expect(response.status).toBe(200);
     expect(payload.summary).toEqual({
       customerProfiles: 4,
+      birthdayProfiles: 2,
       policyRecords: 8,
       openActivities: 3,
       latestProfile: null,
+      latestBirthday: null,
       latestPolicy: null,
     });
 
@@ -58,13 +66,21 @@ describe("operations summary", () => {
       createdById: "user-1",
       deletedAt: null,
     });
-    expect(prismaMock.customerProfile.count).toHaveBeenCalledWith({ where: profileWhere });
-    expect(prismaMock.customerProfile.groupBy).toHaveBeenCalledWith(
+    expect(prismaMock.leadGeneration.count).toHaveBeenCalledWith({ where: profileWhere });
+    expect(prismaMock.leadGeneration.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({ where: profileWhere }),
     );
-    expect(prismaMock.customerProfile.findFirst).toHaveBeenCalledWith(
+    expect(prismaMock.leadGeneration.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: profileWhere }),
     );
+    expect(prismaMock.customerProfile.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        organizationId: "org-1",
+        createdById: "user-1",
+        deletedAt: null,
+        dob: { not: null },
+      }),
+    });
 
     const policyWhere = expect.objectContaining({ organizationId: "org-1", deletedAt: null });
     expect(prismaMock.policyRecord.count).toHaveBeenCalledWith({ where: policyWhere });

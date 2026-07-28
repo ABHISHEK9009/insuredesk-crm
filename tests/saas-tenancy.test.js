@@ -124,13 +124,13 @@ describe("SaaS Multi-Tenancy & RBAC Tests", () => {
       }
     });
 
-    it("allows Super Admin to audit and manage all profiles in its organization", () => {
+    it("allows Super Admin to audit and manage all profiles across organizations", () => {
       const session = { id: user1, role: UserRole.SUPER_ADMIN, organizationId: orgA };
 
       expect(canAccessCustomerProfile(session, "read", otherProfile)).toBe(true);
       expect(canAccessCustomerProfile(session, "write", otherProfile)).toBe(true);
       expect(canAccessCustomerProfile(session, "delete", otherProfile)).toBe(true);
-      expect(canAccessCustomerProfile(session, "read", { organizationId: orgB, createdById: user2 })).toBe(false);
+      expect(canAccessCustomerProfile(session, "read", { organizationId: orgB, createdById: user2 })).toBe(true);
     });
 
     it("blocks cross-organization profiling access", () => {
@@ -268,15 +268,11 @@ describe("SaaS Multi-Tenancy & RBAC Tests", () => {
       }
     });
 
-    it("scopes organization Super Admin to all lead generation records in its organization", () => {
+    it("does not scope Super Admin lead generation records by owner or organization", () => {
       const session = { userId: user1, role: UserRole.SUPER_ADMIN, organizationId: orgA };
       const filter = getCustomerProfileScopedFilter(session);
 
-      expect(filter).toEqual({
-        organizationId: orgA,
-        deletedAt: null,
-        createdById: { not: null },
-      });
+      expect(filter).toEqual({ deletedAt: null });
     });
 
     it("scopes users with no organization to their own profiling records with organizationId: null", () => {

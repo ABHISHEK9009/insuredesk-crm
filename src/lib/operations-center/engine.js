@@ -175,7 +175,7 @@ export async function syncOperationsCenter(session) {
         updatedAt: true,
       },
     }),
-    prisma.customerProfile.findMany({
+    prisma.leadGeneration.findMany({
       where: getCustomerProfileScopedFilter(session),
       orderBy: { updatedAt: "desc" },
       take: MAX_SYNC_ROWS,
@@ -573,7 +573,7 @@ export async function syncDueFollowUpNotifications({ now = new Date(), limit = 1
         updatedAt: true,
       },
     }),
-    prisma.customerProfile.findMany({
+    prisma.leadGeneration.findMany({
       where: {
         deletedAt: null,
         OR: [

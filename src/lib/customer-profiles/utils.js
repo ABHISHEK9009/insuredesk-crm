@@ -18,6 +18,7 @@ export const CUSTOMER_PROFILE_FOLLOW_UP_OUTCOMES = [
 
 export function sanitizeCustomerProfilePayload(payload = {}) {
   return {
+    customerProfileId: asUuidText(payload.customerProfileId),
     name: asText(payload.name, 220),
     phone: normalizePhone(payload.phone),
     alternatePhone: payload.alternatePhone ? normalizePhone(payload.alternatePhone) : "",
@@ -55,9 +56,15 @@ export function sanitizeCustomerProfilePayload(payload = {}) {
   };
 }
 
+export function sanitizeLeadGenerationPayload(payload = {}) {
+  const { dob: _dob, ...lead } = sanitizeCustomerProfilePayload(payload);
+  return lead;
+}
+
 export function serializeCustomerProfile(profile) {
   return {
     id: profile.id,
+    customerProfileId: profile.customerProfileId || "",
     name: profile.name,
     phone: profile.phone,
     alternatePhone: profile.alternatePhone || "",

@@ -23,7 +23,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Select an insurance type before converting." }, { status: 422 });
     }
 
-    const existing = await prisma.customerProfile.findFirst({
+    const existing = await prisma.leadGeneration.findFirst({
       where: {
         id,
         ...getCustomerProfileScopedFilter(session),
@@ -39,7 +39,7 @@ export async function POST(request, { params }) {
     }
 
     const actorId = session.userId || session.id;
-    const profile = await prisma.customerProfile.update({
+    const profile = await prisma.leadGeneration.update({
       where: { id },
       data: {
         convertedToCustomer: true,
@@ -51,8 +51,8 @@ export async function POST(request, { params }) {
     const redirectUrl = `/bulk-upload?profileId=${encodeURIComponent(id)}&insuranceType=${encodeURIComponent(insuranceType)}`;
     const { ipAddress, userAgent } = getAuditMetadata(request);
     await logAudit({
-      action: "CUSTOMER_PROFILE_CONVERT",
-      entityType: "CustomerProfile",
+      action: "LEAD_CONVERT",
+      entityType: "LeadGeneration",
       entityId: profile.id,
       severity: "INFO",
       source: "API",

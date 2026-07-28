@@ -29,13 +29,14 @@ describe("Super Admin lead agent report", () => {
 
   it("returns creator-grouped, server-paginated lead totals", async () => {
     const report = await loadLeadAgentReport({
-      session: { role: "SUPER_ADMIN", organizationId: null },
+      session: { role: "SUPER_ADMIN", organizationId: "00000000-0000-4000-8000-000000000099" },
       page: 2,
       limit: 1,
     });
 
     expect(report).toMatchObject({ page: 2, limit: 1, totalAgents: 3, totalPages: 3 });
     expect(report.agents[0]).toMatchObject({ agentName: "Agent One", totalLeads: 12, converted: 2 });
+    expect(queryRawMock.mock.calls[0][0]).not.toContain("cp.organization_id");
     expect(queryRawMock.mock.calls[0].at(-2)).toBe(1);
     expect(queryRawMock.mock.calls[0].at(-1)).toBe(1);
   });

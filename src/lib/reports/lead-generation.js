@@ -8,8 +8,6 @@ export async function loadLeadAgentReport({ session, page = 1, limit = 25, q = "
   const safePage = Math.max(1, Number.parseInt(page, 10) || 1);
   const safeLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 25));
   const search = String(q || "").trim();
-  const organizationId = session.organizationId || null;
-  const isGlobal = !organizationId;
   const offset = (safePage - 1) * safeLimit;
 
   const rows = await prisma.$queryRawUnsafe(
@@ -26,25 +24,22 @@ export async function loadLeadAgentReport({ session, page = 1, limit = 25, q = "
           COUNT(*) FILTER (WHERE cp.status = 'Converted' OR cp.converted_to_customer = true)::integer AS converted,
           COUNT(*) FILTER (WHERE cp.status = 'Lost')::integer AS lost,
           MAX(cp.created_at) AS latest_lead_at
-        FROM customer_profiles cp
+        FROM lead_generation cp
         LEFT JOIN users u ON u.id = cp.created_by_id AND u.deleted_at IS NULL
         WHERE cp.deleted_at IS NULL
           AND cp.created_by_id IS NOT NULL
-          AND ($1::boolean OR cp.organization_id IS NOT DISTINCT FROM $2::uuid)
           AND (
-            $3::text = ''
-            OR COALESCE(u.name, '') ILIKE $4::text
-            OR COALESCE(u.email, '') ILIKE $4::text
+            $1::text = ''
+            OR COALESCE(u.name, '') ILIKE $2::text
+            OR COALESCE(u.email, '') ILIKE $2::text
           )
         GROUP BY cp.created_by_id, u.name, u.email
       )
       SELECT agent_leads.*, COUNT(*) OVER()::integer AS agent_count
       FROM agent_leads
       ORDER BY total_leads DESC, agent_name ASC
-      LIMIT $5::integer OFFSET $6::integer
+      LIMIT $3::integer OFFSET $4::integer
     `,
-    isGlobal,
-    organizationId,
     search,
     `%${search}%`,
     safeLimit,

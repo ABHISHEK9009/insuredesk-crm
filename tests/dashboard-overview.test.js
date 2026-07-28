@@ -136,14 +136,20 @@ describe("management dashboard overview", () => {
     const overviewRoute = source("src/app/api/dashboard/overview/route.js");
     const report = source("src/lib/reports/lead-generation.js");
     const reportPage = source("src/app/(dashboard)/dashboard/reports/lead-generation/page.js");
+    const leadGenerationPage = source(
+      "src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js",
+    );
 
     expect(overviewRoute).toContain('session.role === "SUPER_ADMIN"');
     expect(report).toContain("GROUP BY cp.created_by_id, u.name, u.email");
-    expect(report).toContain("LIMIT $5::integer OFFSET $6::integer");
+    expect(report).toContain("LIMIT $3::integer OFFSET $4::integer");
     expect(report).toContain("cp.deleted_at IS NULL");
     expect(report).toContain("cp.created_by_id IS NOT NULL");
+    expect(report).not.toContain("cp.organization_id");
     expect(reportPage).toContain("Lead generation by agent");
     expect(reportPage).toContain('session.role !== "SUPER_ADMIN"');
+    expect(leadGenerationPage).toContain('currentUser?.role === "SUPER_ADMIN"');
+    expect(leadGenerationPage).toContain('router.push("/dashboard/reports/lead-generation")');
     expect(reportPage).toContain("createdById=");
   });
 

@@ -17,15 +17,21 @@ export async function GET(request) {
     const profileWhere = { ...getCustomerProfileScopedFilter(session), deletedAt: null };
     const policyWhere = withoutManualRenewalSources({ ...getTenantFilter(session, "read"), deletedAt: null });
 
-    const [profileTotal, profileCounts, latestProfile, policyTotal, latestPolicyRaw] = await Promise.all([
-      prisma.customerProfile.count({ where: profileWhere }),
-      prisma.customerProfile.groupBy({
+    const [profileTotal, profileCounts, latestProfile, birthdayProfiles, latestBirthday, policyTotal, latestPolicyRaw] = await Promise.all([
+      prisma.leadGeneration.count({ where: profileWhere }),
+      prisma.leadGeneration.groupBy({
         by: ["status"],
         where: profileWhere,
         _count: { id: true },
       }),
-      prisma.customerProfile.findFirst({
+      prisma.leadGeneration.findFirst({
         where: profileWhere,
+        orderBy: { updatedAt: "desc" },
+        select: { name: true, phone: true, createdAt: true, updatedAt: true },
+      }),
+      prisma.customerProfile.count({ where: { ...profileWhere, dob: { not: null } } }),
+      prisma.customerProfile.findFirst({
+        where: { ...profileWhere, dob: { not: null } },
         orderBy: { updatedAt: "desc" },
         select: { name: true, phone: true, createdAt: true, updatedAt: true },
       }),
@@ -53,6 +59,14 @@ export async function GET(request) {
       success: true,
       summary: {
         customerProfiles: profileTotal,
+        birthdayProfiles,
+        latestBirthday: latestBirthday
+          ? {
+              name: latestBirthday.name || "",
+              phone: latestBirthday.phone || "",
+              updatedAt: latestBirthday.updatedAt || latestBirthday.createdAt,
+            }
+          : null,
         policyRecords: policyTotal,
         openActivities: counter("Follow-up Required") + counter("New Lead"),
         latestProfile: latestProfile

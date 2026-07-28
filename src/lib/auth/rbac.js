@@ -41,7 +41,7 @@ export function canAccessSharedResource(user, action, resourceOrgId) {
 
 /**
  * Lead Generation is owner-scoped for normal users. Super Admin can audit and
- * manage every lead in its organization (or every organization when global).
+ * manage every lead across the platform.
  */
 export function canAccessCustomerProfile(user, action, profile) {
   if (!user || !user.role || !profile) return false;
@@ -49,20 +49,12 @@ export function canAccessCustomerProfile(user, action, profile) {
   const userId = user.userId || user.id;
   if (!userId) return false;
 
-  if (user.role !== UserRole.SUPER_ADMIN) {
-    if ((profile.organizationId || null) !== (user.organizationId || null)) {
-      return false;
-    }
-  } else if (
-    user.organizationId &&
-    profile.organizationId &&
-    profile.organizationId !== user.organizationId
-  ) {
-    return false;
-  }
-
   if (user.role === UserRole.SUPER_ADMIN) {
     return action === "read" || action === "write" || action === "delete";
+  }
+
+  if ((profile.organizationId || null) !== (user.organizationId || null)) {
+    return false;
   }
 
   if (profile.createdById !== userId) {
@@ -148,11 +140,7 @@ export function getCustomerProfileScopedFilter(user) {
   }
 
   if (user.role === "SUPER_ADMIN") {
-    return {
-      deletedAt: null,
-      createdById: { not: null },
-      ...(user.organizationId ? { organizationId: user.organizationId } : {}),
-    };
+    return { deletedAt: null };
   }
 
   if (!actorId) return { id: "00000000-0000-0000-0000-000000000000" };

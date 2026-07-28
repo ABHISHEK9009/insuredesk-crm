@@ -406,13 +406,10 @@ export default function BirthdayManagementPage() {
   const handleSaveInlineDob = async (profileId) => {
     if (!editDate) return;
     try {
-      const res = await fetch(`/api/customer-profiles/${profileId}`, {
-        method: "PUT",
+      const res = await fetch("/api/operations/birthday-management", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...profiles.find(p => p.id === profileId),
-          dob: editDate
-        }),
+        body: JSON.stringify({ profileId, dob: editDate }),
       });
 
       if (!res.ok) {

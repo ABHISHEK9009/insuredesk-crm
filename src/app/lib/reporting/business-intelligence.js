@@ -353,7 +353,7 @@ export async function loadReportingCenterData({ category = "executive", searchPa
       : prisma.endorsement.count({ where: endorsementWhere }),
     queryPlan.profiles === "none"
       ? Promise.resolve([])
-      : prisma.customerProfile.findMany({
+      : prisma.leadGeneration.findMany({
           where: profileWhere,
           select: queryPlan.profiles === "detail" ? PROFILE_SELECT : PROFILE_SUMMARY_SELECT,
           orderBy: { updatedAt: "desc" },
@@ -361,7 +361,7 @@ export async function loadReportingCenterData({ category = "executive", searchPa
         }),
     queryPlan.profiles === "none"
       ? Promise.resolve(0)
-      : prisma.customerProfile.count({ where: profileWhere }),
+      : prisma.leadGeneration.count({ where: profileWhere }),
     queryPlan.uploads === "none"
       ? Promise.resolve([])
       : prisma.uploadedFile.findMany({

@@ -6,7 +6,7 @@ import { logAudit, getAuditMetadata } from "@/lib/audit";
 import {
   normalizeProfilePhone,
   normalizeIndianPhone,
-  sanitizeCustomerProfilePayload,
+  sanitizeLeadGenerationPayload,
   serializeCustomerProfile,
 } from "@/lib/customer-profiles/utils";
 import { getUserFacingErrorMessage } from "@/lib/errors/user-facing";
@@ -96,7 +96,7 @@ export async function GET(request) {
       }
 
       if (summaryOnly) {
-        const counts = await prisma.customerProfile.groupBy({
+        const counts = await prisma.leadGeneration.groupBy({
           by: ["status", "convertedToCustomer"],
           where: {
             ...ownProfileFilter,
@@ -113,7 +113,7 @@ export async function GET(request) {
         user.role === "SUPER_ADMIN" ? null : user.assignedLOBs,
       );
       const [profiles, totalCount, counts, assignedToOptions, lobRows] = await Promise.all([
-        prisma.customerProfile.findMany({
+        prisma.leadGeneration.findMany({
           where,
           orderBy: { updatedAt: "desc" },
           skip,
@@ -123,8 +123,8 @@ export async function GET(request) {
             updatedBy: { select: { name: true, email: true } },
           },
         }),
-        prisma.customerProfile.count({ where }),
-        prisma.customerProfile.groupBy({
+        prisma.leadGeneration.count({ where }),
+        prisma.leadGeneration.groupBy({
           by: ["status", "convertedToCustomer"],
           where: {
             ...ownProfileFilter,
@@ -134,7 +134,7 @@ export async function GET(request) {
             id: true,
           },
         }),
-        prisma.customerProfile.findMany({
+        prisma.leadGeneration.findMany({
           where: {
             ...ownProfileFilter,
             deletedAt: null,
@@ -173,7 +173,7 @@ export async function GET(request) {
     }
 
     const [profiles, policyRecords] = await Promise.all([
-      prisma.customerProfile.findMany({
+      prisma.leadGeneration.findMany({
         where: {
           ...ownProfileFilter,
           phone: { contains: phone },
@@ -202,6 +202,7 @@ export async function GET(request) {
         take: 200,
         select: {
           id: true,
+          customerPortfolioId: true,
           savedAt: true,
           data: true,
           reviewedData: true,
@@ -214,7 +215,7 @@ export async function GET(request) {
     const claimedByAnotherUser =
       user.role === "SUPER_ADMIN"
         ? null
-        : await prisma.customerProfile.findFirst({
+        : await prisma.leadGeneration.findFirst({
             where: {
               ...getCustomerProfileClaimFilter(user),
               phone: { contains: phone },
@@ -236,6 +237,7 @@ export async function GET(request) {
         const payload = record.reviewedData || record.data || {};
         return {
           id: record.id,
+          customerProfileId: record.customerPortfolioId || null,
           savedAt: record.savedAt,
           name: payload.insuredName || payload.customerName || "",
           phone: payload.contactNumber || payload.customerMobile || "",
@@ -322,7 +324,7 @@ function buildCustomerProfileLobOptionsQuery(ownerFilter = {}) {
   return {
     sql: `
       SELECT DISTINCT lob
-      FROM customer_profiles, jsonb_array_elements_text(selected_lobs) AS lob
+      FROM lead_generation, jsonb_array_elements_text(selected_lobs) AS lob
       WHERE ${conditions.join(" AND ")}
       ORDER BY lob ASC
     `,
@@ -339,7 +341,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const data = sanitizeCustomerProfilePayload(body);
+    const data = sanitizeLeadGenerationPayload(body);
 
     const actorId = user.userId || user.id;
     const creatorLabel = user.name || user.email || "";
@@ -359,8 +361,21 @@ export async function POST(request) {
         { status: 400 },
       );
     }
+    if (profileData.customerProfileId) {
+      const linkedCustomer = await prisma.customerProfile.findFirst({
+        where: {
+          id: profileData.customerProfileId,
+          ...getTenantFilter(user, "read"),
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!linkedCustomer) {
+        return NextResponse.json({ error: "Selected customer portfolio was not found." }, { status: 400 });
+      }
+    }
 
-    const existing = await prisma.customerProfile.findFirst({
+    const existing = await prisma.leadGeneration.findFirst({
       where: {
         ...getCustomerProfileClaimFilter(user),
         phone: profileData.phone,
@@ -385,13 +400,19 @@ export async function POST(request) {
       );
     }
 
-    const record = await prisma.customerProfile.create({
+    const { customerProfileId, ...leadData } = profileData;
+    const record = await prisma.leadGeneration.create({
       data: {
-        ...profileData,
+        ...leadData,
         name: profileData.name || "Unnamed Customer",
-        organizationId: user.organizationId,
-        createdById: actorId,
-        updatedById: actorId,
+        ...(user.organizationId
+          ? { organization: { connect: { id: user.organizationId } } }
+          : {}),
+        createdBy: { connect: { id: actorId } },
+        updatedBy: { connect: { id: actorId } },
+        ...(customerProfileId
+          ? { customerProfile: { connect: { id: customerProfileId } } }
+          : {}),
       },
       include: {
         createdBy: { select: { name: true, email: true } },
@@ -401,8 +422,8 @@ export async function POST(request) {
 
     const { ipAddress, userAgent } = getAuditMetadata(request);
     await logAudit({
-      action: "CUSTOMER_PROFILE_CREATE",
-      entityType: "CustomerProfile",
+      action: "LEAD_CREATE",
+      entityType: "LeadGeneration",
       entityId: record.id,
       severity: "INFO",
       source: "API",

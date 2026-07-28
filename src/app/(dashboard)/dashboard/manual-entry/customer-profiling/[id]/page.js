@@ -6,12 +6,16 @@ import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowLeft,
+  CalendarPlus,
   CheckCircle,
+  Clipboard,
   MessageSquare,
   Phone,
+  Send,
   UserRound,
   X,
   LayoutGrid,
+  MoreVertical,
   User,
   MapPin,
   Shield,
@@ -34,6 +38,14 @@ const FOLLOW_UP_OUTCOMES = [
   "Wrong Number",
   "Not Reachable",
 ];
+const WHATSAPP_TEMPLATE_LABELS = {
+  follow_up: "Follow-up",
+  information: "Information Request",
+  quote_shared: "Quote Shared",
+  meeting: "Meeting Reminder",
+  thank_you: "Thank You",
+  general: "General Update",
+};
 const LOB_OPTIONS = [
   "Motor Insurance",
   "Health Insurance",
@@ -129,6 +141,17 @@ export default function CustomerProfileDetailPage({ params }) {
     remark: "",
   });
   const [timelineFilters, setTimelineFilters] = useState({ q: "", status: "", policy: "", date: "" });
+  const [openActionMenuId, setOpenActionMenuId] = useState("");
+  const [actionMenuPosition, setActionMenuPosition] = useState({ top: 0, left: 0 });
+  const [whatsappPreviewOpen, setWhatsAppPreviewOpen] = useState(false);
+  const [whatsappMessage, setWhatsAppMessage] = useState("");
+  const [whatsappTemplates, setWhatsAppTemplates] = useState({});
+  const [selectedWhatsAppTemplate, setSelectedWhatsAppTemplate] = useState("follow_up");
+  const [whatsappSignature, setWhatsAppSignature] = useState("");
+  const [currentAgentId, setCurrentAgentId] = useState("");
+  const [whatsappPhone, setWhatsAppPhone] = useState("");
+  const [whatsappSending, setWhatsAppSending] = useState(false);
+  const [whatsappError, setWhatsAppError] = useState("");
   const [alert, setAlert] = useState(null);
   const [isPending, startTransition] = useTransition();
 
@@ -148,6 +171,37 @@ export default function CustomerProfileDetailPage({ params }) {
       setProfile(payload);
     });
   }, [profileId]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (!payload?.success || !payload.user?.id) return;
+        const agentId = payload.user.id;
+        const savedSignature = window.localStorage.getItem(`lead-whatsapp-signature:${agentId}`);
+        setCurrentAgentId(agentId);
+        setWhatsAppSignature(savedSignature || buildDefaultAgentSignature(payload.user));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!openActionMenuId) return undefined;
+
+    const closeMenu = (event) => {
+      if (!event.target.closest("[data-lead-detail-action-menu]")) setOpenActionMenuId("");
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOpenActionMenuId("");
+    };
+
+    document.addEventListener("pointerdown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openActionMenuId]);
 
   const viewModel = useMemo(() => buildProfileView(profile), [profile]);
   const timelinePolicyOptions = useMemo(() => {
@@ -198,7 +252,7 @@ export default function CustomerProfileDetailPage({ params }) {
     window.open(`tel:${profile.phone}`);
   }
 
-  async function whatsappCustomer() {
+  function openWhatsAppPreview(policy = null) {
     if (!profile?.phone) {
       window.alert("No mobile number available.");
       return;
@@ -208,8 +262,28 @@ export default function CustomerProfileDetailPage({ params }) {
       window.alert("Invalid mobile number format.");
       return;
     }
-    const message = `Hello ${profile.name || "Customer"}, following up regarding your insurance requirement.`;
+    const interestedLob = policy?.policyType || policy?.lob || profile.selectedLOBs?.[0] || "insurance";
+    const followUpDate = policy?.renewalDate || profile.nextFollowUpDate;
+    const templates = buildLeadWhatsAppTemplates({
+      customerName: profile.name,
+      interestedLob,
+      followUpDate,
+    });
+    setWhatsAppPhone(whatsappPhone);
+    setWhatsAppTemplates(templates);
+    setSelectedWhatsAppTemplate("follow_up");
+    setWhatsAppMessage(templates.follow_up);
+    setWhatsAppError("");
+    setWhatsAppPreviewOpen(true);
+  }
+
+  async function sendWhatsAppMessage() {
+    const message = [whatsappMessage.trim(), whatsappSignature.trim()].filter(Boolean).join("\n\n");
+    if (!message || !whatsappPhone) return;
+
     try {
+      setWhatsAppSending(true);
+      setWhatsAppError("");
       const res = await fetch("/api/operations/whatsapp/test-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,13 +291,21 @@ export default function CustomerProfileDetailPage({ params }) {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        window.alert(`WhatsApp message sent successfully to ${profile.name || "Customer"}!`);
+        setWhatsAppPreviewOpen(false);
+        setAlert({ type: "success", message: `WhatsApp message sent successfully to ${profile.name || "Customer"}.` });
       } else {
-        window.alert(`Failed to send WhatsApp message: ${data.error || "Unknown error"}`);
+        setWhatsAppError(data.error || "WhatsApp gateway could not send the message.");
       }
     } catch {
-      window.alert("Failed to connect to the CRM WhatsApp API.");
+      setWhatsAppError("Failed to connect to the CRM WhatsApp gateway.");
+    } finally {
+      setWhatsAppSending(false);
     }
+  }
+
+  function updateWhatsAppSignature(value) {
+    setWhatsAppSignature(value);
+    if (currentAgentId) window.localStorage.setItem(`lead-whatsapp-signature:${currentAgentId}`, value);
   }
 
   function openRemarkModal(policy) {
@@ -820,7 +902,7 @@ export default function CustomerProfileDetailPage({ params }) {
             <button type="button" className="sidebar-action-btn" onClick={callCustomer}>
               <Phone size={16} /> Call
             </button>
-            <button type="button" className="sidebar-action-btn" onClick={whatsappCustomer}>
+            <button type="button" className="sidebar-action-btn" onClick={() => openWhatsAppPreview()}>
               <MessageSquare size={16} /> WhatsApp
             </button>
           </div>
@@ -955,7 +1037,7 @@ export default function CustomerProfileDetailPage({ params }) {
                 <tbody>
                   {viewModel.policies.length ? (
                     viewModel.policies.map((policy) => (
-                      <tr key={policy.id}>
+                      <tr key={policy.id} className={openActionMenuId === policy.id ? "lead-detail-row-menu-open" : ""}>
                         <td>{policy.policyNumber || "-"}</td>
                         <td>{policy.company || "-"}</td>
                         <td>{policy.policyType || "-"}</td>
@@ -967,14 +1049,63 @@ export default function CustomerProfileDetailPage({ params }) {
                             {profile.status || "-"}
                           </span>
                         </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="customer-portfolio-table-action"
-                            onClick={() => openRemarkModal(policy)}
-                          >
-                            Add Follow-up
-                          </button>
+                        <td className="lead-detail-actions-cell">
+                          <div className="lead-detail-action-menu" data-lead-detail-action-menu>
+                            <button
+                              type="button"
+                              className="lead-detail-action-trigger"
+                              onClick={(event) => {
+                                if (openActionMenuId === policy.id) {
+                                  setOpenActionMenuId("");
+                                  return;
+                                }
+                                const bounds = event.currentTarget.getBoundingClientRect();
+                                const menuWidth = 190;
+                                const menuHeight = 96;
+                                setActionMenuPosition({
+                                  top:
+                                    bounds.bottom + menuHeight + 12 > window.innerHeight
+                                      ? Math.max(12, bounds.top - menuHeight - 6)
+                                      : bounds.bottom + 6,
+                                  left: Math.max(12, bounds.right - menuWidth),
+                                });
+                                setOpenActionMenuId(policy.id);
+                              }}
+                              aria-label={`Open actions for ${policy.company || profile.name || "lead"}`}
+                              aria-expanded={openActionMenuId === policy.id}
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                            {openActionMenuId === policy.id && typeof document !== "undefined"
+                              ? createPortal(
+                                  <div
+                                    className="lead-detail-action-popover"
+                                    data-lead-detail-action-menu
+                                    style={actionMenuPosition}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenActionMenuId("");
+                                        openRemarkModal(policy);
+                                      }}
+                                    >
+                                      <CalendarPlus size={15} /> Add Follow-up
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenActionMenuId("");
+                                    openWhatsAppPreview(policy);
+                                      }}
+                                    >
+                                      <MessageSquare size={15} /> Send WhatsApp
+                                    </button>
+                                  </div>,
+                                  document.body,
+                                )
+                              : null}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1266,8 +1397,142 @@ export default function CustomerProfileDetailPage({ params }) {
           </div>,
           document.body,
         )}
+
+      {typeof window !== "undefined" &&
+        whatsappPreviewOpen &&
+        createPortal(
+          <div
+            className="tb-modal-backdrop customer-profile-remark-backdrop"
+            onClick={() => setWhatsAppPreviewOpen(false)}
+          >
+            <div className="lead-whatsapp-preview-card" onClick={(event) => event.stopPropagation()}>
+              <div className="lead-whatsapp-preview-head">
+                <div>
+                  <h3>WhatsApp Message Preview</h3>
+                  <p>Review and customize the message before sending.</p>
+                </div>
+                <button type="button" onClick={() => setWhatsAppPreviewOpen(false)} aria-label="Close">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="lead-whatsapp-recipient">
+                <span>Recipient</span>
+                <strong>{profile.name || "Customer"}</strong>
+                <small>+{whatsappPhone}</small>
+              </div>
+
+              {whatsappError ? (
+                <div className="lead-whatsapp-error">
+                  <AlertTriangle size={17} />
+                  <span>{whatsappError}</span>
+                </div>
+              ) : null}
+
+              <div className="lead-whatsapp-template-picker">
+                <span>Message Type</span>
+                <div>
+                  {Object.entries(WHATSAPP_TEMPLATE_LABELS).map(([type, label]) => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={selectedWhatsAppTemplate === type ? "active" : ""}
+                      onClick={() => {
+                        setSelectedWhatsAppTemplate(type);
+                        setWhatsAppMessage(whatsappTemplates[type]);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="lead-whatsapp-message-field">
+                <span>Message Preview & Edit</span>
+                <textarea
+                  value={whatsappMessage}
+                  onChange={(event) => setWhatsAppMessage(event.target.value)}
+                  rows={8}
+                />
+              </label>
+
+              <label className="lead-whatsapp-signature-field">
+                <span>Agent Signature</span>
+                <textarea
+                  value={whatsappSignature}
+                  onChange={(event) => updateWhatsAppSignature(event.target.value)}
+                  rows={3}
+                  placeholder="Regards,\nAgent name"
+                />
+                <small>Saved separately for each logged-in agent on this device.</small>
+              </label>
+
+              <div className="lead-whatsapp-preview-actions">
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.navigator.clipboard?.writeText(
+                      [whatsappMessage.trim(), whatsappSignature.trim()].filter(Boolean).join("\n\n"),
+                    )
+                  }
+                >
+                  <Clipboard size={15} /> Copy Text
+                </button>
+                <div>
+                  <button type="button" onClick={() => setWhatsAppPreviewOpen(false)}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="send-whatsapp"
+                    onClick={sendWhatsAppMessage}
+                    disabled={whatsappSending || !whatsappMessage.trim()}
+                  >
+                    <Send size={15} /> {whatsappSending ? "Sending..." : "Send WhatsApp"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
+}
+
+function buildLeadWhatsAppTemplates({ customerName, interestedLob, followUpDate }) {
+  const name = customerName || "Customer";
+  const lob = interestedLob || "insurance";
+  const date = followUpDate ? formatDate(followUpDate) : "the agreed date";
+
+  return {
+    follow_up: `Hello ${name}, following up regarding your ${lob} requirement. Our next follow-up is scheduled for ${date}. Please let us know if you need any assistance.`,
+    information: `Hello ${name}, to proceed with your ${lob} requirement, please share the pending information or documents at your convenience. Let us know if you need help with the details required.`,
+    quote_shared: `Hello ${name}, we have shared the quotation for your ${lob} requirement. Please review it and let us know if you would like any clarification or changes.`,
+    meeting: `Hello ${name}, this is a reminder about our discussion regarding your ${lob} requirement scheduled for ${date}. Please confirm your availability.`,
+    thank_you: `Hello ${name}, thank you for discussing your ${lob} requirement with us. We appreciate your time and remain available for any questions or assistance.`,
+    general: `Hello ${name}, we are contacting you with an update regarding your ${lob} requirement. Please let us know a convenient time to connect and discuss the next steps.`,
+  };
+}
+
+function buildDefaultAgentSignature(user) {
+  return [
+    "*Warm regards,*",
+    "",
+    `*${user?.name || user?.email || "CRM Team"}*`,
+    "Insurance Advisor",
+    "",
+    "*Bima Headquarter*",
+    "by *InsureDesk IMF Pvt. Ltd.*",
+    "",
+    "Phone: +91 88188 89660",
+    "Email: insuredeskbhopal@gmail.com",
+    "Website: www.bimaheadquarter.com",
+    "",
+    "*Comprehensive Insurance Solutions*",
+    "Motor Insurance • Health Insurance • Life Insurance • Commercial Insurance • Marine Insurance • Policy Renewals • Claims Assistance",
+  ].join("\n");
 }
 
 function buildProfileView(profile) {

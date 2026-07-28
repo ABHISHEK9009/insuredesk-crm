@@ -3,7 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { GET as whatsappWorkerGET } from "../src/app/api/cron/whatsapp-worker/route.js";
 import { calculateDaysLeft, calculateRenewalStatus, parseRenewalDate } from "../src/lib/renewals/dates.js";
-import { normalizeIndianPhone, sanitizeCustomerProfilePayload } from "../src/lib/customer-profiles/utils.js";
+import {
+  normalizeIndianPhone,
+  sanitizeCustomerProfilePayload,
+  sanitizeLeadGenerationPayload,
+} from "../src/lib/customer-profiles/utils.js";
 import { extractBajajAllianzMotor } from "../src/lib/policies/pdf/parsers/bajaj/index.cjs";
 import { getPresetDates } from "../src/lib/records/scoped-data.js";
 
@@ -112,6 +116,18 @@ describe("Production Fixes Audit Test Suite", () => {
   });
 
   describe("Customer Profile Phone Validation", () => {
+    it("keeps portfolio-only DOB out of lead writes", () => {
+      const lead = sanitizeLeadGenerationPayload({
+        customerProfileId: "3ea500c8-727c-44c3-a0ad-fae4cdf6e961",
+        name: "PATEL WAREHOUSE",
+        phone: "9752569201",
+        dob: "1990-01-01",
+      });
+
+      expect(lead).not.toHaveProperty("dob");
+      expect(lead.customerProfileId).toBe("3ea500c8-727c-44c3-a0ad-fae4cdf6e961");
+    });
+
     it("sanitizes alternate phone numbers correctly preserving bad numbers for validator", () => {
       // 1. Valid numbers should normalize to 10 digits
       const resValid = sanitizeCustomerProfilePayload({
@@ -259,5 +275,4 @@ describe("Production Fixes Audit Test Suite", () => {
     });
   });
 });
-
 

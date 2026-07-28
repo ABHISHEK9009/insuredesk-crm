@@ -39,10 +39,12 @@ const ICONS = {
 
 const DEFAULT_METRICS = {
   customerProfiles: 0,
+  birthdayProfiles: 0,
   policyRecords: 0,
   openActivities: 0,
   activeModules: OPERATIONS_MODULES.length,
   latestProfileActivity: "",
+  latestBirthdayActivity: "",
   latestPolicyActivity: "",
 };
 
@@ -73,6 +75,7 @@ export default function OperationsHubPage() {
 
         const summary = payload?.summary || {};
         const latestProfile = summary.latestProfile;
+        const latestBirthday = summary.latestBirthday;
         const latestRecord = summary.latestPolicy;
         const activities = [];
 
@@ -94,10 +97,12 @@ export default function OperationsHubPage() {
 
         setMetrics({
           customerProfiles: summary.customerProfiles || 0,
+          birthdayProfiles: summary.birthdayProfiles || 0,
           policyRecords: summary.policyRecords || 0,
           openActivities: summary.openActivities || 0,
           activeModules: OPERATIONS_MODULES.length,
           latestProfileActivity: formatActivityDate(latestProfile?.updatedAt || latestProfile?.createdAt),
+          latestBirthdayActivity: formatActivityDate(latestBirthday?.updatedAt || latestBirthday?.createdAt),
           latestPolicyActivity: formatActivityDate(latestRecord?.savedAt || latestRecord?.createdAt),
         });
         setRecentActivity(activities);
@@ -250,15 +255,21 @@ function OperationsCard({ module, metrics }) {
 
 function getModuleCount(id, metrics) {
   if (id === "work-center") return metrics.openActivities || 0;
-  if (id === "lead-generation" || id === "lead-management" || id === "birthday-management") return metrics.customerProfiles || 0;
+  if (id === "lead-generation" || id === "lead-management") return metrics.customerProfiles || 0;
+  if (id === "birthday-management") return metrics.birthdayProfiles || 0;
   if (id === "manual-policy-entry") return metrics.policyRecords || 0;
   return 0;
 }
 
 function getLastActivityText(id, count, metrics) {
-  if (id === "lead-generation" || id === "lead-management" || id === "birthday-management") {
+  if (id === "lead-generation" || id === "lead-management") {
     return count > 0 && metrics.latestProfileActivity
       ? `Last activity ${metrics.latestProfileActivity}`
+      : "No recent activity";
+  }
+  if (id === "birthday-management") {
+    return count > 0 && metrics.latestBirthdayActivity
+      ? `Last activity ${metrics.latestBirthdayActivity}`
       : "No recent activity";
   }
   if (id === "manual-policy-entry") {

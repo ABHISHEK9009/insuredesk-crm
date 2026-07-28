@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { verifyJWT } from "@/lib/auth";
-import { canAccessCustomerProfile, getCustomerProfileScopedFilter } from "@/lib/auth/rbac";
+import { canAccessCustomerProfile, getCustomerProfileScopedFilter, getTenantFilter } from "@/lib/auth/rbac";
 import { logAudit, getAuditMetadata } from "@/lib/audit";
 import {
   normalizeIndianPhone,
-  sanitizeCustomerProfilePayload,
+  sanitizeLeadGenerationPayload,
   serializeCustomerProfile,
 } from "@/lib/customer-profiles/utils";
 import { getUserFacingErrorMessage } from "@/lib/errors/user-facing";
@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
     }
 
     const { id } = await params;
-    const profile = await prisma.customerProfile.findFirst({
+    const profile = await prisma.leadGeneration.findFirst({
       where: {
         id,
         ...getCustomerProfileScopedFilter(session),
@@ -56,7 +56,7 @@ export async function PUT(request, { params }) {
     }
 
     const { id } = await params;
-    const existing = await prisma.customerProfile.findFirst({
+    const existing = await prisma.leadGeneration.findFirst({
       where: {
         id,
         ...getCustomerProfileScopedFilter(session),
@@ -71,7 +71,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    const data = sanitizeCustomerProfilePayload(await request.json());
+    const data = sanitizeLeadGenerationPayload(await request.json());
     const actorLabel = session.name || session.email || "";
 
     const actorId = session.userId || session.id;
@@ -87,8 +87,21 @@ export async function PUT(request, { params }) {
         { status: 400 },
       );
     }
+    if (data.customerProfileId) {
+      const linkedCustomer = await prisma.customerProfile.findFirst({
+        where: {
+          id: data.customerProfileId,
+          ...getTenantFilter(session, "read"),
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!linkedCustomer) {
+        return NextResponse.json({ error: "Selected customer portfolio was not found." }, { status: 400 });
+      }
+    }
 
-    const duplicate = await prisma.customerProfile.findFirst({
+    const duplicate = await prisma.leadGeneration.findFirst({
       where: {
         deletedAt: null,
         phone: data.phone,
@@ -115,13 +128,17 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const profile = await prisma.customerProfile.update({
+    const { customerProfileId, ...leadData } = data;
+    const profile = await prisma.leadGeneration.update({
       where: { id },
       data: {
-        ...data,
+        ...leadData,
         name: data.name || "Unnamed Customer",
         assignedTo: data.assignedTo || existing.assignedTo || actorLabel,
-        updatedById: actorId,
+        updatedBy: { connect: { id: actorId } },
+        customerProfile: customerProfileId
+          ? { connect: { id: customerProfileId } }
+          : { disconnect: true },
       },
       include: {
         createdBy: { select: { name: true, email: true } },
@@ -131,8 +148,8 @@ export async function PUT(request, { params }) {
 
     const { ipAddress, userAgent } = getAuditMetadata(request);
     await logAudit({
-      action: "CUSTOMER_PROFILE_UPDATE",
-      entityType: "CustomerProfile",
+      action: "LEAD_UPDATE",
+      entityType: "LeadGeneration",
       entityId: profile.id,
       severity: "INFO",
       source: "API",
@@ -162,7 +179,7 @@ export async function DELETE(request, { params }) {
     }
 
     const { id } = await params;
-    const existing = await prisma.customerProfile.findFirst({
+    const existing = await prisma.leadGeneration.findFirst({
       where: {
         id,
         ...getCustomerProfileScopedFilter(session),
@@ -174,7 +191,7 @@ export async function DELETE(request, { params }) {
     }
 
     const actorId = session.userId || session.id;
-    const profile = await prisma.customerProfile.update({
+    const profile = await prisma.leadGeneration.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -188,8 +205,8 @@ export async function DELETE(request, { params }) {
 
     const { ipAddress, userAgent } = getAuditMetadata(request);
     await logAudit({
-      action: "CUSTOMER_PROFILE_DELETE",
-      entityType: "CustomerProfile",
+      action: "LEAD_DELETE",
+      entityType: "LeadGeneration",
       entityId: profile.id,
       severity: "WARNING",
       source: "API",

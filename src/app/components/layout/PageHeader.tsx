@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function PageHeader({
   title,
   subtitle,
+  actions,
   showRecordSaveActions,
   isSaving,
   isUploading,
@@ -19,26 +20,31 @@ export default function PageHeader({
         <h2>{title}</h2>
         <p>{subtitle}</p>
       </div>
-      {showRecordSaveActions ? (
+      {actions || showRecordSaveActions ? (
         <div className="title-actions">
-          <button type="button" onClick={() => router.push("/upload-history")}>
-            <History size={18} /> View Upload History
-          </button>
-          <button
-            className="secondary-action"
-            type="button"
-            onClick={onSaveRecord}
-            disabled={isSaving || isUploading}
-          >
-            {isUploading ? (
-              <LoaderCircle size={18} className="spin" />
-            ) : isSaving ? (
-              <LoaderCircle size={18} className="spin" />
-            ) : (
-              <Upload size={18} />
-            )}
-            {isUploading ? "Extracting PDFs" : "Save Record"}
-          </button>
+          {actions}
+          {showRecordSaveActions ? (
+            <>
+              <button type="button" onClick={() => router.push("/upload-history")}>
+                <History size={18} /> View Upload History
+              </button>
+              <button
+                className="secondary-action"
+                type="button"
+                onClick={onSaveRecord}
+                disabled={isSaving || isUploading}
+              >
+                {isUploading ? (
+                  <LoaderCircle size={18} className="spin" />
+                ) : isSaving ? (
+                  <LoaderCircle size={18} className="spin" />
+                ) : (
+                  <Upload size={18} />
+                )}
+                {isUploading ? "Extracting PDFs" : "Save Record"}
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
     </section>

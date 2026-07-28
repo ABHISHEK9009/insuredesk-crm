@@ -4,11 +4,12 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, CheckCircle, Search, UserPlus, X } from "lucide-react";
+import { AlertTriangle, BarChart3, CheckCircle, Eye, MoreVertical, Search, Trash2, UserPlus, X } from "lucide-react";
 import PageHeader from "@/app/components/layout/PageHeader";
 import { normalizeIndianPhone, formatPhoneForWhatsapp } from "@/lib/customer-profiles/utils";
 
 const EMPTY_FORM = {
+  customerProfileId: "",
   name: "",
   phone: "",
   alternatePhone: "",
@@ -1048,6 +1049,7 @@ export default function CustomerProfilingPage() {
       assignedTo: record.assignedTo || currentUser?.name || "",
       referenceSource: "Policy Record",
       sourcePolicyId: record.id || "",
+      customerProfileId: record.customerProfileId || "",
       sourcePolicyNumber: record.policyNumber || "",
       sourcePolicyType: record.policyType || "",
       sourceCompany: record.insuranceCompany || "",
@@ -1660,6 +1662,17 @@ export default function CustomerProfilingPage() {
         eyebrow="Manual Entry"
         title="Lead Generation"
         subtitle="Create cross-sell and follow-up profiles before converting them into policy work."
+        actions={
+          currentUser?.role === "SUPER_ADMIN" ? (
+            <button
+              className="secondary-action"
+              type="button"
+              onClick={() => router.push("/dashboard/reports/lead-generation")}
+            >
+              <BarChart3 size={18} /> View Report
+            </button>
+          ) : null
+        }
       />
 
       {alert ? (
@@ -2503,14 +2516,34 @@ function CounterCard({ label, value }) {
 }
 
 function ProfileListingTable({ profiles, onEdit, onDelete, canDelete = false }) {
+  const [openMenuId, setOpenMenuId] = useState("");
+
+  useEffect(() => {
+    if (!openMenuId) return undefined;
+
+    const closeMenu = (event) => {
+      if (!event.target.closest("[data-profile-action-menu]")) setOpenMenuId("");
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOpenMenuId("");
+    };
+
+    document.addEventListener("pointerdown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openMenuId]);
+
   return (
     <div className="existing-customer-table">
-      <table>
+      <table className="profile-listing-table">
         <thead>
           <tr>
             <th>Name</th>
             <th>Phone</th>
-            <th>Customer Type</th>
+            <th>Last Updated</th>
             <th>Selected LOBs</th>
             <th>Status</th>
             <th>Created By</th>
@@ -2522,28 +2555,54 @@ function ProfileListingTable({ profiles, onEdit, onDelete, canDelete = false }) 
         <tbody>
           {profiles.length ? (
             profiles.map((profile) => (
-              <tr key={profile.id}>
+              <tr key={profile.id} className={openMenuId === profile.id ? "profile-row-menu-open" : ""}>
                 <td>{profile.name || "-"}</td>
                 <td>{profile.phone || "-"}</td>
-                <td>{profile.customerType || "-"}</td>
+                <td>{formatDateTime(profile.updatedAt) || "-"}</td>
                 <td>{(profile.selectedLOBs || []).join(", ") || "-"}</td>
-                <td>{profile.status || "-"}</td>
+                <td>
+                  <span className={`lead-status-badge ${getLeadStatusClass(profile.status)}`}>
+                    {profile.status || "Unknown"}
+                  </span>
+                </td>
                 <td>{profile.createdBy || profile.assignedTo || "-"}</td>
                 <td>{formatDate(profile.nextFollowUpDate || profile.followUpDate)}</td>
                 <td>{profile.convertedToCustomer ? "Yes" : "No"}</td>
-                <td>
-                  <div className="profile-table-actions">
-                    <button type="button" onClick={() => onEdit(profile)}>
-                      View More
+                <td className="profile-actions-cell">
+                  <div className="profile-action-menu" data-profile-action-menu>
+                    <button
+                      type="button"
+                      className="profile-action-trigger"
+                      onClick={() => setOpenMenuId(openMenuId === profile.id ? "" : profile.id)}
+                      aria-label={`Open actions for ${profile.name || profile.phone || "lead"}`}
+                      aria-expanded={openMenuId === profile.id}
+                    >
+                      <MoreVertical size={18} />
                     </button>
-                    {canDelete ? (
-                      <button
-                        type="button"
-                        className="danger-action"
-                        onClick={() => onDelete(profile)}
-                      >
-                        Delete
-                      </button>
+                    {openMenuId === profile.id ? (
+                      <div className="profile-action-popover">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuId("");
+                            onEdit(profile);
+                          }}
+                        >
+                          <Eye size={15} /> View More
+                        </button>
+                        {canDelete ? (
+                          <button
+                            type="button"
+                            className="danger-action"
+                            onClick={() => {
+                              setOpenMenuId("");
+                              onDelete(profile);
+                            }}
+                          >
+                            <Trash2 size={15} /> Delete
+                          </button>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                 </td>
@@ -2567,6 +2626,17 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("en-IN");
+}
+
+function getLeadStatusClass(status) {
+  return {
+    "New Lead": "is-new",
+    "Follow-up Required": "is-follow-up",
+    Interested: "is-interested",
+    "Not Interested": "is-not-interested",
+    Converted: "is-converted",
+    Lost: "is-lost",
+  }[status] || "is-unknown";
 }
 
 function formatDateTime(value) {

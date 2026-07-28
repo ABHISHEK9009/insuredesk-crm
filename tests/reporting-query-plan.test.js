@@ -9,7 +9,7 @@ const { prismaMock, sessionMock } = vi.hoisted(() => ({
     policyRecord: { findMany: vi.fn(), count: vi.fn() },
     claim: { findMany: vi.fn(), count: vi.fn() },
     endorsement: { findMany: vi.fn(), count: vi.fn() },
-    customerProfile: { findMany: vi.fn(), count: vi.fn() },
+    leadGeneration: { findMany: vi.fn(), count: vi.fn() },
     uploadedFile: { findMany: vi.fn(), count: vi.fn() },
     user: { findMany: vi.fn() },
     auditLog: { findMany: vi.fn() },
@@ -44,7 +44,7 @@ describe("business intelligence category query plan", () => {
     Object.values(prismaMock).forEach((model) => {
       Object.values(model).forEach((method) => method.mockResolvedValue([]));
     });
-    for (const model of ["policyRecord", "claim", "endorsement", "customerProfile", "uploadedFile"]) {
+    for (const model of ["policyRecord", "claim", "endorsement", "leadGeneration", "uploadedFile"]) {
       prismaMock[model].count.mockResolvedValue(0);
     }
   });
@@ -122,13 +122,13 @@ describe("business intelligence category query plan", () => {
     expect(prismaMock.claim.count).toHaveBeenCalledWith({
       where: expect.objectContaining({ organizationId: "org-1", deletedAt: null }),
     });
-    for (const model of ["policyRecord", "endorsement", "customerProfile", "uploadedFile"]) {
+    for (const model of ["policyRecord", "endorsement", "leadGeneration", "uploadedFile"]) {
       expect(prismaMock[model].count).not.toHaveBeenCalled();
     }
     expect(prismaMock.auditLog.findMany).not.toHaveBeenCalled();
     expect(prismaMock.policyRecord.findMany).not.toHaveBeenCalled();
     expect(prismaMock.endorsement.findMany).not.toHaveBeenCalled();
-    expect(prismaMock.customerProfile.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.leadGeneration.findMany).not.toHaveBeenCalled();
     expect(prismaMock.uploadedFile.findMany).not.toHaveBeenCalled();
     expect(prismaMock.claim.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -149,11 +149,11 @@ describe("business intelligence category query plan", () => {
     expect(prismaMock.policyRecord.count).toHaveBeenCalledTimes(1);
     expect(prismaMock.claim.findMany).not.toHaveBeenCalled();
     expect(prismaMock.endorsement.findMany).not.toHaveBeenCalled();
-    expect(prismaMock.customerProfile.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.leadGeneration.findMany).not.toHaveBeenCalled();
     expect(prismaMock.uploadedFile.findMany).not.toHaveBeenCalled();
     expect(prismaMock.claim.count).not.toHaveBeenCalled();
     expect(prismaMock.endorsement.count).not.toHaveBeenCalled();
-    expect(prismaMock.customerProfile.count).not.toHaveBeenCalled();
+    expect(prismaMock.leadGeneration.count).not.toHaveBeenCalled();
     expect(prismaMock.uploadedFile.count).not.toHaveBeenCalled();
     expect(data.report.actions.map(([label]) => label)).toEqual([
       "Renewals Due Today",
@@ -180,7 +180,7 @@ describe("business intelligence category query plan", () => {
     const data = await loadReportingCenterData({ category: "service-requests" });
 
     expect(allCalls()).toBe(1);
-    for (const model of ["policyRecord", "claim", "endorsement", "customerProfile", "uploadedFile"]) {
+    for (const model of ["policyRecord", "claim", "endorsement", "leadGeneration", "uploadedFile"]) {
       expect(prismaMock[model].findMany).not.toHaveBeenCalled();
       expect(prismaMock[model].count).not.toHaveBeenCalled();
     }
