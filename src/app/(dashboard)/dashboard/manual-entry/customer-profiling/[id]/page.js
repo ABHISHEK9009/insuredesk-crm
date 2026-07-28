@@ -16,6 +16,7 @@ import {
   X,
   LayoutGrid,
   MoreVertical,
+  Plus,
   User,
   MapPin,
   Shield,
@@ -132,6 +133,8 @@ export default function CustomerProfileDetailPage({ params }) {
   const [profileId, setProfileId] = useState("");
   const [profile, setProfile] = useState(null);
   const [remarkModalOpen, setRemarkModalOpen] = useState(false);
+  const [lobModalOpen, setLobModalOpen] = useState(false);
+  const [lobForm, setLobForm] = useState({ policyInterests: [], policyDetails: {} });
   const [remarkForm, setRemarkForm] = useState({
     status: "New Lead",
     outcome: "Call Back Later",
@@ -221,7 +224,10 @@ export default function CustomerProfileDetailPage({ params }) {
           item.createdBy,
           item.title,
           item.remark,
+          item.outcome,
+          item.leadStatus,
           item.policyInterest,
+          item.requirementDetails,
           item.policyLabel,
           item.statusBadge,
         ]
@@ -310,7 +316,7 @@ export default function CustomerProfileDetailPage({ params }) {
 
   function openRemarkModal(policy) {
     const policyInterest = normalizePolicyInterest(
-      policy?.lob || policy?.policyType || profile.selectedLOBs?.[0] || profile.sourcePolicyType,
+      policy?.lob || policy?.policyType || profile.selectedLOBs?.[0],
     );
     setRemarkForm({
       status: profile.status || "New Lead",
@@ -325,15 +331,20 @@ export default function CustomerProfileDetailPage({ params }) {
     setRemarkModalOpen(true);
   }
 
-  function toggleRemarkPolicyInterest(lob) {
-    setRemarkForm((current) => {
+  function openLobModal() {
+    setLobForm({ policyInterests: [], policyDetails: {} });
+    setLobModalOpen(true);
+  }
+
+  function toggleNewLob(lob) {
+    setLobForm((current) => {
       const interests = current.policyInterests.includes(lob)
         ? current.policyInterests.filter((t) => t !== lob)
         : [...current.policyInterests, lob];
 
       const details = { ...(current.policyDetails || {}) };
       if (!details[lob]) {
-        details[lob] = profile?.lobDetails?.[lob] || {};
+        details[lob] = {};
       }
 
       return {
@@ -344,8 +355,8 @@ export default function CustomerProfileDetailPage({ params }) {
     });
   }
 
-  function updateRemarkPolicyDetail(lob, key, value) {
-    setRemarkForm((current) => ({
+  function updateNewLobDetail(lob, key, value) {
+    setLobForm((current) => ({
       ...current,
       policyDetails: {
         ...(current.policyDetails || {}),
@@ -357,6 +368,39 @@ export default function CustomerProfileDetailPage({ params }) {
     }));
   }
 
+  function saveLobs() {
+    if (!lobForm.policyInterests.length) {
+      setAlert({ type: "error", message: "Select at least one new LOB." });
+      return;
+    }
+
+    startTransition(async () => {
+      const lobDetails = { ...(profile.lobDetails || {}) };
+      lobForm.policyInterests.forEach((lob) => {
+        lobDetails[lob] = lobForm.policyDetails[lob] || {};
+      });
+
+      const response = await fetch(`/api/customer-profiles/${profile.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...profile,
+          selectedLOBs: unique([...(profile.selectedLOBs || []), ...lobForm.policyInterests]),
+          lobDetails,
+        }),
+      });
+      const updated = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setAlert({ type: "error", message: updated.error || "LOB could not be added." });
+        return;
+      }
+
+      setProfile(updated);
+      setLobModalOpen(false);
+      setAlert({ type: "success", message: "LOB added successfully." });
+    });
+  }
+
   async function saveRemark({ convert = false } = {}) {
     const text = remarkForm.remark.trim();
     if (!text) {
@@ -364,12 +408,11 @@ export default function CustomerProfileDetailPage({ params }) {
       return null;
     }
     if (!remarkForm.policyInterests || remarkForm.policyInterests.length === 0) {
-      setAlert({ type: "error", message: "Select interested policy type." });
+      setAlert({ type: "error", message: "Add a LOB before saving a follow-up remark." });
       return null;
     }
 
     const now = new Date().toISOString();
-    const selectedLOBs = unique([...(profile.selectedLOBs || []), ...remarkForm.policyInterests]);
     const entry = {
       id: `${Date.now()}`,
       remark: text,
@@ -385,21 +428,16 @@ export default function CustomerProfileDetailPage({ params }) {
       createdBy: profile.createdBy || profile.assignedTo || "Agent",
     };
 
-    const updatedLobDetails = { ...(profile.lobDetails || {}) };
-    remarkForm.policyInterests.forEach((type) => {
-      updatedLobDetails[type] = remarkForm.policyDetails[type] || {};
-    });
-
     const payload = {
       ...profile,
-      selectedLOBs,
+      selectedLOBs: profile.selectedLOBs || [],
       status: convert ? "Converted" : remarkForm.status,
       followUpOutcome: convert ? "Converted" : remarkForm.outcome,
       followUpRemark: text,
       lastFollowUpDate: now,
       nextFollowUpDate: remarkForm.nextFollowUpDate || null,
       lobDetails: {
-        ...updatedLobDetails,
+        ...(profile.lobDetails || {}),
         followUps: [
           entry,
           ...(Array.isArray(profile.lobDetails?.followUps) ? profile.lobDetails.followUps : []),
@@ -1019,7 +1057,12 @@ export default function CustomerProfileDetailPage({ params }) {
           </section>
 
           <section className="customer-portfolio-card">
-            <h2>Lead Follow-up Details</h2>
+            <div className="lead-detail-section-head">
+              <h2>Lead Follow-up Details</h2>
+              <button type="button" className="lead-add-lob-button" onClick={openLobModal}>
+                <Plus size={16} /> Add LOB
+              </button>
+            </div>
             <div className="customer-portfolio-table-wrap">
               <table className="customer-portfolio-table">
                 <thead>
@@ -1188,17 +1231,41 @@ export default function CustomerProfileDetailPage({ params }) {
                               <span>{formatDateTime(item.createdAt)}</span>
                             </div>
                             <div className="customer-portfolio-timeline-body">
-                              {item.policyLabel ? <small>{item.policyLabel}</small> : null}
-                              <p>{item.remark}</p>
-                              {item.nextFollowUpDate ? (
-                                <em>
-                                  Next Follow-Up scheduled for: {formatDate(item.nextFollowUpDate)} via{" "}
-                                  {item.mode || "Call"}
-                                </em>
+                              {item.policyInterest || item.outcome || item.leadStatus || item.nextFollowUpDate ? (
+                                <section className="lead-timeline-details-section">
+                                  <span className="lead-timeline-section-label">Lead &amp; LOB Details</span>
+                                  <div className="lead-timeline-details-grid">
+                                    {item.policyInterest ? (
+                                      <div><span>Interested LOB</span><strong>{item.policyInterest}</strong></div>
+                                    ) : null}
+                                    {item.outcome ? (
+                                      <div><span>Outcome</span><strong>{item.outcome}</strong></div>
+                                    ) : null}
+                                    {item.leadStatus ? (
+                                      <div><span>Lead Status</span><strong>{item.leadStatus}</strong></div>
+                                    ) : null}
+                                    {item.nextFollowUpDate ? (
+                                      <div>
+                                        <span>Next Follow-up</span>
+                                        <strong>{formatDate(item.nextFollowUpDate)}</strong>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                  {item.requirementDetails ? (
+                                    <p className="lead-timeline-requirement">{item.requirementDetails}</p>
+                                  ) : null}
+                                  {item.nextFollowUpDate ? (
+                                    <em>Scheduled via {item.mode || "Lead Generation"}</em>
+                                  ) : null}
+                                  {item.statusBadge ? (
+                                    <b className={`tone-${item.tone}`}>{item.statusBadge}</b>
+                                  ) : null}
+                                </section>
                               ) : null}
-                              {item.statusBadge ? (
-                                <b className={`tone-${item.tone}`}>{item.statusBadge}</b>
-                              ) : null}
+                              <section className="lead-timeline-remark-section">
+                                <span className="lead-timeline-section-label">Remark</span>
+                                <p>{item.remark || "-"}</p>
+                              </section>
                             </div>
                           </div>
                         </div>
@@ -1234,152 +1301,90 @@ export default function CustomerProfileDetailPage({ params }) {
               </div>
 
               <div className="customer-profile-remark-body">
-                <div className="customer-profile-remark-grid">
-                  <label>
-                    <span>Status</span>
-                    <select
-                      value={remarkForm.status}
+                <section className="lead-lob-client-summary follow-up-client-summary">
+                  <div>
+                    <span>Client</span>
+                    <strong>{profile.name || "-"}</strong>
+                  </div>
+                  <div>
+                    <span>Phone</span>
+                    <strong>{profile.phone || "-"}</strong>
+                  </div>
+                  <div>
+                    <span>Follow-up LOB</span>
+                    <strong>{remarkForm.policyInterests.join(", ") || "-"}</strong>
+                  </div>
+                  <div>
+                    <span>Assigned Agent</span>
+                    <strong>{profile.createdBy || profile.assignedTo || "-"}</strong>
+                  </div>
+                </section>
+
+                <section className="follow-up-form-section">
+                  <div className="follow-up-form-section-head">
+                    <strong>Follow-up Details</strong>
+                    <span>Update the result and schedule the next action.</span>
+                  </div>
+                  <div className="customer-profile-remark-grid">
+                    <label>
+                      <span>Status</span>
+                      <select
+                        value={remarkForm.status}
+                        onChange={(event) =>
+                          setRemarkForm((current) => ({ ...current, status: event.target.value }))
+                        }
+                      >
+                        {PROFILE_STATUS.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Outcome</span>
+                      <select
+                        value={remarkForm.outcome}
+                        onChange={(event) =>
+                          setRemarkForm((current) => ({ ...current, outcome: event.target.value }))
+                        }
+                      >
+                        {FOLLOW_UP_OUTCOMES.map((outcome) => (
+                          <option key={outcome} value={outcome}>
+                            {outcome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Next Follow-up Date</span>
+                      <input
+                        type="date"
+                        value={remarkForm.nextFollowUpDate}
+                        onChange={(event) =>
+                          setRemarkForm((current) => ({ ...current, nextFollowUpDate: event.target.value }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="follow-up-form-section follow-up-remark-section">
+                  <div className="follow-up-form-section-head">
+                    <strong>Conversation Remark</strong>
+                    <span>Record the key discussion, requirement, or commitment.</span>
+                  </div>
+                  <label className="customer-profile-remark-textarea">
+                    <span>Remark Text *</span>
+                    <textarea
+                      value={remarkForm.remark}
                       onChange={(event) =>
-                        setRemarkForm((current) => ({ ...current, status: event.target.value }))
+                        setRemarkForm((current) => ({ ...current, remark: event.target.value }))
                       }
-                    >
-                      {PROFILE_STATUS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>Outcome</span>
-                    <select
-                      value={remarkForm.outcome}
-                      onChange={(event) =>
-                        setRemarkForm((current) => ({ ...current, outcome: event.target.value }))
-                      }
-                    >
-                      {FOLLOW_UP_OUTCOMES.map((outcome) => (
-                        <option key={outcome} value={outcome}>
-                          {outcome}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>Next Follow-up Date</span>
-                    <input
-                      type="date"
-                      value={remarkForm.nextFollowUpDate}
-                      onChange={(event) =>
-                        setRemarkForm((current) => ({ ...current, nextFollowUpDate: event.target.value }))
-                      }
+                      placeholder="Enter details of conversation..."
                     />
                   </label>
-                </div>
-
-                {/* Interested Policy Types Multi-Select Checkboxes */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "900",
-                      color: "#0f172a",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Interested Policy Types *
-                  </span>
-                  <div className="remark-checkbox-container">
-                    {LOB_OPTIONS.map((lob) => {
-                      const isChecked = remarkForm.policyInterests.includes(lob);
-                      return (
-                        <label key={lob} className={`remark-checkbox-label ${isChecked ? "checked" : ""}`}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleRemarkPolicyInterest(lob)}
-                            style={{
-                              width: "16px",
-                              height: "16px",
-                              minHeight: "16px",
-                              margin: 0,
-                              cursor: "pointer",
-                              flexShrink: 0,
-                            }}
-                          />
-                          {lob}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Dynamic Policy Details Fields for each selected type */}
-                {remarkForm.policyInterests.map((lob) => {
-                  const fields = LOB_FIELDS[lob] || LOB_FIELDS.Other;
-                  return (
-                    <div
-                      key={lob}
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "16px",
-                        background: "#fafbfc",
-                        marginTop: "12px",
-                      }}
-                    >
-                      <h4
-                        style={{
-                          margin: "0 0 12px 0",
-                          fontSize: "14px",
-                          fontWeight: "800",
-                          color: "#2563eb",
-                        }}
-                      >
-                        {lob} Details
-                      </h4>
-                      <div
-                        className="customer-profile-remark-policy-grid"
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                          gap: "12px",
-                        }}
-                      >
-                        {fields.map(([key, label, type]) => (
-                          <label key={key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                fontWeight: "900",
-                                color: "#0f172a",
-                                textTransform: "uppercase",
-                              }}
-                            >
-                              {label}
-                            </span>
-                            <input
-                              type={type || "text"}
-                              value={remarkForm.policyDetails?.[lob]?.[key] || ""}
-                              onChange={(event) => updateRemarkPolicyDetail(lob, key, event.target.value)}
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <label className="customer-profile-remark-textarea">
-                  <span>Remark Text *</span>
-                  <textarea
-                    value={remarkForm.remark}
-                    onChange={(event) =>
-                      setRemarkForm((current) => ({ ...current, remark: event.target.value }))
-                    }
-                    placeholder="Enter details of conversation..."
-                  />
-                </label>
+                </section>
               </div>
 
               <div className="customer-profile-remark-footer">
@@ -1391,6 +1396,119 @@ export default function CustomerProfileDetailPage({ params }) {
                 </button>
                 <button type="button" className="primary" onClick={submitRemark} disabled={isPending}>
                   {isPending ? "Saving..." : "Save Remark"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {typeof window !== "undefined" &&
+        lobModalOpen &&
+        createPortal(
+          <div
+            className="tb-modal-backdrop customer-profile-remark-backdrop"
+            onClick={() => setLobModalOpen(false)}
+          >
+            <div className="customer-profile-remark-card lead-add-lob-card" onClick={(event) => event.stopPropagation()}>
+              <div className="customer-profile-remark-head">
+                <div>
+                  <h3>Add Interested LOB</h3>
+                  <p>Select a new insurance requirement and capture its details.</p>
+                </div>
+                <button type="button" onClick={() => setLobModalOpen(false)} aria-label="Close">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="customer-profile-remark-body">
+                <section className="lead-lob-client-summary">
+                  <div>
+                    <span>Client</span>
+                    <strong>{profile.name || "-"}</strong>
+                  </div>
+                  <div>
+                    <span>Phone</span>
+                    <strong>{profile.phone || "-"}</strong>
+                  </div>
+                  <div className="lead-lob-count">
+                    <span>Interested LOBs</span>
+                    <strong>{profile.selectedLOBs?.length || 0}</strong>
+                  </div>
+                  <div>
+                    <span>Assigned Agent</span>
+                    <strong>{profile.createdBy || profile.assignedTo || "-"}</strong>
+                  </div>
+                </section>
+
+                <div className="lead-lob-selection-layout">
+                  <section className="lead-current-lobs">
+                    <div>
+                      <span>Current LOBs</span>
+                      <small>Already added</small>
+                    </div>
+                    <div className="lead-current-lob-list">
+                      {profile.selectedLOBs?.length ? (
+                        profile.selectedLOBs.map((lob, index) => (
+                          <span key={lob}>
+                            <b>{index + 1}</b>
+                            {lob}
+                          </span>
+                        ))
+                      ) : (
+                        <p>No LOB added yet.</p>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="lead-available-lobs">
+                    <div>
+                      <span>Add New LOB</span>
+                      <small>Select one or more new requirements</small>
+                    </div>
+                    <div className="remark-checkbox-container">
+                      {LOB_OPTIONS.filter((lob) => !profile.selectedLOBs?.includes(lob)).map((lob) => {
+                        const isChecked = lobForm.policyInterests.includes(lob);
+                        return (
+                          <label key={lob} className={`remark-checkbox-label ${isChecked ? "checked" : ""}`}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleNewLob(lob)}
+                            />
+                            <span>{lob}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
+
+                {lobForm.policyInterests.map((lob) => (
+                  <section key={lob} className="lead-add-lob-details">
+                    <h4>{lob} Details</h4>
+                    <div className="customer-profile-remark-policy-grid">
+                      {(LOB_FIELDS[lob] || LOB_FIELDS.Other).map(([key, label, type]) => (
+                        <label key={key}>
+                          <span>{label}</span>
+                          <input
+                            type={type || "text"}
+                            value={lobForm.policyDetails?.[lob]?.[key] || ""}
+                            onChange={(event) => updateNewLobDetail(lob, key, event.target.value)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              <div className="customer-profile-remark-footer">
+                <button type="button" onClick={() => setLobModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="primary" onClick={saveLobs} disabled={isPending}>
+                  {isPending ? "Saving..." : "Save LOB"}
                 </button>
               </div>
             </div>
@@ -1593,10 +1711,14 @@ function buildProfileView(profile) {
     ...followUps.map((item, index) => ({
       id: item.id || `followup-${index}`,
       title: item.status || item.outcome || "Follow-up",
-      remark: formatTimelineRemark(item),
+      remark: item.rawRemark || item.remark || "-",
       createdAt: item.createdAt,
       createdBy: item.createdBy,
       mode: item.mode,
+      outcome: item.outcome || "",
+      leadStatus: item.status || "",
+      policyInterest: item.policyInterest || "",
+      requirementDetails: formatPolicyDetails(item.policyInterest, item.policyDetails),
       nextFollowUpDate: item.nextFollowUpDate,
       policyLabel: item.policyInterest
         ? `POLICY: ${item.policyInterest}${profile.sourcePolicyNumber ? ` (${profile.sourcePolicyNumber})` : ""}`
@@ -1611,6 +1733,10 @@ function buildProfileView(profile) {
           remark: profile.followUpRemark,
           createdAt: profile.lastFollowUpDate || profile.updatedAt,
           createdBy: profile.createdBy || profile.assignedTo || "Agent",
+          outcome: profile.followUpOutcome || "",
+          leadStatus: profile.status || "",
+          policyInterest: profile.sourcePolicyType || profile.selectedLOBs?.join(", ") || "",
+          nextFollowUpDate: profile.nextFollowUpDate,
           policyLabel: profile.sourcePolicyType
             ? `POLICY: ${profile.sourcePolicyType}${profile.sourcePolicyNumber ? ` (${profile.sourcePolicyNumber})` : ""}`
             : "",
@@ -1625,6 +1751,7 @@ function buildProfileView(profile) {
           remark: profile.remarks,
           createdAt: profile.updatedAt,
           createdBy: profile.createdBy || profile.assignedTo || "Agent",
+          policyInterest: profile.sourcePolicyType || "",
           policyLabel: profile.sourcePolicyType
             ? `POLICY: ${profile.sourcePolicyType}${profile.sourcePolicyNumber ? ` (${profile.sourcePolicyNumber})` : ""}`
             : "",
@@ -1647,18 +1774,6 @@ function buildProfileView(profile) {
     totalSumInsured,
     dueCount,
   };
-}
-
-function formatTimelineRemark(item = {}) {
-  const parts = [];
-  if (item.outcome) parts.push(`Outcome: ${item.outcome}`);
-  if (item.status) parts.push(`Lead Status: ${item.status}`);
-  if (item.policyInterest) parts.push(`Policy Interest: ${item.policyInterest}`);
-  const fields = formatPolicyDetails(item.policyInterest, item.policyDetails);
-  if (fields) parts.push(fields.replace(/\n/g, " "));
-  if (item.nextFollowUpDate) parts.push(`Next Follow-up Date: ${formatDate(item.nextFollowUpDate)}`);
-  if (item.rawRemark || item.remark) parts.push(`Remark: ${item.rawRemark || item.remark}`);
-  return parts.join(" ") || "-";
 }
 
 function formatPolicyDetails(policyType, details = {}) {

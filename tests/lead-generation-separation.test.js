@@ -99,4 +99,53 @@ describe("lead generation data separation", () => {
     expect(leadPage).toContain("Select new requirement");
     expect(leadPage).toContain('selectedLOBs: []');
   });
+
+  it("uses the phone check as a saved-lead filter and opens matching leads in detail view", () => {
+    const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
+
+    expect(leadPage).toContain('function updatePhoneSearch(value)');
+    expect(leadPage).toContain('updateFilter("q", value.trim())');
+    expect(leadPage).toContain('router.push(`/dashboard/manual-entry/lead-generation/${profile.id}`)');
+    expect(leadPage).toContain('const matchedLeadMessage = useMemo');
+    expect(leadPage).toContain('Here is your saved lead.');
+    expect(leadPage).toContain('Created by ${ownerNames.join(", ")}');
+    expect(leadPage).toContain('View More');
+    expect(leadPage).not.toContain('Use Lead');
+  });
+
+  it("keeps lead entries private except for Super Admin", () => {
+    const rbac = read("src/lib/auth/rbac.js");
+    const listRoute = read("src/app/api/customer-profiles/route.js");
+    const detailRoute = read("src/app/api/customer-profiles/[id]/route.js");
+
+    expect(rbac).toContain('if (user.role === "SUPER_ADMIN")');
+    expect(rbac).toContain('createdById: actorId');
+    expect(listRoute).toContain('const ownProfileFilter = getCustomerProfileScopedFilter(user)');
+    expect(detailRoute).toContain('...getCustomerProfileScopedFilter(session)');
+  });
+
+  it("manages LOBs separately from follow-up remarks", () => {
+    const detailPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/[id]/page.js");
+
+    expect(detailPage).toContain('className="lead-add-lob-button"');
+    expect(detailPage).toContain('Add Interested LOB');
+    expect(detailPage).toContain('className="lead-lob-client-summary"');
+    expect(detailPage).toContain('Interested LOBs');
+    expect(detailPage).toContain('profile.selectedLOBs?.length || 0');
+    expect(detailPage).toContain('Assigned Agent');
+    expect(detailPage).toContain('function saveLobs()');
+    expect(detailPage).toContain('selectedLOBs: unique([...(profile.selectedLOBs || []), ...lobForm.policyInterests])');
+    expect(detailPage).toContain('className="lead-lob-selection-layout"');
+    expect(detailPage).toContain('className="lead-current-lob-list"');
+    expect(detailPage).toContain('LOB_OPTIONS.filter((lob) => !profile.selectedLOBs?.includes(lob))');
+    expect(detailPage).toContain('className="lead-lob-client-summary follow-up-client-summary"');
+    expect(detailPage).toContain('className="follow-up-form-section"');
+    expect(detailPage).toContain('Conversation Remark');
+    expect(detailPage).toContain('className="lead-timeline-details-section"');
+    expect(detailPage).toContain('Lead &amp; LOB Details');
+    expect(detailPage).toContain('className="lead-timeline-remark-section"');
+    expect(detailPage).toContain('remark: item.rawRemark || item.remark || "-"');
+    expect(detailPage).not.toContain('Interested Policy Types *');
+    expect(detailPage).not.toContain('toggleRemarkPolicyInterest');
+  });
 });

@@ -64,6 +64,7 @@ export function sanitizeLeadGenerationPayload(payload = {}) {
 export function serializeCustomerProfile(profile) {
   return {
     id: profile.id,
+    createdById: profile.createdById || "",
     customerProfileId: profile.customerProfileId || "",
     name: profile.name,
     phone: profile.phone,

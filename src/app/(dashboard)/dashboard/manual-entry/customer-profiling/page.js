@@ -868,6 +868,33 @@ export default function CustomerProfilingPage() {
   const assignedNames = useMemo(() => {
     return [...searchResults.profiles.map((item) => item.assignedTo || item.createdBy)].filter(Boolean);
   }, [searchResults]);
+  const matchedLeadMessage = useMemo(() => {
+    if (!searchResults.profiles.length) return null;
+
+    const actorId = currentUser?.userId || currentUser?.id || "";
+    const ownerNames = [
+      ...new Set(
+        searchResults.profiles
+          .map((profile) => profile.createdBy || profile.assignedTo)
+          .filter(Boolean),
+      ),
+    ];
+    const ownLeadCount = searchResults.profiles.filter((profile) => profile.createdById === actorId).length;
+
+    if (currentUser?.role !== "SUPER_ADMIN" || ownLeadCount === searchResults.profiles.length) {
+      return {
+        title: searchResults.profiles.length === 1 ? "Here is your saved lead." : "Here are your saved leads.",
+        detail: "Click View More to open the lead and continue its follow-ups or other actions.",
+      };
+    }
+
+    return {
+      title: searchResults.profiles.length === 1 ? "A saved lead was found." : "Saved leads were found.",
+      detail: ownerNames.length
+        ? `Created by ${ownerNames.join(", ")}. Click View More to audit the lead.`
+        : "Click View More to audit the lead.",
+    };
+  }, [searchResults.profiles, currentUser]);
   const currentProducts = useMemo(() => {
     const matchingPolicies = searchResults.policyMatches.filter(
       (record) => normalizeIndianPhone(record.phone) === normalizeIndianPhone(form.phone),
@@ -987,22 +1014,14 @@ export default function CustomerProfilingPage() {
     }));
   }
 
-  function openProfile(profile) {
-    setSelectedExistingId(profile.id);
-    setConvertType("");
-    setForm({
-      ...EMPTY_FORM,
-      ...profile,
-      followUpDate: profile.followUpDate ? new Date(profile.followUpDate).toISOString().slice(0, 10) : "",
-      lastFollowUpDate: profile.lastFollowUpDate
-        ? new Date(profile.lastFollowUpDate).toISOString().slice(0, 10)
-        : "",
-      nextFollowUpDate: profile.nextFollowUpDate
-        ? new Date(profile.nextFollowUpDate).toISOString().slice(0, 10)
-        : "",
-      selectedLOBs: profile.selectedLOBs || [],
-      lobDetails: profile.lobDetails || {},
-    });
+  function viewProfile(profile) {
+    if (!profile?.id) return;
+    router.push(`/dashboard/manual-entry/lead-generation/${profile.id}`);
+  }
+
+  function updatePhoneSearch(value) {
+    updateField("phone", value);
+    updateFilter("q", value.trim());
   }
 
   function usePolicyLead(record) {
@@ -1046,6 +1065,7 @@ export default function CustomerProfilingPage() {
     });
     setOptionalFieldsOpen(false);
     setSearchResults(EMPTY_SEARCH_RESULTS);
+    updateFilter("q", "");
   }
 
   function clearPolicyLead() {
@@ -1219,14 +1239,12 @@ export default function CustomerProfilingPage() {
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
           if (response.status === 409 && payload.profile) {
-            openProfile(payload.profile);
+            viewProfile(payload.profile);
           }
           setAlert({ type: "error", message: payload.error || "Customer profile could not be saved." });
           return;
         }
-        if (selectedExistingId) {
-          openProfile(payload);
-        } else {
+        if (!selectedExistingId) {
           setForm({
             ...EMPTY_FORM,
             assignedTo: currentUser?.name || currentUser?.email || "",
@@ -1715,7 +1733,7 @@ export default function CustomerProfilingPage() {
           </div>
         </div>
         <div className="customer-profile-grid two">
-          <Field label="Phone Number" value={form.phone} onChange={(value) => updateField("phone", value)} />
+          <Field label="Phone Number" value={form.phone} onChange={updatePhoneSearch} />
           <SelectField
             label="Customer Type"
             value={form.customerType}
@@ -1733,14 +1751,18 @@ export default function CustomerProfilingPage() {
                   ? "This phone number is already claimed in Lead Generation."
                   : hasExternalMatches
                     ? "This phone number is being handled by another user."
-                    : "This phone number has matching records."}
+                    : matchedLeadMessage
+                      ? matchedLeadMessage.title
+                      : "This phone number has matching records."}
               </strong>
               <p>
                 {isClaimedByAnotherUser
                   ? "Another user has already added this lead. You cannot view or add it from this page."
                   : hasExternalMatches
                     ? "Check the existing lead before creating another follow-up."
-                    : "Select an existing profile or policy customer to create a lead."}
+                    : matchedLeadMessage
+                      ? matchedLeadMessage.detail
+                      : "Select a policy customer only when you want to create a new lead."}
               </p>
               {!isClaimedByAnotherUser && hasExternalMatches && assignedNames[0] ? (
                 <p>Existing follow-up is being handled by {assignedNames[0]}.</p>
@@ -1761,7 +1783,7 @@ export default function CustomerProfilingPage() {
           <ExistingCustomerTable
             profiles={searchResults.profiles}
             policyMatches={searchResults.policyMatches}
-            onSelectProfile={openProfile}
+            onSelectProfile={viewProfile}
             onSelectPolicy={usePolicyLead}
           />
         ) : null}
@@ -2778,7 +2800,7 @@ function ExistingCustomerTable({ profiles, policyMatches, onSelectProfile, onSel
               <td>{profile.remarks || "-"}</td>
               <td>
                 <button type="button" onClick={() => onSelectProfile(profile)}>
-                  Use Lead
+                  View More
                 </button>
               </td>
             </tr>
