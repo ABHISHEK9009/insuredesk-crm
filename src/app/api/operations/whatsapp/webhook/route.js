@@ -59,14 +59,15 @@ export async function POST(request) {
       const message = data || payload.message;
       const isGroup = message.isGroupMsg || message.chat?.isGroup;
       const groupName = message.chat?.name || message.chat?.contact?.name || message.chat?.subject || "";
-      const bodyText = String(message.body || "").trim();
+      const bodyText = String(message.body || message.caption || message.text || "").trim();
       const senderName = message.sender?.name || message.chat?.contact?.name || "Unknown";
 
-      if (!message.fromMe && isGroup && isRenewalQuoteGroup(groupName)) {
+      if (isGroup && isRenewalQuoteGroup(groupName)) {
         const entry = buildRenewalQuoteEntry({
           groupName,
           senderName,
           body: bodyText,
+          caption: message.caption,
           timestamp: message.messageTimestamp ? new Date(Number(message.messageTimestamp) * 1000) : new Date(),
           sourceMessageId: message.id || message.key?.id || "",
         });

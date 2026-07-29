@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-const RENEWAL_QUOTE_GROUP_PATTERN = /renewal\s*quote/i;
+const RENEWAL_QUOTE_GROUP_PATTERN = /ren(e)?wal\s*quote/i;
 const VEHICLE_NUMBER_PATTERNS = [
   /\b([A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4})\b/i,
   /\b([A-Z]{2}[ -]?[0-9]{1,2}(?:[ -]?[A-Z]{1,3})?[ -]?[0-9]{4})\b/i,
@@ -33,11 +33,11 @@ export function extractVehicleNumber(text = "") {
 export function isRenewalQuoteGroup(groupName = "") {
   const normalized = String(groupName || "").trim().toLowerCase();
   if (!normalized) return false;
-  return RENEWAL_QUOTE_GROUP_PATTERN.test(normalized) || normalized.includes("quote new");
+  return RENEWAL_QUOTE_GROUP_PATTERN.test(normalized) || normalized.includes("quote new") || normalized.includes("renwal");
 }
 
-export function buildRenewalQuoteEntry({ groupName, senderName, body, timestamp, attachmentUrl = "", sourceMessageId = "" } = {}) {
-  const cleanedBody = String(body || "").trim();
+export function buildRenewalQuoteEntry({ groupName, senderName, body, caption, timestamp, attachmentUrl = "", sourceMessageId = "" } = {}) {
+  const cleanedBody = String(body || caption || "").trim();
   const vehicleNumber = extractVehicleNumber(cleanedBody);
 
   if (!vehicleNumber) {
