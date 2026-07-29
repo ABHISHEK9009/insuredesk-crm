@@ -7,6 +7,7 @@ import {
   refreshWhatsAppGroups,
   sendWhatsAppText,
 } from "../src/lib/whatsapp/whatsapp-client.js";
+import { extractVehicleNumber, isRenewalQuoteGroup, buildRenewalQuoteEntry, prepareRenewalQuotePayload } from "../src/lib/whatsapp/renewal-quote-capture.js";
 
 // Mock global fetch for REST API tests
 global.fetch = vi.fn();
@@ -39,6 +40,52 @@ describe("WhatsApp Template Compiler", () => {
     const template = "Hello {{ customerName  }}.";
     const compiled = compileTemplate(template, { customerName: "John" });
     expect(compiled).toBe("Hello John.");
+  });
+});
+
+describe("Renewal quote capture", () => {
+  it("extracts a vehicle number from a typical quote message", () => {
+    const vehicleNumber = extractVehicleNumber("Please find quote for MP04CL3716 from ICICI Lombard");
+    expect(vehicleNumber).toBe("MP04CL3716");
+  });
+
+  it("matches the renewal quote group even with a typo in the group name", () => {
+    expect(isRenewalQuoteGroup("Renwal Quote New")).toBe(true);
+    expect(isRenewalQuoteGroup("Renewal Quote New")).toBe(true);
+    expect(isRenewalQuoteGroup("Some Other Group")).toBe(false);
+  });
+
+  it("builds a quote entry with the extracted vehicle number and message body", () => {
+    const entry = buildRenewalQuoteEntry({
+      groupName: "Renwal Quote New",
+      senderName: "Anand",
+      body: "MP04CL3716\nICICI Lombard",
+      timestamp: new Date("2026-07-29T11:30:00.000Z"),
+    });
+
+    expect(entry).toMatchObject({
+      groupName: "Renwal Quote New",
+      vehicleNumber: "MP04CL3716",
+      senderName: "Anand",
+      messageBody: "MP04CL3716\nICICI Lombard",
+    });
+    expect(entry.vehicleNumber).toBe("MP04CL3716");
+  });
+
+  it("prepares a quote payload for sending with the renewal message", () => {
+    const payload = prepareRenewalQuotePayload({
+      attachmentData: "abc123",
+      attachmentType: "image",
+      attachmentFileName: "quote.jpg",
+      messageBody: "ICICI Lombard quote",
+    });
+
+    expect(payload).toMatchObject({
+      mediaBase64: "abc123",
+      mediaType: "image",
+      filename: "quote.jpg",
+      caption: "ICICI Lombard quote",
+    });
   });
 });
 

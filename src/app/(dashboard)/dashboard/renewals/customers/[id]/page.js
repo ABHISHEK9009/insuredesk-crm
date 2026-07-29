@@ -220,6 +220,9 @@ export default function CustomerProfilePage(props) {
   const [whatsappContactDetails, setWhatsAppContactDetails] = useState(null);
   const [whatsappRecipientType, setWhatsAppRecipientType] = useState("individual");
   const [whatsappGroupId, setWhatsAppGroupId] = useState("");
+  const [renewalQuotes, setRenewalQuotes] = useState([]);
+  const [renewalQuotesLoading, setRenewalQuotesLoading] = useState(false);
+  const [selectedRenewalQuoteIds, setSelectedRenewalQuoteIds] = useState([]);
 
   const [teamMembers, setTeamMembers] = useState([]);
   const [portfolioOptions, setPortfolioOptions] = useState([]);
@@ -725,6 +728,28 @@ export default function CustomerProfilePage(props) {
   };
 
   // WhatsApp Combined Message
+  const fetchRenewalQuotes = async (policy = null) => {
+    const vehicleNumber = String(policy?.vehicleNumber || policy?.registrationNumber || "").trim();
+    if (!vehicleNumber) {
+      setRenewalQuotes([]);
+      return;
+    }
+
+    setRenewalQuotesLoading(true);
+    try {
+      const res = await fetch(`/api/operations/whatsapp/quotes?vehicleNumber=${encodeURIComponent(vehicleNumber)}`);
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || "Failed to load renewal quotes");
+      setRenewalQuotes(Array.isArray(payload.quotes) ? payload.quotes : []);
+      setSelectedRenewalQuoteIds([]);
+    } catch (error) {
+      console.error("Failed to load renewal quotes", error);
+      setRenewalQuotes([]);
+    } finally {
+      setRenewalQuotesLoading(false);
+    }
+  };
+
   const handleWhatsApp = async (policy = null) => {
     const cleanPhone = profile?.phone ? String(profile.phone).replace(/[^0-9]/g, "") : "";
     if (!policy && !profile?.id && (!cleanPhone || cleanPhone.length < 10)) {
@@ -765,6 +790,7 @@ export default function CustomerProfilePage(props) {
         setEditedWhatsAppMessage(data.templates[data.defaultTemplate]);
         setWhatsAppRecipientGroups(data.recipientGroups || []);
         setWhatsAppContactDetails(data.contactDetails || null);
+        await fetchRenewalQuotes(policy || null);
         setWhatsAppPreviewOpen(true);
       } else {
         window.alert(data.error || "Failed to load WhatsApp template.");
@@ -787,6 +813,12 @@ export default function CustomerProfilePage(props) {
     }
   };
 
+  const toggleRenewalQuoteSelection = (quoteId) => {
+    setSelectedRenewalQuoteIds((prev) => (
+      prev.includes(quoteId) ? prev.filter((item) => item !== quoteId) : [...prev, quoteId]
+    ));
+  };
+
   const handleSendWhatsApp = async () => {
     if (!editedWhatsAppMessage) return;
     const isGroupRecipient = whatsappRecipientType === "group";
@@ -800,6 +832,14 @@ export default function CustomerProfilePage(props) {
 
     try {
       const groupPolicyIds = [...new Set(whatsappRecipientGroups.flatMap((group) => group.policyIds || []))];
+      const selectedQuotes = renewalQuotes.filter((quote) => selectedRenewalQuoteIds.includes(quote.id));
+      const quoteAttachments = selectedQuotes.map((quote) => ({
+        attachmentData: quote.attachmentData || "",
+        attachmentUrl: quote.attachmentUrl || "",
+        attachmentFileName: quote.attachmentFileName || quote.fileName || "",
+        attachmentType: quote.attachmentType || (String(quote.attachmentUrl || "").match(/\.(pdf)$/i) ? "document" : "image"),
+        messageBody: quote.messageBody || "",
+      }));
       const sends = isGroupRecipient
         ? [{ phone: whatsappGroupId, message: editedWhatsAppMessage, policyIds: groupPolicyIds.length ? groupPolicyIds : (whatsappPolicyId ? [whatsappPolicyId] : []) }]
         : whatsappRecipientGroups.length > 1
@@ -814,7 +854,7 @@ export default function CustomerProfilePage(props) {
         const res = await fetch("/api/operations/whatsapp/test-message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: send.phone, message: send.message }),
+          body: JSON.stringify({ phone: send.phone, message: send.message, attachments: quoteAttachments }),
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || "Unknown error");
@@ -2878,6 +2918,49 @@ export default function CustomerProfilePage(props) {
                           value={editedWhatsAppMessage}
                           onChange={(e) => setEditedWhatsAppMessage(e.target.value)}
                         />
+                      </div>
+                      <div style={{ marginTop: "12px", border: "1px solid var(--rn-border)", borderRadius: "10px", padding: "12px", background: "#f8fafc" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                          <div>
+                            <label className="customer-meta-label">Renewal Quotes (Auto Detected)</label>
+                            <p style={{ marginTop: "2px", fontSize: "12px", color: "var(--rn-text-muted)" }}>
+                              Quotes captured from the Renewal Quote New group for this vehicle.
+                            </p>
+                          </div>
+                          {renewalQuotesLoading ? <span className="rn-badge rn-badge-neutral">Searching…</span> : null}
+                        </div>
+                        {renewalQuotes.length === 0 ? (
+                          <div style={{ marginTop: "8px", padding: "10px", borderRadius: "8px", background: "#fff", color: "var(--rn-text-muted)", fontSize: "12px" }}>
+                            No matching quote found for this vehicle yet.
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: "8px", display: "grid", gap: "8px" }}>
+                            {renewalQuotes.map((quote) => (
+                              <div key={quote.id} style={{ border: "1px solid #dbeafe", borderRadius: "8px", background: "#fff", padding: "10px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
+                                  <div>
+                                    <div style={{ fontSize: "12px", fontWeight: 700 }}>{quote.vehicleNumber}</div>
+                                    <div style={{ fontSize: "11px", color: "var(--rn-text-muted)" }}>{quote.groupName}</div>
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <span className="rn-badge rn-badge-active">Matched</span>
+                                    <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--rn-text-muted)", cursor: "pointer" }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedRenewalQuoteIds.includes(quote.id)}
+                                        onChange={() => toggleRenewalQuoteSelection(quote.id)}
+                                      />
+                                      Send
+                                    </label>
+                                  </div>
+                                </div>
+                                <div style={{ marginTop: "6px", fontSize: "12px", color: "var(--rn-text-muted)", whiteSpace: "pre-wrap" }}>
+                                  {quote.messageBody}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </>
                   )}

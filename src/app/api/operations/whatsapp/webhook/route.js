@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
+import { isRenewalQuoteGroup, buildRenewalQuoteEntry, storeRenewalQuoteEntry } from "@/lib/whatsapp/renewal-quote-capture";
 
 export const runtime = "nodejs";
 
@@ -57,12 +58,28 @@ export async function POST(request) {
     } else if (event === "message" || payload.type === "message") {
       const message = data || payload.message;
       const isGroup = message.isGroupMsg || message.chat?.isGroup;
+      const groupName = message.chat?.name || message.chat?.contact?.name || message.chat?.subject || "";
+      const bodyText = String(message.body || "").trim();
+      const senderName = message.sender?.name || message.chat?.contact?.name || "Unknown";
+
+      if (!message.fromMe && isGroup && isRenewalQuoteGroup(groupName)) {
+        const entry = buildRenewalQuoteEntry({
+          groupName,
+          senderName,
+          body: bodyText,
+          timestamp: message.messageTimestamp ? new Date(Number(message.messageTimestamp) * 1000) : new Date(),
+          sourceMessageId: message.id || message.key?.id || "",
+        });
+
+        if (entry) {
+          await storeRenewalQuoteEntry(entry);
+          console.log(`Stored renewal quote for ${entry.vehicleNumber} from group ${groupName}`);
+        }
+      }
       
       // We only care about direct incoming replies from customers
       if (!message.fromMe && !isGroup) {
         const fromNumber = message.from ? message.from.split("@")[0] : "";
-        const bodyText = message.body || "";
-        const senderName = message.sender?.name || message.chat?.contact?.name || "Customer";
 
         console.log(`Incoming customer WhatsApp message from ${fromNumber} (${senderName}): ${bodyText}`);
 
