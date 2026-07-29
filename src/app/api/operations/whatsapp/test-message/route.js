@@ -23,10 +23,21 @@ function buildDefaultAgentSignature(session) {
   ].join("\n");
 }
 
+function hasExistingSignature(message) {
+  const text = String(message || "").toLowerCase();
+  return [
+    "*comprehensive insurance solutions*",
+    "team bimaheadquarter",
+    "bima headquarter",
+    "insuredesk imf",
+    "your trusted insurance partner",
+  ].some((marker) => text.includes(marker));
+}
+
 function withAgentSignature(message, signature) {
   const text = String(message || "").trim();
   const signOff = String(signature || "").trim();
-  if (!signOff || text.includes("*Comprehensive Insurance Solutions*")) return text;
+  if (!signOff || hasExistingSignature(text)) return text;
   return `${text}\n\n${signOff}`;
 }
 

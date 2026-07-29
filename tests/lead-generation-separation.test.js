@@ -56,6 +56,10 @@ describe("lead generation data separation", () => {
 
     expect(senderRoute).toContain("buildDefaultAgentSignature(session)");
     expect(senderRoute).toContain("withAgentSignature(message");
+    expect(senderRoute).toContain("hasExistingSignature(text)");
+    expect(senderRoute).toContain("team bimaheadquarter");
+    expect(senderRoute).toContain("insuredesk imf");
+    expect(senderRoute).toContain("your trusted insurance partner");
     expect(senderRoute).toContain("*Comprehensive Insurance Solutions*");
     expect(senderRoute).toContain("sendWhatsAppText(recipient, signedMessage)");
   });
