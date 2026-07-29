@@ -47,25 +47,65 @@ export async function POST(request) {
       nextFollowUpDate,
     } = body;
 
-    // Required fields validation
+    const tenantFilter = getTenantFilter(user, "write");
+    const actorId = user.userId || user.id || null;
+    const actorName = user.name || user.email || "User";
+
     if (!policyId) {
       return Response.json({ error: "Missing policyId parameter" }, { status: 400 });
     }
-    const validatedInsuredName = normalizeCustomerName(insuredName);
+
+    // 1. Fetch existing policy record before validation so contact-only edits can reuse existing policy values.
+    const policy = await prisma.policyRecord.findFirst({
+      where: {
+        id: policyId,
+        ...tenantFilter,
+      },
+    });
+
+    if (!policy) {
+      return Response.json({ error: "Policy record not found or access denied" }, { status: 404 });
+    }
+
+    const oldData = { ...(policy.data || {}), ...(policy.reviewedData || {}) };
+
+    // Parse old values
+    const oldInsuredName = oldData.insuredName || "";
+    const oldContactPersonName = policy.contactPersonName || oldData.contactPersonName || oldData.contactPerson || "";
+    const oldContactNumber = policy.contactPersonMobile || oldData.contactNumber || oldData.customerMobile || "";
+    const oldRenewalRecipientName = policy.renewalRecipientName || oldData.renewalRecipientName || oldContactPersonName;
+    const oldRenewalRecipientMobile = policy.renewalRecipientMobile || oldData.renewalRecipientMobile || oldContactNumber;
+    const oldPolicyNumber = oldData.policyNumber || "";
+    const oldInsuranceCompany = normalizeRenewalInsuranceCompany(
+      policy.selectedCompany || oldData.insuranceCompany,
+    );
+    const oldPolicyType = policy.selectedPolicyType || oldData.policyType || "";
+    const oldPremium = oldData.premium || oldData.totalPremium || 0;
+    const oldExpiryDate = oldData.expiryDate || oldData.policyEndDate || "";
+    const oldAssignedTo = oldData.assignedTo || "";
+    const oldAssignedToId = oldData.assignedToId || "";
+    const oldStatus = policy.renewalStatus || "ACTIVE";
+    const validatedInsuredName = normalizeCustomerName(insuredName) || normalizeCustomerName(oldInsuredName);
+    const finalPolicyNumber = String(policyNumber || oldPolicyNumber || "").trim();
+    const finalInsuranceCompanyInput = String(insuranceCompany || policy.selectedCompany || oldData.insuranceCompany || "").trim();
+    const standardInsuranceCompany = normalizeRenewalInsuranceCompany(finalInsuranceCompanyInput);
+    const finalPolicyType = String(policyType || policy.selectedPolicyType || oldData.policyType || "").trim();
+    const finalExpiryInput = expiryDate || oldData.expiryDate || oldData.policyEndDate;
+
+    // Required fields validation
     if (!validatedInsuredName) {
       return Response.json({ error: "Customer Name is required." }, { status: 400 });
     }
-    if (!policyNumber || !String(policyNumber).trim()) {
+    if (!finalPolicyNumber) {
       return Response.json({ error: "Policy Number is required." }, { status: 400 });
     }
-    if (!insuranceCompany || !String(insuranceCompany).trim()) {
+    if (!standardInsuranceCompany) {
       return Response.json({ error: "Insurance Company is required." }, { status: 400 });
     }
-    const standardInsuranceCompany = normalizeRenewalInsuranceCompany(insuranceCompany);
-    if (!policyType || !String(policyType).trim()) {
+    if (!finalPolicyType) {
       return Response.json({ error: "Policy Type is required." }, { status: 400 });
     }
-    if (!expiryDate || isNaN(new Date(expiryDate).getTime())) {
+    if (!finalExpiryInput || isNaN(new Date(finalExpiryInput).getTime())) {
       return Response.json({ error: "Valid Expiry Date is required." }, { status: 400 });
     }
     if (!["policy_only", "move_existing", "create_portfolio"].includes(contactUpdateMode)) {
@@ -98,40 +138,6 @@ export async function POST(request) {
       cleanRenewalMobile = normalized;
     }
 
-    const tenantFilter = getTenantFilter(user, "write");
-    const actorId = user.userId || user.id || null;
-    const actorName = user.name || user.email || "User";
-
-    // 1. Fetch existing policy record
-    const policy = await prisma.policyRecord.findFirst({
-      where: {
-        id: policyId,
-        ...tenantFilter,
-      },
-    });
-
-    if (!policy) {
-      return Response.json({ error: "Policy record not found or access denied" }, { status: 404 });
-    }
-
-    const oldData = { ...(policy.data || {}), ...(policy.reviewedData || {}) };
-
-    // Parse old values
-    const oldInsuredName = oldData.insuredName || "";
-    const oldContactPersonName = policy.contactPersonName || oldData.contactPersonName || oldData.contactPerson || "";
-    const oldContactNumber = policy.contactPersonMobile || oldData.contactNumber || oldData.customerMobile || "";
-    const oldRenewalRecipientName = policy.renewalRecipientName || oldData.renewalRecipientName || oldContactPersonName;
-    const oldRenewalRecipientMobile = policy.renewalRecipientMobile || oldData.renewalRecipientMobile || oldContactNumber;
-    const oldPolicyNumber = oldData.policyNumber || "";
-    const oldInsuranceCompany = normalizeRenewalInsuranceCompany(
-      policy.selectedCompany || oldData.insuranceCompany,
-    );
-    const oldPolicyType = policy.selectedPolicyType || oldData.policyType || "";
-    const oldPremium = oldData.premium || oldData.totalPremium || 0;
-    const oldExpiryDate = oldData.expiryDate || oldData.policyEndDate || "";
-    const oldAssignedTo = oldData.assignedTo || "";
-    const oldAssignedToId = oldData.assignedToId || "";
-    const oldStatus = policy.renewalStatus || "ACTIVE";
     const finalContactPersonName = resolvePolicyCustomerName(
       contactPersonName === undefined ? oldContactPersonName : contactPersonName,
       validatedInsuredName,
@@ -166,8 +172,8 @@ export async function POST(request) {
     if (cleanRenewalMobile !== String(oldRenewalRecipientMobile).trim()) {
       changes.push({ field: "Renewal Mobile", oldValue: oldRenewalRecipientMobile || "N/A", newValue: cleanRenewalMobile || "N/A" });
     }
-    if (String(policyNumber).trim() !== String(oldPolicyNumber).trim()) {
-      changes.push({ field: "Policy Number", oldValue: oldPolicyNumber || "N/A", newValue: policyNumber });
+    if (finalPolicyNumber !== String(oldPolicyNumber).trim()) {
+      changes.push({ field: "Policy Number", oldValue: oldPolicyNumber || "N/A", newValue: finalPolicyNumber });
     }
     if (standardInsuranceCompany !== oldInsuranceCompany) {
       changes.push({
@@ -176,8 +182,8 @@ export async function POST(request) {
         newValue: standardInsuranceCompany,
       });
     }
-    if (String(policyType).trim() !== String(oldPolicyType).trim()) {
-      changes.push({ field: "Policy Type", oldValue: oldPolicyType || "N/A", newValue: policyType });
+    if (finalPolicyType !== String(oldPolicyType).trim()) {
+      changes.push({ field: "Policy Type", oldValue: oldPolicyType || "N/A", newValue: finalPolicyType });
     }
     if (premiumProvided && parsedPremium !== Number(String(oldPremium).replace(/[^0-9.-]/g, ""))) {
       changes.push({ field: "Premium", oldValue: String(oldPremium || 0), newValue: String(premium) });
@@ -187,7 +193,7 @@ export async function POST(request) {
     const formattedOldExpiry = parsedOldExpiry && !Number.isNaN(parsedOldExpiry.getTime())
       ? parsedOldExpiry.toISOString().split("T")[0]
       : String(oldExpiryDate || "");
-    const formattedNewExpiry = new Date(expiryDate).toISOString().split("T")[0];
+    const formattedNewExpiry = new Date(finalExpiryInput).toISOString().split("T")[0];
     if (formattedNewExpiry !== formattedOldExpiry) {
       changes.push({
         field: "Expiry Date",
@@ -236,7 +242,7 @@ export async function POST(request) {
     if (formattedNewExpiry !== formattedOldExpiry && !isClosed) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const newExpiry = new Date(expiryDate);
+      const newExpiry = new Date(finalExpiryInput);
       newExpiry.setHours(0, 0, 0, 0);
       const diffTime = newExpiry.getTime() - today.getTime();
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -317,9 +323,9 @@ export async function POST(request) {
       renewalRecipientName: finalRenewalRecipientName,
       renewalRecipientMobile: cleanRenewalMobile,
       renewalRecipientEmail: finalRenewalRecipientEmail,
-      policyNumber,
+      policyNumber: finalPolicyNumber,
       insuranceCompany: standardInsuranceCompany,
-      policyType,
+      policyType: finalPolicyType,
       premium: finalPremium,
       totalPremium: finalPremium,
       expiryDate: formattedNewExpiry,
@@ -406,7 +412,7 @@ export async function POST(request) {
         renewalRecipientEmail: finalRenewalRecipientEmail || null,
         renewalStatus: finalStatus,
         selectedCompany: standardInsuranceCompany,
-        selectedPolicyType: policyType,
+        selectedPolicyType: finalPolicyType,
         isActivePolicy,
         reviewedData: updatedPayload,
         data: updatedPayload,
