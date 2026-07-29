@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { createWorker } from "tesseract.js";
+import os from "os";
 
 const RENEWAL_QUOTE_GROUP_PATTERN = /ren(e)?wal\s*quote/i;
 const VEHICLE_NUMBER_PATTERNS = [
@@ -8,7 +9,15 @@ const VEHICLE_NUMBER_PATTERNS = [
   /\b([A-Z]{2}[ -]?[0-9]{1,2}(?:[ -]?[A-Z]{1,3})?[ -]?[0-9]{4})\b/i,
   /\b([A-Z0-9]{2,10}[ -]?[0-9]{3,6})\b/i,
 ];
-const STORAGE_PATH = path.join(process.cwd(), "storage", "whatsapp", "renewal-quotes.json");
+
+let memoryQuoteCache = [];
+
+function getStoragePath() {
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return path.join(os.tmpdir(), "renewal-quotes.json");
+  }
+  return path.join(process.cwd(), "storage", "whatsapp", "renewal-quotes.json");
+}
 
 export async function extractOcrTextFromImage(imageInput) {
   if (!imageInput) return "";
@@ -49,34 +58,26 @@ export function extractVehicleNumber(text = "") {
 }
 
 export function isRenewalQuoteGroup(groupName = "") {
-  const normalized = String(groupName || "").trim().toLowerCase();
-  if (!normalized) return false;
-  return RENEWAL_QUOTE_GROUP_PATTERN.test(normalized) || normalized.includes("quote new") || normalized.includes("renwal");
+  return RENEWAL_QUOTE_GROUP_PATTERN.test(String(groupName || ""));
 }
 
-export async function buildRenewalQuoteEntry({ groupName, senderName, body, caption, mediaBase64, timestamp, attachmentUrl = "", sourceMessageId = "" } = {}) {
-  let cleanedBody = String(body || caption || "").trim();
+export async function buildRenewalQuoteEntry({ groupName, senderName, body, caption, messageBody, mediaBase64, timestamp, sourceMessageId } = {}) {
+  const cleanedBody = String(body || caption || messageBody || "").trim();
   let vehicleNumber = extractVehicleNumber(cleanedBody);
 
   if (!vehicleNumber && mediaBase64) {
     const ocrText = await extractOcrTextFromImage(mediaBase64);
     if (ocrText) {
-      cleanedBody = [cleanedBody, ocrText].filter(Boolean).join("\n");
-      vehicleNumber = extractVehicleNumber(cleanedBody);
+      vehicleNumber = extractVehicleNumber(ocrText);
     }
   }
 
-  if (!vehicleNumber) {
-    return null;
-  }
-
   return {
-    id: sourceMessageId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    groupName: String(groupName || "").trim(),
-    senderName: String(senderName || "").trim() || "Unknown",
+    id: sourceMessageId || `quote-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    groupName: groupName || "Renwal Quote New",
+    senderName: senderName || "Agent",
     messageBody: cleanedBody,
     vehicleNumber,
-    attachmentUrl,
     mediaBase64: mediaBase64 || "",
     receivedAt: timestamp ? new Date(timestamp) : new Date(),
     sourceMessageId,
@@ -85,13 +86,17 @@ export async function buildRenewalQuoteEntry({ groupName, senderName, body, capt
 
 export async function readRenewalQuoteEntries() {
   try {
-    await fs.mkdir(path.dirname(STORAGE_PATH), { recursive: true });
-    const raw = await fs.readFile(STORAGE_PATH, "utf8");
+    const targetPath = getStoragePath();
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    const raw = await fs.readFile(targetPath, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    if (error?.code === "ENOENT") return [];
-    throw error;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      memoryQuoteCache = parsed;
+      return parsed;
+    }
+    return memoryQuoteCache;
+  } catch (_error) {
+    return memoryQuoteCache;
   }
 }
 
@@ -99,8 +104,14 @@ export async function storeRenewalQuoteEntry(entry) {
   if (!entry) return null;
   const entries = await readRenewalQuoteEntries();
   const nextEntries = [entry, ...entries.filter((item) => item.id !== entry.id && item.sourceMessageId !== entry.sourceMessageId)].slice(0, 200);
-  await fs.mkdir(path.dirname(STORAGE_PATH), { recursive: true });
-  await fs.writeFile(STORAGE_PATH, JSON.stringify(nextEntries, null, 2), "utf8");
+  memoryQuoteCache = nextEntries;
+  try {
+    const targetPath = getStoragePath();
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await fs.writeFile(targetPath, JSON.stringify(nextEntries, null, 2), "utf8");
+  } catch (error) {
+    console.warn("Vercel serverless disk write fallback to memory:", error?.message || error);
+  }
   return entry;
 }
 
