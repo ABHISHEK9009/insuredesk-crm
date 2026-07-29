@@ -3129,19 +3129,34 @@ export default function CustomerProfilePage(props) {
                                     </div>
                                   </div>
                                   {imageSrc ? (
-                                    <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
-                                      <img
-                                        src={imageSrc}
-                                        alt="Quote Calculation"
-                                        style={{ height: "65px", width: "100px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1", cursor: "pointer" }}
-                                        onClick={() => setPreviewQuoteImage(imageSrc)}
-                                      />
+                                    <div style={{ marginTop: "10px", padding: "8px", background: "#f1f5f9", borderRadius: "8px", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <div style={{ position: "relative", cursor: "pointer" }} onClick={() => setPreviewQuoteImage(imageSrc)}>
+                                          <img
+                                            src={imageSrc}
+                                            alt="Quote Calculation"
+                                            style={{ height: "60px", width: "90px", objectFit: "cover", borderRadius: "6px", border: "1px solid #94a3b8", display: "block" }}
+                                          />
+                                          <div style={{ position: "absolute", bottom: "2px", right: "2px", background: "rgba(0,0,0,0.6)", color: "#fff", borderRadius: "3px", padding: "1px 4px", fontSize: "9px" }}>
+                                            🔍 Zoom
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div style={{ fontSize: "12px", fontWeight: 600, color: "#0f172a" }}>
+                                            Quote Image Attached
+                                          </div>
+                                          <div style={{ fontSize: "11px", color: "#64748b" }}>
+                                            Click preview to view full calculation sheet
+                                          </div>
+                                        </div>
+                                      </div>
                                       <button
                                         type="button"
-                                        style={{ background: "none", border: "none", color: "#0284c7", fontSize: "12px", textDecoration: "underline", cursor: "pointer", padding: 0 }}
+                                        className="rn-btn-secondary"
+                                        style={{ padding: "5px 10px", fontSize: "12px", cursor: "pointer", background: "#0284c7", color: "#ffffff", border: "none", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                         onClick={() => setPreviewQuoteImage(imageSrc)}
                                       >
-                                        🔍 View Quote Image
+                                        <Eye size={14} /> Preview Image
                                       </button>
                                     </div>
                                   ) : null}
@@ -3332,8 +3347,8 @@ export default function CustomerProfilePage(props) {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(0, 0, 0, 0.75)",
-              backdropFilter: "blur(4px)",
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(6px)",
               zIndex: 99999,
               display: "flex",
               alignItems: "center",
@@ -3347,35 +3362,50 @@ export default function CustomerProfilePage(props) {
                 position: "relative",
                 maxWidth: "90vw",
                 maxHeight: "90vh",
-                background: "#fff",
-                borderRadius: "12px",
-                padding: "16px",
-                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
+                background: "#ffffff",
+                borderRadius: "16px",
+                padding: "20px",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "10px",
-                  background: "#e2e8f0",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "28px",
-                  height: "28px",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-                onClick={() => setPreviewQuoteImage(null)}
-              >
-                ✕
-              </button>
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
+                <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#0f172a" }}>
+                  🖼️ Quote Calculation Image Preview
+                </h4>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <a
+                    href={previewQuoteImage}
+                    download="Quote_Calculation.png"
+                    style={{ textDecoration: "none", fontSize: "12px", color: "#0284c7", fontWeight: 600, background: "#f0f9ff", padding: "4px 8px", borderRadius: "6px" }}
+                  >
+                    ⬇️ Download
+                  </a>
+                  <button
+                    type="button"
+                    style={{
+                      background: "#f1f5f9",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "30px",
+                      height: "30px",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      color: "#64748b",
+                    }}
+                    onClick={() => setPreviewQuoteImage(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
               <img
                 src={previewQuoteImage}
-                alt="Quote Image"
-                style={{ maxWidth: "100%", maxHeight: "80vh", display: "block", borderRadius: "8px", objectFit: "contain" }}
+                alt="Quote Image Preview"
+                style={{ maxWidth: "100%", maxHeight: "75vh", display: "block", borderRadius: "8px", objectFit: "contain", border: "1px solid #cbd5e1" }}
               />
             </div>
           </div>
