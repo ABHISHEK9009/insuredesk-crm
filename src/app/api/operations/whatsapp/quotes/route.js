@@ -50,6 +50,7 @@ export async function POST(request) {
         senderName: user.name || "Agent",
         messageBody: messageBody || `Quote for ${vehicleNumber}`,
         vehicleNumber: String(vehicleNumber).replace(/[\s-]/g, "").toUpperCase(),
+        mediaBase64: mediaBase64 || "",
         receivedAt: new Date(),
       };
       await storeRenewalQuoteEntry(manualEntry);

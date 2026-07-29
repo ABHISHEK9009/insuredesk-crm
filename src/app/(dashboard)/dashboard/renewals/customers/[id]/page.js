@@ -225,6 +225,9 @@ export default function CustomerProfilePage(props) {
   const [selectedRenewalQuoteIds, setSelectedRenewalQuoteIds] = useState([]);
   const [showAddQuoteForm, setShowAddQuoteForm] = useState(false);
   const [manualQuoteText, setManualQuoteText] = useState("");
+  const [manualQuoteFileBase64, setManualQuoteFileBase64] = useState("");
+  const [manualQuoteFileName, setManualQuoteFileName] = useState("");
+  const [previewQuoteImage, setPreviewQuoteImage] = useState(null);
   const [savingManualQuote, setSavingManualQuote] = useState(false);
 
   const [teamMembers, setTeamMembers] = useState([]);
@@ -822,8 +825,19 @@ export default function CustomerProfilePage(props) {
     ));
   };
 
+  const handleQuoteFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setManualQuoteFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setManualQuoteFileBase64(event.target.result || "");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveManualQuote = async () => {
-    if (!manualQuoteText.trim()) return;
+    if (!manualQuoteText.trim() && !manualQuoteFileBase64) return;
     const policy = (policies || []).find((p) => p.id === whatsappPolicyId) || (policies || [])[0] || null;
     const vehicleNumber = String(policy?.vehicleNumber || policy?.registrationNumber || "").trim();
 
@@ -835,12 +849,15 @@ export default function CustomerProfilePage(props) {
         body: JSON.stringify({
           vehicleNumber: vehicleNumber || "MP04UC1162",
           groupName: "Manual Entry",
-          messageBody: manualQuoteText.trim(),
+          messageBody: manualQuoteText.trim() || `Quote Image for ${vehicleNumber}`,
+          mediaBase64: manualQuoteFileBase64,
         }),
       });
       const payload = await res.json();
       if (res.ok && payload.success) {
         setManualQuoteText("");
+        setManualQuoteFileBase64("");
+        setManualQuoteFileName("");
         setShowAddQuoteForm(false);
         await fetchRenewalQuotes(policy);
         if (payload.quote?.id) {
@@ -872,10 +889,10 @@ export default function CustomerProfilePage(props) {
       const groupPolicyIds = [...new Set(whatsappRecipientGroups.flatMap((group) => group.policyIds || []))];
       const selectedQuotes = renewalQuotes.filter((quote) => selectedRenewalQuoteIds.includes(quote.id));
       const quoteAttachments = selectedQuotes.map((quote) => ({
-        attachmentData: quote.attachmentData || "",
+        attachmentData: quote.mediaBase64 || quote.attachmentData || "",
         attachmentUrl: quote.attachmentUrl || "",
-        attachmentFileName: quote.attachmentFileName || quote.fileName || "",
-        attachmentType: quote.attachmentType || (String(quote.attachmentUrl || "").match(/\.(pdf)$/i) ? "document" : "image"),
+        attachmentFileName: quote.attachmentFileName || quote.fileName || "quote_image.jpg",
+        attachmentType: quote.attachmentType || (quote.mediaBase64 || quote.attachmentData ? "image" : (String(quote.attachmentUrl || "").match(/\.(pdf)$/i) ? "document" : "image")),
         messageBody: quote.messageBody || "",
       }));
       const sends = isGroupRecipient
@@ -2981,11 +2998,33 @@ export default function CustomerProfilePage(props) {
                         {showAddQuoteForm && (
                           <div style={{ marginTop: "10px", padding: "10px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#ffffff" }}>
                             <label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px", color: "#334155" }}>
-                              Paste / Enter Quote Details
+                              Upload Quote Image / Enter Details
                             </label>
+                            <div style={{ marginBottom: "8px" }}>
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                style={{ fontSize: "12px" }}
+                                onChange={handleQuoteFileUpload}
+                              />
+                              {manualQuoteFileName && (
+                                <div style={{ fontSize: "11px", color: "#0284c7", marginTop: "2px" }}>
+                                  Selected: {manualQuoteFileName}
+                                </div>
+                              )}
+                              {manualQuoteFileBase64 && manualQuoteFileBase64.startsWith("data:image") && (
+                                <div style={{ marginTop: "6px" }}>
+                                  <img
+                                    src={manualQuoteFileBase64}
+                                    alt="Quote Preview"
+                                    style={{ maxHeight: "80px", borderRadius: "4px", border: "1px solid #cbd5e1", objectFit: "cover" }}
+                                  />
+                                </div>
+                              )}
+                            </div>
                             <textarea
                               className="rn-input"
-                              style={{ width: "100%", height: "75px", fontSize: "12px", fontFamily: "monospace", padding: "6px" }}
+                              style={{ width: "100%", height: "65px", fontSize: "12px", fontFamily: "monospace", padding: "6px" }}
                               placeholder="e.g. TATA AIG - OD: ₹452, TP: ₹714, Total: ₹999..."
                               value={manualQuoteText}
                               onChange={(e) => setManualQuoteText(e.target.value)}
@@ -2995,7 +3034,11 @@ export default function CustomerProfilePage(props) {
                                 type="button"
                                 className="rn-btn-secondary"
                                 style={{ padding: "3px 8px", fontSize: "11px", cursor: "pointer" }}
-                                onClick={() => setShowAddQuoteForm(false)}
+                                onClick={() => {
+                                  setShowAddQuoteForm(false);
+                                  setManualQuoteFileBase64("");
+                                  setManualQuoteFileName("");
+                                }}
                               >
                                 Cancel
                               </button>
@@ -3003,10 +3046,10 @@ export default function CustomerProfilePage(props) {
                                 type="button"
                                 className="rn-btn-primary"
                                 style={{ padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}
-                                disabled={savingManualQuote || !manualQuoteText.trim()}
+                                disabled={savingManualQuote || (!manualQuoteText.trim() && !manualQuoteFileBase64)}
                                 onClick={handleSaveManualQuote}
                               >
-                                {savingManualQuote ? "Saving..." : "Attach Quote"}
+                                {savingManualQuote ? "Saving..." : "Attach Quote Image"}
                               </button>
                             </div>
                           </div>
@@ -3014,35 +3057,56 @@ export default function CustomerProfilePage(props) {
 
                         {renewalQuotes.length === 0 && !showAddQuoteForm ? (
                           <div style={{ marginTop: "8px", padding: "10px", borderRadius: "8px", background: "#fff", color: "var(--rn-text-muted)", fontSize: "12px" }}>
-                            No matching quote found for this vehicle yet.
+                            No matching quote found for this vehicle yet. Click "+ Attach Quote" to upload or enter a quote image manually.
                           </div>
                         ) : null}
-                          {renewalQuotes.length > 0 && (
+
+                        {renewalQuotes.length > 0 && (
                           <div style={{ marginTop: "8px", display: "grid", gap: "8px" }}>
-                            {renewalQuotes.map((quote) => (
-                              <div key={quote.id} style={{ border: "1px solid #dbeafe", borderRadius: "8px", background: "#fff", padding: "10px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
-                                  <div>
-                                    <div style={{ fontSize: "12px", fontWeight: 700 }}>{quote.vehicleNumber}</div>
-                                    <div style={{ fontSize: "11px", color: "var(--rn-text-muted)" }}>{quote.groupName}</div>
+                            {renewalQuotes.map((quote) => {
+                              const imageSrc = quote.mediaBase64 || quote.attachmentUrl || (quote.attachmentData ? (quote.attachmentData.startsWith("data:") ? quote.attachmentData : `data:image/jpeg;base64,${quote.attachmentData}`) : null);
+                              return (
+                                <div key={quote.id} style={{ border: "1px solid #dbeafe", borderRadius: "8px", background: "#fff", padding: "10px" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
+                                    <div>
+                                      <div style={{ fontSize: "12px", fontWeight: 700 }}>{quote.vehicleNumber}</div>
+                                      <div style={{ fontSize: "11px", color: "var(--rn-text-muted)" }}>{quote.groupName}</div>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                      <span className="rn-badge rn-badge-active">Matched</span>
+                                      <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--rn-text-muted)", cursor: "pointer" }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedRenewalQuoteIds.includes(quote.id)}
+                                          onChange={() => toggleRenewalQuoteSelection(quote.id)}
+                                        />
+                                        Send Image
+                                      </label>
+                                    </div>
                                   </div>
-                                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span className="rn-badge rn-badge-active">Matched</span>
-                                    <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--rn-text-muted)", cursor: "pointer" }}>
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedRenewalQuoteIds.includes(quote.id)}
-                                        onChange={() => toggleRenewalQuoteSelection(quote.id)}
+                                  {imageSrc ? (
+                                    <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
+                                      <img
+                                        src={imageSrc}
+                                        alt="Quote Calculation"
+                                        style={{ height: "65px", width: "100px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1", cursor: "pointer" }}
+                                        onClick={() => setPreviewQuoteImage(imageSrc)}
                                       />
-                                      Send
-                                    </label>
+                                      <button
+                                        type="button"
+                                        style={{ background: "none", border: "none", color: "#0284c7", fontSize: "12px", textDecoration: "underline", cursor: "pointer", padding: 0 }}
+                                        onClick={() => setPreviewQuoteImage(imageSrc)}
+                                      >
+                                        🔍 View Quote Image
+                                      </button>
+                                    </div>
+                                  ) : null}
+                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "var(--rn-text-muted)", whiteSpace: "pre-wrap" }}>
+                                    {quote.messageBody}
                                   </div>
                                 </div>
-                                <div style={{ marginTop: "6px", fontSize: "12px", color: "var(--rn-text-muted)", whiteSpace: "pre-wrap" }}>
-                                  {quote.messageBody}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -3098,6 +3162,64 @@ export default function CustomerProfilePage(props) {
             </div>
           </div>,
         )}
+      {previewQuoteImage && (
+        <ModalPortal>
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.75)",
+              backdropFilter: "blur(4px)",
+              zIndex: 99999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+            onClick={() => setPreviewQuoteImage(null)}
+          >
+            <div
+              style={{
+                position: "relative",
+                maxWidth: "90vw",
+                maxHeight: "90vh",
+                background: "#fff",
+                borderRadius: "12px",
+                padding: "16px",
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  background: "#e2e8f0",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "28px",
+                  height: "28px",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+                onClick={() => setPreviewQuoteImage(null)}
+              >
+                ✕
+              </button>
+              <img
+                src={previewQuoteImage}
+                alt="Quote Image"
+                style={{ maxWidth: "100%", maxHeight: "80vh", display: "block", borderRadius: "8px", objectFit: "contain" }}
+              />
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 }

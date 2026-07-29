@@ -77,6 +77,7 @@ export async function buildRenewalQuoteEntry({ groupName, senderName, body, capt
     messageBody: cleanedBody,
     vehicleNumber,
     attachmentUrl,
+    mediaBase64: mediaBase64 || "",
     receivedAt: timestamp ? new Date(timestamp) : new Date(),
     sourceMessageId,
   };
