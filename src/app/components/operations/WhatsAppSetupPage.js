@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import ModalPortal from "@/app/components/shared/ModalPortal";
 import {
   Smartphone,
   CheckCircle2,
@@ -12,19 +10,15 @@ import {
   Save,
   FileText,
   Clock,
-  RotateCcw,
   Plus,
-  Info,
   AlertCircle,
   Zap,
-  Layers,
-  MessageSquare,
-  Radio,
   Users,
   ShieldCheck,
   Gift,
   Sparkles,
   Mail,
+  MessageSquare,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 import WhatsAppRecipientPicker from "@/app/components/whatsapp/WhatsAppRecipientPicker";
