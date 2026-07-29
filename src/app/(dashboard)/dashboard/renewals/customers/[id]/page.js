@@ -836,7 +836,23 @@ export default function CustomerProfilePage(props) {
     if (typeof window === "undefined" || !window.FileReader) return;
     const reader = new window.FileReader();
     reader.onload = (event) => {
-      setManualQuoteFileBase64(event.target.result || "");
+      const base64 = event.target.result || "";
+      setManualQuoteFileBase64(base64);
+      if (base64) {
+        const tempId = `uploaded-quote-${Date.now()}`;
+        const newQuote = {
+          id: tempId,
+          groupName: "Manual Upload",
+          senderName: "Agent",
+          messageBody: file.name,
+          mediaBase64: base64,
+          attachmentFileName: file.name,
+          attachmentType: file.type.includes("pdf") ? "document" : "image",
+          receivedAt: new Date(),
+        };
+        setRenewalQuotes((prev) => [newQuote, ...prev.filter((item) => item.id !== tempId)]);
+        setSelectedRenewalQuoteIds((prev) => [...new Set([...prev, tempId])]);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -921,13 +937,22 @@ export default function CustomerProfilePage(props) {
     try {
       const groupPolicyIds = [...new Set(whatsappRecipientGroups.flatMap((group) => group.policyIds || []))];
       const selectedQuotes = renewalQuotes.filter((quote) => selectedRenewalQuoteIds.includes(quote.id));
-      const quoteAttachments = selectedQuotes.map((quote) => ({
+      let quoteAttachments = selectedQuotes.map((quote) => ({
         attachmentData: quote.mediaBase64 || quote.attachmentData || "",
         attachmentUrl: quote.attachmentUrl || "",
         attachmentFileName: quote.attachmentFileName || quote.fileName || "quote_image.jpg",
         attachmentType: quote.attachmentType || (quote.mediaBase64 || quote.attachmentData ? "image" : (String(quote.attachmentUrl || "").match(/\.(pdf)$/i) ? "document" : "image")),
         messageBody: quote.messageBody || "",
       }));
+
+      if (manualQuoteFileBase64 && quoteAttachments.length === 0) {
+        quoteAttachments.push({
+          attachmentData: manualQuoteFileBase64,
+          attachmentFileName: manualQuoteFileName || "quote_image.jpg",
+          attachmentType: manualQuoteFileName?.endsWith(".pdf") ? "document" : "image",
+          messageBody: manualQuoteText || "",
+        });
+      }
       const sends = isGroupRecipient
         ? [{ phone: whatsappGroupId, message: editedWhatsAppMessage, policyIds: groupPolicyIds.length ? groupPolicyIds : (whatsappPolicyId ? [whatsappPolicyId] : []) }]
         : whatsappRecipientGroups.length > 1
