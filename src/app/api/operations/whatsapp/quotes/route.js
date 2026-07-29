@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 import { readRenewalQuoteEntries, filterRenewalQuoteEntries, buildRenewalQuoteEntry, storeRenewalQuoteEntry } from "@/lib/whatsapp/renewal-quote-capture";
+import { searchGroupMessages, downloadWhatsAppMedia } from "@/lib/whatsapp/whatsapp-client";
 
 export const runtime = "nodejs";
 
@@ -15,15 +16,42 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const vehicleNumber = searchParams.get("vehicleNumber") || "";
     const fetchAll = searchParams.get("all") === "true";
-    const entries = await readRenewalQuoteEntries();
+    let entries = await readRenewalQuoteEntries();
 
     if (fetchAll || !vehicleNumber) {
       return NextResponse.json({ success: true, quotes: entries.slice(0, 50) });
     }
 
-    const filtered = filterRenewalQuoteEntries(entries, vehicleNumber).slice(0, 20);
+    let filtered = filterRenewalQuoteEntries(entries, vehicleNumber);
 
-    return NextResponse.json({ success: true, quotes: filtered });
+    if (filtered.length === 0 && vehicleNumber.length >= 4) {
+      try {
+        const remoteMsgs = await searchGroupMessages("Renwal Quote New", vehicleNumber);
+        if (Array.isArray(remoteMsgs) && remoteMsgs.length > 0) {
+          for (const msg of remoteMsgs) {
+            const msgId = msg.id || msg.key?.id || "";
+            let mediaBase64 = "";
+            if (msgId) {
+              mediaBase64 = await downloadWhatsAppMedia(msgId);
+            }
+            const entry = await buildRenewalQuoteEntry({
+              groupName: msg.groupName || "Renwal Quote New",
+              senderName: msg.senderName || msg.pushName || "Agent",
+              messageBody: msg.body || msg.caption || `Quote for ${vehicleNumber}`,
+              mediaBase64,
+              sourceMessageId: msgId,
+            });
+            await storeRenewalQuoteEntry(entry);
+          }
+          entries = await readRenewalQuoteEntries();
+          filtered = filterRenewalQuoteEntries(entries, vehicleNumber);
+        }
+      } catch (_err) {
+        // Fallback gracefully
+      }
+    }
+
+    return NextResponse.json({ success: true, quotes: filtered.slice(0, 20) });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Failed to load renewal quotes" }, { status: 500 });
   }

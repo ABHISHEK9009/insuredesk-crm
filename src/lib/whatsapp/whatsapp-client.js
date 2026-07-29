@@ -212,6 +212,19 @@ export async function downloadWhatsAppMedia(messageId) {
   }
 }
 
+export async function searchGroupMessages(groupName = "Renwal Quote New", searchPattern = "") {
+  if (!groupName) return [];
+  try {
+    const res = await callGateway("POST", "groups/search-messages", {
+      groupName,
+      query: searchPattern,
+    });
+    return Array.isArray(res) ? res : (Array.isArray(res?.messages) ? res.messages : []);
+  } catch (_error) {
+    return [];
+  }
+}
+
 export const getOpenwaStatus = getWhatsAppStatus;
 export const getOpenwaQrCode = getWhatsAppQrCode;
 export const sendOpenwaText = sendWhatsAppText;
