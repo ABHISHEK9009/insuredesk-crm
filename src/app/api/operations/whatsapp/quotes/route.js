@@ -14,7 +14,13 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const vehicleNumber = searchParams.get("vehicleNumber") || "";
+    const fetchAll = searchParams.get("all") === "true";
     const entries = await readRenewalQuoteEntries();
+
+    if (fetchAll || !vehicleNumber) {
+      return NextResponse.json({ success: true, quotes: entries.slice(0, 50) });
+    }
+
     const filtered = filterRenewalQuoteEntries(entries, vehicleNumber).slice(0, 20);
 
     return NextResponse.json({ success: true, quotes: filtered });

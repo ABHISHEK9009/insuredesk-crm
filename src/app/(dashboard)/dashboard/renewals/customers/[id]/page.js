@@ -229,6 +229,9 @@ export default function CustomerProfilePage(props) {
   const [manualQuoteFileName, setManualQuoteFileName] = useState("");
   const [previewQuoteImage, setPreviewQuoteImage] = useState(null);
   const [savingManualQuote, setSavingManualQuote] = useState(false);
+  const [allGroupQuotes, setAllGroupQuotes] = useState([]);
+  const [loadingAllGroupQuotes, setLoadingAllGroupQuotes] = useState(false);
+  const [showGroupGalleryModal, setShowGroupGalleryModal] = useState(false);
 
   const [teamMembers, setTeamMembers] = useState([]);
   const [portfolioOptions, setPortfolioOptions] = useState([]);
@@ -873,6 +876,34 @@ export default function CustomerProfilePage(props) {
     } finally {
       setSavingManualQuote(false);
     }
+  };
+
+  const fetchGroupQuotesGallery = async () => {
+    setLoadingAllGroupQuotes(true);
+    try {
+      const res = await fetch("/api/operations/whatsapp/quotes?all=true");
+      const payload = await res.json();
+      if (res.ok && Array.isArray(payload.quotes)) {
+        setAllGroupQuotes(payload.quotes);
+      } else {
+        setAllGroupQuotes([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setAllGroupQuotes([]);
+    } finally {
+      setLoadingAllGroupQuotes(false);
+    }
+  };
+
+  const handleSelectQuoteFromGallery = (quote) => {
+    if (!quote) return;
+    setRenewalQuotes((prev) => {
+      const exists = prev.some((item) => item.id === quote.id);
+      return exists ? prev : [quote, ...prev];
+    });
+    setSelectedRenewalQuoteIds((prev) => [...new Set([...prev, quote.id])]);
+    setShowGroupGalleryModal(false);
   };
 
   const handleSendWhatsApp = async () => {
@@ -2988,10 +3019,21 @@ export default function CustomerProfilePage(props) {
                             <button
                               type="button"
                               className="rn-btn-secondary"
+                              style={{ padding: "3px 8px", fontSize: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                              onClick={() => {
+                                fetchGroupQuotesGallery();
+                                setShowGroupGalleryModal(true);
+                              }}
+                            >
+                              📱 Select from Group
+                            </button>
+                            <button
+                              type="button"
+                              className="rn-btn-secondary"
                               style={{ padding: "3px 8px", fontSize: "12px", cursor: "pointer" }}
                               onClick={() => setShowAddQuoteForm(!showAddQuoteForm)}
                             >
-                              {showAddQuoteForm ? "Cancel" : "+ Attach Quote"}
+                              {showAddQuoteForm ? "Cancel" : "+ Upload Quote"}
                             </button>
                           </div>
                         </div>
@@ -3163,6 +3205,123 @@ export default function CustomerProfilePage(props) {
             </div>
           </div>,
         )}
+      {showGroupGalleryModal && (
+        <ModalPortal>
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(15, 23, 42, 0.65)",
+              backdropFilter: "blur(4px)",
+              zIndex: 99998,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+            onClick={() => setShowGroupGalleryModal(false)}
+          >
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: "750px",
+                maxHeight: "85vh",
+                background: "#ffffff",
+                borderRadius: "16px",
+                padding: "20px",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                display: "flex",
+                flexDirection: "column",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                    📱 Renwal Quote New — Group Quote Gallery
+                  </h3>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
+                    Select an image quote captured from the WhatsApp group to attach to this customer.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontWeight: 700, color: "#64748b" }}
+                  onClick={() => setShowGroupGalleryModal(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ overflowY: "auto", flex: 1, paddingRight: "4px" }}>
+                {loadingAllGroupQuotes ? (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
+                    Searching group quote images...
+                  </div>
+                ) : allGroupQuotes.length === 0 ? (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
+                    No quote images found from <b>Renwal Quote New</b> yet.<br />
+                    Use <b>+ Upload Quote</b> to attach a quote image directly!
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" }}>
+                    {allGroupQuotes.map((quote) => {
+                      const imageSrc = quote.mediaBase64 || quote.attachmentUrl || (quote.attachmentData ? (quote.attachmentData.startsWith("data:") ? quote.attachmentData : `data:image/jpeg;base64,${quote.attachmentData}`) : null);
+                      return (
+                        <div
+                          key={quote.id}
+                          style={{
+                            border: "1px solid #cbd5e1",
+                            borderRadius: "10px",
+                            padding: "10px",
+                            background: "#fafafa",
+                            display: "flex",
+                            flexDirection: "column",
+                            justify: "space-between",
+                          }}
+                        >
+                          <div>
+                            {imageSrc ? (
+                              <img
+                                src={imageSrc}
+                                alt="Group Quote"
+                                style={{ width: "100%", height: "130px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0", cursor: "pointer", marginBottom: "8px" }}
+                                onClick={() => setPreviewQuoteImage(imageSrc)}
+                              />
+                            ) : (
+                              <div style={{ height: "60px", background: "#e2e8f0", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: "11px", marginBottom: "8px" }}>
+                                Text Quote
+                              </div>
+                            )}
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#0f172a" }}>
+                              {quote.vehicleNumber || "Vehicle Unspecified"}
+                            </div>
+                            <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>
+                              From: {quote.senderName} ({new Date(quote.receivedAt).toLocaleDateString()})
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="rn-btn-primary"
+                            style={{ marginTop: "10px", width: "100%", padding: "6px", fontSize: "11px", cursor: "pointer" }}
+                            onClick={() => handleSelectQuoteFromGallery(quote)}
+                          >
+                            ✓ Select & Attach This Quote
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
       {previewQuoteImage && (
         <ModalPortal>
           <div
