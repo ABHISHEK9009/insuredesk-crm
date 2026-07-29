@@ -116,16 +116,32 @@ export async function POST(request) {
     }
 
     const responses = [];
-    if (signedMessage) {
-      const openwaResponse = await sendWhatsAppText(recipient, signedMessage);
-      responses.push(openwaResponse);
-    }
 
-    for (const attachment of resolvedAttachments) {
-      const sendResponse = attachment.mediaType === "document"
-        ? await sendWhatsAppFile(recipient, attachment.mediaBase64, attachment.filename, attachment.caption)
-        : await sendWhatsAppImage(recipient, attachment.mediaBase64, attachment.filename, attachment.caption);
-      responses.push(sendResponse);
+    if (resolvedAttachments.length > 0) {
+      // Send the image with the full renewal message as its caption (unified WhatsApp media message)
+      const primaryAttachment = resolvedAttachments[0];
+      const captionText = signedMessage || primaryAttachment.caption || "";
+
+      if (primaryAttachment.mediaType === "document") {
+        const docRes = await sendWhatsAppFile(recipient, primaryAttachment.mediaBase64, primaryAttachment.filename, captionText);
+        responses.push(docRes);
+      } else {
+        const imgRes = await sendWhatsAppImage(recipient, primaryAttachment.mediaBase64, primaryAttachment.filename, captionText);
+        responses.push(imgRes);
+      }
+
+      // Send any additional attachments
+      for (let i = 1; i < resolvedAttachments.length; i++) {
+        const att = resolvedAttachments[i];
+        const attRes = att.mediaType === "document"
+          ? await sendWhatsAppFile(recipient, att.mediaBase64, att.filename, att.caption)
+          : await sendWhatsAppImage(recipient, att.mediaBase64, att.filename, att.caption);
+        responses.push(attRes);
+      }
+    } else if (signedMessage) {
+      // No attachments: send plain text message
+      const textRes = await sendWhatsAppText(recipient, signedMessage);
+      responses.push(textRes);
     }
 
     const firstResponse = responses[0];
