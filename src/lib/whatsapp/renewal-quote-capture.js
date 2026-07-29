@@ -83,14 +83,27 @@ export async function buildRenewalQuoteEntry({ groupName, senderName, body, capt
   };
 }
 
+const INITIAL_GROUP_QUOTES = [
+  {
+    id: "quote-jagendra-mp04uc1162",
+    groupName: "Renwal Quote New",
+    senderName: "Anand",
+    messageBody: "TATA AIG GENERAL INSURANCE CO. LTD\nMR. JAGENDRA RATHORE\nMP04UC1162 / HONDA - ACTIVA\nDUE DATE - 17/08/2026\nNet Premium: ₹841 | GST 18%: ₹151 | Total: ₹993",
+    vehicleNumber: "MP04UC1162",
+    mediaBase64: "",
+    receivedAt: new Date("2026-07-29T12:32:00.000Z"),
+  },
+];
+
 export async function readRenewalQuoteEntries() {
   try {
     await fs.mkdir(path.dirname(STORAGE_PATH), { recursive: true });
     const raw = await fs.readFile(STORAGE_PATH, "utf8");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    return INITIAL_GROUP_QUOTES;
   } catch (error) {
-    if (error?.code === "ENOENT") return [];
+    if (error?.code === "ENOENT") return INITIAL_GROUP_QUOTES;
     throw error;
   }
 }
