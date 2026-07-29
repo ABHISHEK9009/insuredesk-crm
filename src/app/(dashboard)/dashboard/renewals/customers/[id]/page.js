@@ -4,6 +4,7 @@ import { useEffect, useState, use, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
+import ModalPortal from "@/app/components/shared/ModalPortal";
 import {
   Phone,
   MessageSquare,
