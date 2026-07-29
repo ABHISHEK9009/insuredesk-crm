@@ -207,7 +207,7 @@ export async function downloadWhatsAppMedia(messageId) {
   try {
     const res = await callGateway("POST", "download-media", { messageId });
     return res.mediaBase64 || res.data || res.base64 || "";
-  } catch (error) {
+  } catch (_error) {
     return "";
   }
 }

@@ -829,7 +829,8 @@ export default function CustomerProfilePage(props) {
     const file = e.target.files?.[0];
     if (!file) return;
     setManualQuoteFileName(file.name);
-    const reader = new FileReader();
+    if (typeof window === "undefined" || !window.FileReader) return;
+    const reader = new window.FileReader();
     reader.onload = (event) => {
       setManualQuoteFileBase64(event.target.result || "");
     };
