@@ -16,6 +16,15 @@ import {
   Plus,
   Info,
   AlertCircle,
+  Zap,
+  Layers,
+  MessageSquare,
+  Radio,
+  Users,
+  ShieldCheck,
+  Gift,
+  Sparkles,
+  Mail,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 import WhatsAppRecipientPicker from "@/app/components/whatsapp/WhatsAppRecipientPicker";
@@ -26,10 +35,55 @@ const TEMPLATE_VARIABLES = [
   { tag: "{{policyNumber}}", desc: "Policy Number" },
   { tag: "{{policyType}}", desc: "Policy Type (e.g. Motor, Health)" },
   { tag: "{{expiryDate}}", desc: "Policy Expiry Date" },
+  { tag: "{{vehicleName}}", desc: "Vehicle Make / Model" },
+  { tag: "{{registrationNumber}}", desc: "Vehicle Registration No." },
+  { tag: "{{netPremium}}", desc: "Net Payable Premium" },
   { tag: "{{agentName}}", desc: "Assigned Servicing Agent" },
 ];
 
 export default function WhatsAppSetupPage() {
+  // Template Groups Module Definition with Lucide Icons
+  const TEMPLATE_GROUPS = [
+    {
+      id: "renewals",
+      label: "Renewals Module",
+      icon: RefreshCw,
+      description: "Customize all automated & manual renewal reminder templates used in Renewals & Customer Profile.",
+      templates: [
+        { id: "due_soon", label: "Due Soon Notice", icon: Clock },
+        { id: "today", label: "Expires Today", icon: AlertTriangle },
+        { id: "expired", label: "Policy Expired", icon: AlertCircle },
+        { id: "follow_up", label: "Follow-Up", icon: Mail },
+        { id: "renewal_reminder", label: "Renewal Reminder", icon: RefreshCw },
+      ],
+    },
+    {
+      id: "customer",
+      label: "Customer Profiling & Greetings",
+      icon: Users,
+      description: "Customize birthday wishes, holiday greetings & generic customer communications.",
+      templates: [
+        { id: "birthday_wish", label: "Birthday Wish", icon: Gift },
+        { id: "festival_greeting", label: "Festival Greeting", icon: Sparkles },
+      ],
+    },
+    {
+      id: "operations",
+      label: "Policy & Claims Operations",
+      icon: ShieldCheck,
+      description: "Customize claim status updates and policy document attachment dispatches.",
+      templates: [
+        { id: "claim_update", label: "Claim Update", icon: Zap },
+        { id: "policy_document", label: "Policy Documents", icon: FileText },
+      ],
+    },
+  ];
+
+  const [selectedModuleGroup, setSelectedModuleGroup] = useState("renewals");
+  const currentModule = TEMPLATE_GROUPS.find((g) => g.id === selectedModuleGroup) || TEMPLATE_GROUPS[0];
+  // Main Dashboard Tab Navigation
+  const [activeMainSection, setActiveMainSection] = useState("templates"); // "templates" | "connection" | "logs"
+
   // Connection Status
   const [status, setStatus] = useState("UNREACHABLE");
   const [connected, setConnected] = useState(false);
@@ -79,9 +133,12 @@ export default function WhatsAppSetupPage() {
     return text
       .replace(/\{\{customerName\}\}/g, "John Doe")
       .replace(/\{\{companyName\}\}/g, "Bima Headquarter")
-      .replace(/\{\{policyNumber\}\}/g, "POL-987654")
-      .replace(/\{\{policyType\}\}/g, "Health Insurance")
-      .replace(/\{\{expiryDate\}\}/g, "15-Jul-2026")
+      .replace(/\{\{policyNumber\}\}/g, "45140031250100004298")
+      .replace(/\{\{policyType\}\}/g, "Motor Insurance")
+      .replace(/\{\{expiryDate\}\}/g, "15-Aug-2026")
+      .replace(/\{\{vehicleName\}\}/g, "SUZUKI ACCESS")
+      .replace(/\{\{registrationNumber\}\}/g, "MP04UF3275")
+      .replace(/\{\{netPremium\}\}/g, "3,450")
       .replace(/\{\{agentName\}\}/g, "Rahul Sharma");
   };
 
@@ -229,7 +286,6 @@ export default function WhatsAppSetupPage() {
     }
   }
 
-  // Handle template body updates locally
   const handleTemplateBodyChange = (e) => {
     setTemplates((prev) =>
       prev.map((t) =>
@@ -238,7 +294,6 @@ export default function WhatsAppSetupPage() {
     );
   };
 
-  // Handle template mediaUrl updates locally
   const handleTemplateMediaChange = (e) => {
     setTemplates((prev) =>
       prev.map((t) =>
@@ -247,7 +302,6 @@ export default function WhatsAppSetupPage() {
     );
   };
 
-  // Handle template mediaType updates locally
   const handleTemplateMediaTypeChange = (e) => {
     setTemplates((prev) =>
       prev.map((t) =>
@@ -399,33 +453,31 @@ export default function WhatsAppSetupPage() {
     }, 0);
   };
 
-  // Pagination helper
   const handlePageChange = (newOffset) => {
     setQueueOffset(newOffset);
   };
 
-  // Status Filter helper
   const handleStatusFilterChange = (status) => {
     setQueueStatusFilter(status);
     setQueueOffset(0);
   };
 
   return (
-    <div className="whatsapp-setup-page pb-12 max-w-7xl mx-auto px-4">
+    <div className="whatsapp-setup-page pb-16 max-w-7xl mx-auto px-4 sm:px-6">
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-[100] animate-slide-in">
+        <div className="fixed bottom-6 right-6 z-[100] animate-slide-in">
           <div
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-lg shadow-lg border text-sm font-semibold ${
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-xl shadow-xl border text-xs font-semibold ${
               toast.type === "success"
-                ? "bg-emerald-50 border-emerald-250 text-emerald-800"
-                : "bg-rose-50 border-rose-250 text-rose-800"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : "bg-rose-50 border-rose-200 text-rose-900"
             }`}
           >
             {toast.type === "success" ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             )}
             <span>{toast.message}</span>
           </div>
@@ -434,120 +486,467 @@ export default function WhatsAppSetupPage() {
 
       <OperationsBackLink />
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-5 mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Smartphone className="w-6 h-6 text-emerald-600 animate-pulse" />
-            WhatsApp Automation Setup
-          </h2>
-          <p className="text-slate-500 text-sm">
-            Configure WhatsApp gateway session, customize notification templates, and inspect message queue logs.
-          </p>
+      {/* Hero Header & Action Bar - Light Theme */}
+      <div
+        className="rounded-3xl p-6 sm:p-8 mb-8 relative overflow-hidden"
+        style={{
+          background: "#ffffff",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05)",
+          color: "#0f172a",
+        }}
+      >
+        {/* Decorative Light Background Blurs */}
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
+        <div className="absolute right-40 -bottom-20 w-80 h-80 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: "#ecfdf5",
+                border: "1px solid #a7f3d0",
+                color: "#047857",
+              }}
+            >
+              <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-600" />
+              <span>WhatsApp Operations Hub</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: "#0f172a" }}>
+              Automation & Messaging Center
+            </h1>
+            <p className="text-xs sm:text-sm max-w-2xl font-medium leading-relaxed" style={{ color: "#475569" }}>
+              Configure your WhatsApp gateway session, build smart dynamic notification templates, and monitor automated queue dispatches.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                fetchStatus();
+                fetchTemplates();
+                fetchQueue();
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition"
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #cbd5e1",
+                color: "#334155",
+              }}
+            >
+              <RefreshCw size={14} className={isCheckingStatus ? "animate-spin text-emerald-600" : ""} style={{ color: "#059669" }} />
+              Sync Status
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRunAutomations}
+              disabled={isRunningAutomations || !connected}
+              className="flex items-center gap-2 px-5 py-2.5 font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+              style={{ background: "#10b981", color: "#ffffff" }}
+            >
+              <Zap size={14} className={isRunningAutomations ? "animate-bounce" : ""} />
+              {isRunningAutomations ? "Running..." : "Run Automations"}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            fetchStatus();
-            fetchTemplates();
-            fetchQueue();
-          }}
-          className="flex items-center gap-1.5 px-4 py-2 border border-slate-350 rounded-lg text-xs font-semibold hover:bg-emerald-50/50 hover:text-emerald-700 hover:border-emerald-300 text-slate-700 bg-white transition shadow-sm"
-        >
-          <RefreshCw size={14} className={isCheckingStatus ? "animate-spin text-emerald-600" : ""} />
-          Refresh Panel
-        </button>
+
+        {/* Mini KPI Dashboard Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 relative z-10" style={{ borderTop: "1px solid #f1f5f9" }}>
+          <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={connected
+                ? { background: "#d1fae5", color: "#047857", border: "1px solid #a7f3d0" }
+                : { background: "#ffe4e6", color: "#e11d48", border: "1px solid #fecdd3" }
+              }
+            >
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase font-semibold tracking-wider" style={{ color: "#64748b" }}>Gateway State</div>
+              <div className="text-sm font-bold flex items-center gap-1.5 mt-0.5" style={{ color: "#0f172a" }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: connected ? "#10b981" : "#f43f5e" }} />
+                {connected ? "Connected & Active" : status.replace(/_/g, " ")}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#dbeafe", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase font-semibold tracking-wider" style={{ color: "#64748b" }}>Queue Workload</div>
+              <div className="text-sm font-bold mt-0.5" style={{ color: "#0f172a" }}>
+                {totalCount} Total Messages
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#f3e8ff", color: "#7e22ce", border: "1px solid #e9d5ff" }}>
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase font-semibold tracking-wider" style={{ color: "#64748b" }}>Templates Configured</div>
+              <div className="text-sm font-bold mt-0.5" style={{ color: "#0f172a" }}>
+                {templates.length || 9} Active Workflows
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT COLUMN: Status & Test sender */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* SESSION STATUS */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-emerald-600">
-            <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-ping"></span>
-                Connection Status
-              </h3>
-              {isCheckingStatus && (
-                <span className="w-4 h-4 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin" />
-              )}
-            </div>
-            <div className="p-5 flex flex-col items-center text-center">
-              <div
-                className={`w-14 h-14 rounded-full flex items-center justify-center border-2 mb-3.5 ${
-                  connected
-                    ? "bg-emerald-100 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-100"
-                    : (status === "SCAN_QR_CODE" || status === "QR_READY")
-                    ? "bg-amber-100 border-amber-500 text-amber-600 animate-pulse shadow-lg shadow-amber-50"
-                    : "bg-rose-100 border-rose-500 text-rose-600"
-                }`}
-              >
-                <Smartphone className="w-7 h-7" />
+      {/* Main Navigation Switcher Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-px mb-8 overflow-x-auto">
+        {[
+          { id: "templates", label: "Notification Templates", icon: MessageSquare },
+          { id: "connection", label: "Gateway & Testing", icon: Smartphone },
+          { id: "logs", label: "Message Queue & Logs", icon: Clock },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeMainSection === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveMainSection(tab.id)}
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-semibold border-b-2 transition whitespace-nowrap ${
+                isActive
+                  ? "border-slate-900 text-slate-900 bg-slate-50/60 rounded-t-xl"
+                  : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50/40"
+              }`}
+            >
+              <Icon size={15} className={isActive ? "text-slate-900" : "text-slate-400"} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* SECTION 1: NOTIFICATION TEMPLATES */}
+      {activeMainSection === "templates" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8">
+            <div className="flex flex-col gap-4 mb-6">
+              {/* Level 1: Platform CRM Module Bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-200">
+                <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap px-1">
+                    CRM Module:
+                  </span>
+                  {TEMPLATE_GROUPS.map((group) => {
+                    const GroupIcon = group.icon;
+                    const isModuleActive = selectedModuleGroup === group.id;
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedModuleGroup(group.id);
+                          setActiveTemplateTab(group.templates[0].id);
+                          setTemplateSuccess(false);
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                          isModuleActive
+                            ? "bg-white text-slate-900 shadow-md border-2 border-slate-900"
+                            : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <GroupIcon size={14} className={isModuleActive ? "text-slate-900" : "text-slate-400"} />
+                        {group.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <h4 className="text-base font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5 justify-center">
+              {/* Level 2: Message Formats in Selected Module */}
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    {currentModule.label} Formats
+                  </h4>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {currentModule.description}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto p-1.5 bg-slate-100/70 rounded-xl border border-slate-200">
+                  {currentModule.templates.map((tmpl) => {
+                    const TmplIcon = tmpl.icon;
+                    const isActive = activeTemplateTab === tmpl.id;
+                    return (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTemplateTab(tmpl.id);
+                          setTemplateSuccess(false);
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition whitespace-nowrap ${
+                          isActive
+                            ? "bg-white text-emerald-800 shadow-sm border-2 border-emerald-600"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                        }`}
+                      >
+                        <TmplIcon size={13} className={isActive ? "text-emerald-600" : "text-slate-400"} />
+                        {tmpl.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              {/* Left Column: Form Editor (2 Cols) */}
+              <div className="xl:col-span-2 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200">
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                      Attachment Media URL (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={activeTemplate.mediaUrl || ""}
+                      onChange={handleTemplateMediaChange}
+                      placeholder="https://example.com/image.png or base64 data"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-slate-900 transition"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                      Public image URL, PDF document, or brochure. Empty sends standard text-only.
+                    </p>
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                      Attachment Type
+                    </label>
+                    <select
+                      value={activeTemplate.mediaType || "IMAGE"}
+                      onChange={handleTemplateMediaTypeChange}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-slate-900 transition font-medium"
+                    >
+                      <option value="IMAGE">IMAGE</option>
+                      <option value="PDF">PDF / DOCUMENT</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                      Message Body / Caption Text
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {activeTemplate.body ? `${activeTemplate.body.length} characters` : ""}
+                    </span>
+                  </div>
+                  <textarea
+                    id="template-textarea"
+                    rows="7"
+                    value={activeTemplate.body || ""}
+                    onChange={handleTemplateBodyChange}
+                    className="w-full px-4 py-3 bg-slate-50/40 border border-slate-300 rounded-2xl text-xs text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white transition font-mono leading-relaxed shadow-inner"
+                  />
+                </div>
+
+                <div>
+                  <span className="block text-[11px] font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                    Available Dynamic Variables (Click to Insert)
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {TEMPLATE_VARIABLES.map((v) => (
+                      <button
+                        key={v.tag}
+                        type="button"
+                        onClick={() => handleInsertTag(v.tag)}
+                        title={v.desc}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-250 rounded-xl text-[11px] font-semibold text-slate-700 font-mono transition flex items-center gap-1.5 hover:text-slate-900"
+                      >
+                        <Plus size={12} className="text-slate-500" />
+                        {v.tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-200 pt-5">
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    * Dynamic fields automatically compile values from customer records upon dispatch.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSaveTemplate}
+                    disabled={isSavingTemplate}
+                    className="flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl text-xs shadow-sm transition disabled:opacity-50 hover:bg-slate-50"
+                    style={{
+                      background: "#ffffff",
+                      color: "#0f172a",
+                      border: "1.5px solid #0f172a",
+                    }}
+                  >
+                    <Save size={14} className="text-slate-900" />
+                    {isSavingTemplate ? "Saving Template..." : "Save Template"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Mobile Device Simulator (1 Col) */}
+              <div className="xl:col-span-1 flex flex-col justify-start">
+                <span className="block text-[11px] font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                  Real-time WhatsApp Device Preview
+                </span>
+
+                <div className="border border-slate-300 rounded-3xl overflow-hidden shadow-lg flex flex-col h-[400px] bg-[#efeae2] relative">
+                  {/* Smartphone Header Notch */}
+                  <div className="bg-[#075E54] text-white px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs border border-white/20">
+                        ID
+                      </div>
+                      <div>
+                        <div className="font-semibold text-xs text-white">InsureDesk Customer</div>
+                        <div className="text-[10px] text-emerald-200 font-normal">online</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chat Area Wallpaper */}
+                  <div className="flex-1 p-3.5 overflow-y-auto flex flex-col justify-end bg-[#efeae2]">
+                    <div className="bg-[#dcf8c6] text-slate-900 p-3.5 rounded-2xl rounded-tr-none shadow-md max-w-[92%] self-end relative text-xs leading-relaxed border border-[#cbe5bd]">
+                      {activeTemplate.mediaUrl && (
+                        <div className="mb-2 bg-black/5 rounded-xl p-2 border border-black/10 flex items-center gap-2 shrink-0">
+                          {activeTemplate.mediaType === "IMAGE" ? (
+                            <span className="text-[10px] text-slate-800 font-semibold truncate">🖼️ Image Attachment Attached</span>
+                          ) : (
+                            <span className="text-[10px] text-slate-800 font-semibold truncate">📄 PDF Document Attached</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="whitespace-pre-wrap font-sans text-slate-900 break-words pr-2">
+                        {compilePreviewText(activeTemplate.body)}
+                      </div>
+
+                      <div className="text-[9.5px] text-slate-500 text-right mt-2 font-medium flex items-center justify-end gap-1">
+                        <span>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span className="text-[#34B7F1] text-[11px] font-bold">✓✓</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-400 mt-2.5 font-medium text-center">
+                  Preview compiled using mock recipient records.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 2: GATEWAY CONNECTION & TEST SENDER */}
+      {activeMainSection === "connection" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* CONNECTION STATUS */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">WhatsApp Gateway Session</h3>
+                <p className="text-xs text-slate-500 font-normal mt-0.5">
+                  Manage active WhatsApp web gateway instance & authentication QR pair.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fetchStatus(false, true)}
+                className="p-2 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-xl transition"
+              >
+                <RefreshCw size={14} className={isCheckingStatus ? "animate-spin text-emerald-600" : ""} />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center text-center py-4">
+              <div
+                className={`w-16 h-16 rounded-3xl flex items-center justify-center border-2 mb-4 transition-all ${
+                  connected
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-600 shadow-sm"
+                    : (status === "SCAN_QR_CODE" || status === "QR_READY")
+                    ? "bg-amber-50 border-amber-300 text-amber-600 animate-pulse shadow-sm"
+                    : "bg-slate-100 border-slate-300 text-slate-500"
+                }`}
+              >
+                <Smartphone className="w-8 h-8" />
+              </div>
+
+              <h4 className="text-base font-bold text-slate-900 uppercase tracking-wide">
                 {connected ? (
-                  <span className="text-emerald-700 font-bold">🟢 Connected</span>
+                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                    <CheckCircle2 size={14} className="text-emerald-600" /> WhatsApp Gateway Connected
+                  </span>
                 ) : (
-                  <span className="text-slate-700">{status.replace(/_/g, " ")}</span>
+                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-250 text-slate-700 text-xs font-bold">
+                    {status.replace(/_/g, " ")}
+                  </span>
                 )}
               </h4>
-              <p className="text-xs text-slate-400 font-semibold mt-1">
+              <p className="text-xs text-slate-400 font-medium mt-2">
                 Last checked: {lastChecked ? lastChecked.toLocaleTimeString("en-IN") : "Never"}
               </p>
 
               {connected && (
                 <button
+                  type="button"
                   onClick={() => setShowDisconnectModal(true)}
                   disabled={isLoggingOut}
-                  className="mt-3.5 px-3 py-1.5 bg-rose-50 border border-rose-250 text-rose-700 font-bold rounded-lg text-xs hover:bg-rose-100 hover:text-rose-800 transition shadow-sm disabled:opacity-50 flex items-center gap-1"
+                  className="mt-6 px-4 py-2 bg-white border border-rose-200 text-rose-700 font-semibold rounded-xl text-xs hover:bg-rose-50 hover:border-rose-300 transition shadow-sm disabled:opacity-50"
                 >
                   Disconnect Session
                 </button>
               )}
 
               {statusError && !connected && (
-                <div className="mt-3 p-2 bg-rose-50 rounded text-[11px] text-rose-700 font-medium leading-relaxed max-w-full overflow-hidden break-words border border-rose-100">
+                <div className="mt-4 p-3 bg-rose-50 rounded-xl text-xs text-rose-700 font-medium border border-rose-200 max-w-sm">
                   {statusError}
                 </div>
               )}
 
-              {/* QR Code Container */}
+              {/* QR Code Scan area */}
               {(status === "SCAN_QR_CODE" || status === "QR_READY") && qrCode && (
-                <div className="mt-5 w-full flex flex-col items-center">
-                  <div className="p-3.5 bg-white border-2 border-emerald-100 rounded-xl shadow-md">
+                <div className="mt-6 w-full flex flex-col items-center">
+                  <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
                     <Image
                       src={qrCode}
                       alt="WhatsApp Web Login QR Code"
-                      width={192}
-                      height={192}
+                      width={200}
+                      height={200}
                       unoptimized
-                      className="w-48 h-48 block"
+                      className="w-52 h-52 block rounded-lg"
                     />
                   </div>
-                  <div className="flex gap-2 items-center text-slate-600 mt-4.5 text-xs leading-relaxed max-w-xs font-medium bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
-                    <Info size={18} className="text-emerald-600 shrink-0 animate-bounce" />
-                    <span>Scan this QR code using your WhatsApp Linked Devices screen. Polling automatically.</span>
-                  </div>
-                </div>
-              )}
-
-              {!connected && status !== "SCAN_QR_CODE" && status !== "QR_READY" && (
-                <div className="mt-4 flex flex-col items-center">
-                  <div className="flex gap-2 items-center text-rose-700 text-xs leading-relaxed font-medium bg-rose-50/50 p-3 rounded-lg border border-rose-100 max-w-xs">
-                    <AlertTriangle size={18} className="text-rose-500 shrink-0 animate-pulse" />
-                    <span>WhatsApp gateway is offline or initializing. Please ensure the node server is running.</span>
+                  <div className="flex gap-2.5 items-center text-slate-600 mt-4 text-xs leading-relaxed max-w-xs font-medium bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-left">
+                    <Info size={18} className="text-emerald-600 shrink-0" />
+                    <span>Scan this QR code using your phone's WhatsApp Linked Devices menu.</span>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* TEST MESSAGE SENDER */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-teal-600">
-            <div className="bg-slate-50 p-4 border-b border-slate-200">
-              <h3 className="text-sm font-bold text-slate-800">Send Test Message</h3>
+          {/* TEST DISPATCHER */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8">
+            <div className="pb-4 border-b border-slate-200 mb-6">
+              <h3 className="text-base font-bold text-slate-900">Send Test WhatsApp Message</h3>
+              <p className="text-xs text-slate-500 font-normal mt-0.5">
+                Send an instant test message to verify recipient routing & session health.
+              </p>
             </div>
-            <form onSubmit={handleSendTest} className="p-5 space-y-4">
+
+            <form onSubmit={handleSendTest} className="space-y-5">
               <WhatsAppRecipientPicker
                 type={testRecipientType}
                 onTypeChange={(value) => {
@@ -558,64 +957,72 @@ export default function WhatsAppSetupPage() {
                 onGroupChange={setTestGroupId}
                 disabled={isSendingTest || !connected}
               />
-              {testRecipientType === "individual" ? <div>
-                <label className="block text-xs font-bold text-slate-655 mb-1.5 uppercase">
-                  Recipient Phone Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 91XXXXXXXXXX"
-                  value={testPhone}
-                  onChange={(e) => setTestPhone(e.target.value)}
-                  className="w-full pl-3 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
-                />
-                <p className="text-[10px] text-slate-400 mt-1 font-semibold">
-                  Include country code (e.g. 91 for India) without '+' or spaces.
-                </p>
-              </div> : null}
+
+              {testRecipientType === "individual" ? (
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Recipient Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 91XXXXXXXXXX"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-slate-900 transition"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                    Include country code (e.g. 91 for India) without '+' or spaces.
+                  </p>
+                </div>
+              ) : null}
 
               <div>
-                <label className="block text-xs font-bold text-slate-655 mb-1.5 uppercase">
-                  Message Text
+                <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  Message Content
                 </label>
                 <textarea
-                  rows="3"
+                  rows="4"
                   value={testMessage}
                   onChange={(e) => setTestMessage(e.target.value)}
-                  className="w-full pl-3 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
-                ></textarea>
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-slate-900 transition leading-relaxed"
+                />
               </div>
 
               <button
                 type="submit"
                 disabled={isSendingTest || !connected}
-                className="w-full flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-lg text-xs shadow-md disabled:opacity-50 disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-350 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 font-bold rounded-xl text-xs shadow-sm disabled:opacity-50 transition hover:bg-slate-50"
+                style={{
+                  background: "#ffffff",
+                  color: "#0f172a",
+                  border: "1.5px solid #0f172a",
+                }}
               >
-                <Send size={13} className={isSendingTest ? "animate-pulse" : ""} />
-                {isSendingTest ? "Sending..." : "Send Test Message"}
+                <Send size={14} className={isSendingTest ? "animate-pulse text-slate-900" : "text-slate-900"} />
+                {isSendingTest ? "Sending Test Message..." : "Dispatch Test Message"}
               </button>
 
               {testResult && (
                 <div
-                  className={`p-3 rounded-lg border text-xs font-semibold ${
+                  className={`p-4 rounded-2xl border text-xs font-medium ${
                     testResult.success
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm"
-                      : "bg-rose-50 border-rose-200 text-rose-800 shadow-sm"
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      : "bg-rose-50 border-rose-200 text-rose-900"
                   }`}
                 >
                   {testResult.success ? (
                     <div>
-                      <p className="font-bold flex items-center gap-1 text-emerald-700">
-                        <CheckCircle2 size={14} className="text-emerald-600" /> Sent Successfully!
+                      <p className="font-bold flex items-center gap-1.5 text-emerald-800">
+                        <CheckCircle2 size={15} className="text-emerald-600" /> Test Message Sent!
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5 font-mono">ID: {testResult.messageId}</p>
+                      <p className="text-[10px] text-slate-500 mt-1 font-mono">Message ID: {testResult.messageId}</p>
                     </div>
                   ) : (
                     <div>
-                      <p className="font-bold flex items-center gap-1 text-rose-700">
-                        <AlertCircle size={14} className="text-rose-600" /> Sending Failed
+                      <p className="font-bold flex items-center gap-1.5 text-rose-800">
+                        <AlertCircle size={15} className="text-rose-600" /> Dispatch Failed
                       </p>
-                      <p className="text-[10px] text-rose-600 mt-0.5">{testResult.error}</p>
+                      <p className="text-[10px] text-rose-700 mt-1">{testResult.error}</p>
                     </div>
                   )}
                 </div>
@@ -623,395 +1030,204 @@ export default function WhatsAppSetupPage() {
             </form>
           </div>
         </div>
+      )}
 
-        {/* RIGHT COLUMN: Template editor & queue */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* TEMPLATE EDITOR */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-emerald-600">
-            <div className="bg-slate-50 p-4 border-b border-slate-200">
-              <h3 className="text-sm font-bold text-slate-800">Notification Templates</h3>
-            </div>
-            
-            {/* Tabs */}
-            <div className="flex border-b border-slate-200 overflow-x-auto">
-              {[
-                { id: "birthday_wish", label: "Birthday" },
-                { id: "renewal_reminder", label: "Renewal" },
-                { id: "claim_update", label: "Claims" },
-                { id: "policy_document", label: "Policy Docs" },
-                { id: "festival_greeting", label: "Festival" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTemplateTab(tab.id);
-                    setTemplateSuccess(false);
-                  }}
-                  className={`px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition ${
-                    activeTemplateTab === tab.id
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/20"
-                      : "border-transparent text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+      {/* SECTION 3: MESSAGE QUEUE & DISPATCH LOGS */}
+      {activeMainSection === "logs" && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 mb-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                WhatsApp Message Queue & Logs
+              </h3>
+              <p className="text-xs text-slate-500 font-normal mt-0.5">
+                Inspect real-time dispatch queue, retry failed messages, and review delivery logs. Total: {totalCount} records.
+              </p>
             </div>
 
-            <div className="p-5 grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Form elements (Left 2 cols) */}
-              <div className="xl:col-span-2 space-y-5">
-                {/* Media URL setup */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-655 mb-1.5 uppercase">
-                      Attachment Media URL (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={activeTemplate.mediaUrl || ""}
-                      onChange={handleTemplateMediaChange}
-                      placeholder="https://example.com/image.png or base64 data"
-                      className="w-full pl-3 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-1 font-semibold">
-                      Url of image, brochure PDF, or public document. Empty sends text-only.
-                    </p>
-                  </div>
-                  <div className="md:col-span-1">
-                    <label className="block text-xs font-bold text-slate-655 mb-1.5 uppercase">
-                      Attachment Type
-                    </label>
-                    <select
-                      value={activeTemplate.mediaType || "IMAGE"}
-                      onChange={handleTemplateMediaTypeChange}
-                      className="w-full pl-3 pr-8 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="IMAGE">IMAGE</option>
-                      <option value="PDF">PDF / DOCUMENT</option>
-                    </select>
-                  </div>
-                </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={queueStatusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="PENDING">PENDING</option>
+                <option value="SENDING">SENDING</option>
+                <option value="SENT">SENT</option>
+                <option value="RETRYING">RETRYING</option>
+                <option value="FAILED">FAILED</option>
+              </select>
 
-                {/* Template Body */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-655 mb-1.5 uppercase">
-                    Message Body / Caption Text
-                  </label>
-                  <textarea
-                    id="template-textarea"
-                    rows="6"
-                    value={activeTemplate.body || ""}
-                    onChange={handleTemplateBodyChange}
-                    className="w-full pl-3 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-emerald-500 font-mono leading-relaxed"
-                  ></textarea>
-                </div>
-
-                {/* Variable Placeholders */}
-                <div>
-                  <span className="block text-xs font-bold text-slate-655 mb-2 uppercase">
-                    Available Variables (Click to Insert)
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TEMPLATE_VARIABLES.map((v) => (
-                      <button
-                        key={v.tag}
-                        type="button"
-                        onClick={() => handleInsertTag(v.tag)}
-                        title={v.desc}
-                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-250 rounded text-[11px] font-bold text-slate-600 font-mono transition flex items-center gap-1 hover:text-emerald-700 hover:border-emerald-300"
-                      >
-                        <Plus size={10} />
-                        {v.tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Save template */}
-                <div className="flex items-center justify-between border-t border-slate-200 pt-4">
-                  <span className="text-[11px] text-slate-400 font-semibold">
-                    * Dynamic fields compile automatically before message is queued.
-                  </span>
-                  <button
-                    onClick={handleSaveTemplate}
-                    disabled={isSavingTemplate}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-650 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-lg text-xs shadow-md transition"
-                  >
-                    <Save size={13} />
-                    {isSavingTemplate ? "Saving..." : "Save Template"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Live Preview (Right 1 col) */}
-              <div className="xl:col-span-1 flex flex-col justify-start">
-                <span className="block text-xs font-bold text-slate-655 mb-2 uppercase">
-                  Live Preview
-                </span>
-                
-                <div className="border border-emerald-150 rounded-2xl overflow-hidden shadow-md flex flex-col h-[360px] bg-[#efeae2]">
-                  {/* WhatsApp Mock Header */}
-                  <div className="bg-[#075E54] text-white px-3.5 py-2.5 flex items-center justify-between shadow-sm shrink-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-650 text-emerald-105 flex items-center justify-center font-bold text-xs border border-emerald-500/20">
-                        ID
-                      </div>
-                      <div>
-                        <div className="font-bold text-xs">InsureDesk Customer</div>
-                        <div className="text-[10px] text-emerald-300/90 font-medium">online</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Chat screen background area */}
-                  <div className="flex-1 p-3 overflow-y-auto flex flex-col justify-end bg-[#efeae2]">
-                    {/* Message Bubble */}
-                    <div className="bg-[#dcf8c6] text-slate-800 p-3 rounded-lg rounded-tr-none shadow-sm max-w-[90%] self-end relative text-xs leading-relaxed border border-[#cbe5bd]">
-                      {activeTemplate.mediaUrl && (
-                        <div className="mb-2 bg-black/5 rounded p-1.5 border border-black/10 flex items-center gap-2 shrink-0">
-                          {activeTemplate.mediaType === "IMAGE" ? (
-                            <span className="text-[10px] text-slate-600 font-semibold truncate">🖼️ Image Attachment</span>
-                          ) : (
-                            <span className="text-[10px] text-slate-600 font-semibold truncate">📄 PDF Document</span>
-                          )}
-                        </div>
-                      )}
-                      
-                      <div className="whitespace-pre-wrap font-sans text-slate-850 break-words pr-2">
-                        {compilePreviewText(activeTemplate.body)}
-                      </div>
-                      
-                      <div className="text-[9px] text-slate-500 text-right mt-1.5 font-semibold flex items-center justify-end gap-0.5">
-                        <span>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
-                        <span className="text-[#34B7F1] text-[11px] font-bold">✓✓</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <p className="text-[10px] text-slate-400 mt-2 font-semibold text-center leading-normal">
-                  Values compiled using mock records for preview.
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={handleRetryAllFailed}
+                disabled={isRetryingQueue}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl text-xs hover:bg-slate-50 transition shadow-sm"
+              >
+                <RotateCcw size={13} />
+                Retry Failed
+              </button>
             </div>
           </div>
 
-          {/* QUEUE & LOGS TABLE */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="bg-slate-50 p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">WhatsApp Message Queue & Logs</h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                  Total queued: {totalCount} records. Sequenced at 8–12 seconds interval.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleRunAutomations}
-                  disabled={isRunningAutomations || !connected}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 border border-emerald-650 text-white font-bold rounded text-xs hover:bg-emerald-700 transition shadow-sm disabled:opacity-50 disabled:hover:bg-emerald-600"
-                  title={
-                    connected
-                      ? "Queue birthday wishes and internal CRM alerts, then send one safe batch"
-                      : "Connect WhatsApp before sending automation messages"
-                  }
-                >
-                  <Send size={12} className={isRunningAutomations ? "animate-pulse" : ""} />
-                  {isRunningAutomations ? "Running..." : "Run & Send"}
-                </button>
-
-                <select
-                  value={queueStatusFilter}
-                  onChange={(e) => handleStatusFilterChange(e.target.value)}
-                  className="pl-2 pr-6 py-1.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-705 focus:outline-none"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="PENDING">PENDING</option>
-                  <option value="SENDING">SENDING</option>
-                  <option value="SENT">SENT</option>
-                  <option value="RETRYING">RETRYING</option>
-                  <option value="FAILED">FAILED</option>
-                </select>
-                
-                <button
-                  onClick={handleRetryAllFailed}
-                  disabled={isRetryingQueue}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-250 text-emerald-700 font-bold rounded text-xs hover:bg-emerald-100 transition shadow-sm"
-                >
-                  <RotateCcw size={12} />
-                  Retry Failed
-                </button>
-              </div>
+          {isLoadingQueue ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white">
+              <div className="w-6 h-6 rounded-full border-2 border-slate-300 border-t-slate-900 animate-spin mb-2" />
+              <p className="text-slate-400 text-xs font-medium">Loading queue logs...</p>
             </div>
+          ) : queueMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white">
+              <Clock className="w-9 h-9 text-slate-300 mb-2" />
+              <h4 className="text-xs font-bold text-slate-700">No Queue Messages Found</h4>
+              <p className="text-[11px] text-slate-400 max-w-xs mt-0.5">
+                The message queue is empty. Active triggers will enqueue messages at scheduled thresholds.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+                    <th className="py-3.5 px-4">Recipient</th>
+                    <th className="py-3.5 px-4">Type</th>
+                    <th className="py-3.5 px-4 w-1/3">Message</th>
+                    <th className="py-3.5 px-4 text-center">Attempts</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4">Time</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-slate-700">
+                  {queueMessages.map((msg) => {
+                    const date = msg.sentAt || msg.scheduledAt || msg.createdAt;
+                    const formattedTime = date ? new Date(date).toLocaleString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }) : "N/A";
 
-            {automationResult && (
-              <div className="mx-4 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-900">
-                <div className="font-bold">Last manual automation run</div>
-                <div className="mt-1 grid grid-cols-2 md:grid-cols-4 gap-2 font-semibold">
-                  <span>Birthdays queued: {automationResult.scans?.birthdaysQueued || 0}</span>
-                  <span>Renewals queued: {automationResult.scans?.renewalsQueued || 0}</span>
-                  <span>Internal digests: {automationResult.scans?.internalDigestQueued || 0}</span>
-                  <span>Sent now: {automationResult.batch?.processedCount || 0}</span>
-                </div>
-              </div>
-            )}
-
-            {isLoadingQueue ? (
-              <div className="flex flex-col items-center justify-center py-12 bg-white">
-                <div className="w-6 h-6 rounded-full border-2 border-slate-300 border-t-emerald-600 animate-spin mb-2" />
-                <p className="text-slate-400 text-xs font-medium">Loading logs...</p>
-              </div>
-            ) : queueMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-white">
-                <Clock className="w-8 h-8 text-slate-300 mb-2.5 animate-pulse" />
-                <h4 className="text-xs font-bold text-slate-700">No Queue Messages</h4>
-                <p className="text-[11px] text-slate-400 max-w-xs mt-0.5">
-                  The message queue is empty. Active triggers will enqueue messages at scheduled thresholds.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-655 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
-                      <th className="py-3.5 px-4">Recipient</th>
-                      <th className="py-3.5 px-4">Type</th>
-                      <th className="py-3.5 px-4 w-1/3">Message</th>
-                      <th className="py-3.5 px-4 text-center">Attempts</th>
-                      <th className="py-3.5 px-4">Status</th>
-                      <th className="py-3.5 px-4">Time</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 text-slate-700">
-                    {queueMessages.map((msg) => {
-                      const date = msg.sentAt || msg.scheduledAt || msg.createdAt;
-                      const formattedTime = date ? new Date(date).toLocaleString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }) : "N/A";
-                      
-                      return (
-                        <tr key={msg.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-800 text-xs">{msg.recipientName}</div>
-                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">{msg.recipientPhone}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
-                              {msg.messageType}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-xs font-medium text-slate-600 leading-normal">
-                            <div className="line-clamp-2" title={msg.messageBody}>
-                              {msg.messageBody}
+                    return (
+                      <tr key={msg.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-900 text-xs">{msg.recipientName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">{msg.recipientPhone}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                            {msg.messageType}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-xs font-normal text-slate-600 leading-normal">
+                          <div className="line-clamp-2" title={msg.messageBody}>
+                            {msg.messageBody}
+                          </div>
+                          {msg.mediaUrl && (
+                            <div className="text-[10px] text-slate-600 font-medium mt-1 flex items-center gap-1">
+                              <FileText size={10} />
+                              <span className="truncate max-w-[120px]">{msg.fileName || "attachment"}</span>
                             </div>
-                            {msg.mediaUrl && (
-                              <div className="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                                <FileText size={10} />
-                                <span className="truncate max-w-[120px]">{msg.fileName || "attachment"}</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center text-xs font-bold text-slate-500">
-                            {msg.attempts} / 3
-                          </td>
-                          <td className="py-3 px-4 text-xs">
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded font-bold uppercase text-[9px] border ${
-                                msg.status === "SENT"
-                                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                                  : msg.status === "SENDING"
-                                  ? "bg-blue-50 border-blue-200 text-blue-700"
-                                  : msg.status === "PENDING"
-                                  ? "bg-slate-100 border-slate-200 text-slate-600"
-                                  : msg.status === "RETRYING"
-                                  ? "bg-amber-50 border-amber-200 text-amber-700"
-                                  : "bg-rose-50 border-rose-200 text-rose-700"
-                              }`}
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center text-xs font-semibold text-slate-500">
+                          {msg.attempts} / 3
+                        </td>
+                        <td className="py-3 px-4 text-xs">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-md font-bold uppercase text-[9px] border ${
+                              msg.status === "SENT"
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                                : msg.status === "SENDING"
+                                ? "bg-blue-50 border-blue-200 text-blue-700"
+                                : msg.status === "PENDING"
+                                ? "bg-slate-100 border-slate-200 text-slate-600"
+                                : msg.status === "RETRYING"
+                                ? "bg-amber-50 border-amber-200 text-amber-700"
+                                : "bg-rose-50 border-rose-200 text-rose-700"
+                            }`}
+                          >
+                            {msg.status}
+                          </span>
+                          {msg.errorMessage && (
+                            <div className="text-[9px] text-rose-600 font-medium mt-1 leading-normal max-w-[140px] truncate" title={msg.errorMessage}>
+                              {msg.errorMessage}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-[10px] font-medium text-slate-400 whitespace-nowrap">
+                          {formattedTime}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          {["FAILED", "RETRYING"].includes(msg.status) && (
+                            <button
+                              type="button"
+                              onClick={() => handleRetryMessage(msg.id)}
+                              title="Retry sending"
+                              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 transition inline-block font-semibold"
                             >
-                              {msg.status}
-                            </span>
-                            {msg.errorMessage && (
-                              <div className="text-[9px] text-rose-600 font-semibold mt-1 leading-normal max-w-[140px] truncate" title={msg.errorMessage}>
-                                {msg.errorMessage}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-[10px] font-medium text-slate-400 whitespace-nowrap">
-                            {formattedTime}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            {["FAILED", "RETRYING"].includes(msg.status) && (
-                              <button
-                                onClick={() => handleRetryMessage(msg.id)}
-                                title="Retry sending"
-                                className="p-1 hover:bg-slate-100 rounded text-emerald-600 hover:text-emerald-700 transition inline-block font-bold"
-                              >
-                                <RotateCcw size={14} />
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                              <RotateCcw size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-            {/* Pagination footer */}
-            <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500 font-semibold">
-              <span>
-                Showing {queueOffset + 1} - {Math.min(queueOffset + queueLimit, totalCount)} of {totalCount} records
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={queueOffset === 0}
-                  onClick={() => handlePageChange(queueOffset - queueLimit)}
-                  className="px-3 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white text-slate-700 transition shadow-sm"
-                >
-                  Previous
-                </button>
-                <button
-                  disabled={queueOffset + queueLimit >= totalCount}
-                  onClick={() => handlePageChange(queueOffset + queueLimit)}
-                  className="px-3 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white text-slate-700 transition shadow-sm"
-                >
-                  Next
-                </button>
-              </div>
+          {/* Pagination Footer */}
+          <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500 font-medium mt-4 rounded-2xl">
+            <span>
+              Showing {queueOffset + 1} - {Math.min(queueOffset + queueLimit, totalCount)} of {totalCount} records
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={queueOffset === 0}
+                onClick={() => handlePageChange(queueOffset - queueLimit)}
+                className="px-3.5 py-1.5 border border-slate-300 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 transition font-semibold"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={queueOffset + queueLimit >= totalCount}
+                onClick={() => handlePageChange(queueOffset + queueLimit)}
+                className="px-3.5 py-1.5 border border-slate-300 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 transition font-semibold"
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* DISCONNECT CONFIRMATION MODAL */}
       {showDisconnectModal && (
         <ModalPortal>
           <div className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all duration-300">
             <div
-              className="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl text-center transform scale-100 transition-all"
+              className="bg-white rounded-3xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl text-center"
               role="dialog"
               aria-modal="true"
             >
-              <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-4 text-rose-600">
-                <AlertTriangle className="w-6 h-6 animate-pulse" />
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-4 text-rose-600">
+                <AlertTriangle className="w-6 h-6" />
               </div>
 
-              <h3 className="text-base font-bold text-slate-900 mb-2">Disconnect WhatsApp?</h3>
-              <p className="text-xs text-slate-500 leading-relaxed mb-6 font-semibold">
-                Are you sure you want to disconnect your WhatsApp session? This will stop all scheduled messages until you re-link.
+              <h3 className="text-base font-bold text-slate-900 mb-1.5">Disconnect WhatsApp?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-6 font-medium">
+                Are you sure you want to disconnect your WhatsApp session? This will stop all scheduled messages until re-linked.
               </p>
 
               <div className="flex gap-2.5 justify-center">
                 <button
                   type="button"
                   onClick={() => setShowDisconnectModal(false)}
-                  className="px-4 py-2 border border-slate-350 rounded-lg text-xs font-semibold hover:bg-slate-50 text-slate-700 bg-white transition shadow-sm"
+                  className="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-50 text-slate-700 bg-white transition shadow-sm"
                 >
                   Cancel
                 </button>
@@ -1019,7 +1235,7 @@ export default function WhatsAppSetupPage() {
                   type="button"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="px-4 py-2 bg-gradient-to-r from-rose-600 to-red-650 hover:from-rose-700 hover:to-red-700 text-white font-bold rounded-lg text-xs shadow-md transition disabled:opacity-50"
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs shadow-md transition disabled:opacity-50"
                 >
                   {isLoggingOut ? "Disconnecting..." : "Disconnect"}
                 </button>

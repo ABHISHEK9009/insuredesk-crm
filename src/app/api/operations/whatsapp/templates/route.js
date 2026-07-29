@@ -5,13 +5,33 @@ import { verifyJWT } from "@/lib/auth";
 export const runtime = "nodejs";
 
 const DEFAULT_TEMPLATES = {
-  birthday_wish: {
-    body: "Dear {{customerName}},\n\nWishing you a very Happy Birthday! 🎂 May this year bring you joy, health, and prosperity.\n\nBest regards,\n{{companyName}}",
+  due_soon: {
+    body: "Dear {{customerName}},\n\nThe Motor Insurance Policy for {{customerName}} with {{companyName}} is scheduled to expire soon.\n\nPolicy Number: {{policyNumber}}\nVehicle: {{vehicleName}}\nRegistration No.: {{registrationNumber}}\nExpiry Date: {{expiryDate}}\nNet Premium: ₹{{netPremium}}\n\nKindly contact us to renew before expiry.\n\nBest regards,\nBima Headquarter",
+    mediaUrl: "",
+    mediaType: "IMAGE",
+  },
+  today: {
+    body: "URGENT RENEWAL NOTICE 🚨\n\nDear {{customerName}},\n\nYour insurance policy {{policyNumber}} expires TODAY ({{expiryDate}}).\n\nPlease approve calculation to issue renewal instantly.\n\nBest regards,\nBima Headquarter",
+    mediaUrl: "",
+    mediaType: "IMAGE",
+  },
+  expired: {
+    body: "POLICY EXPIRED NOTICE ⚠️\n\nDear {{customerName}},\n\nYour policy {{policyNumber}} for {{vehicleName}} expired on {{expiryDate}}.\n\nDrive safe and renew now to avoid penalties and inspection.\n\nBest regards,\nBima Headquarter",
+    mediaUrl: "",
+    mediaType: "IMAGE",
+  },
+  follow_up: {
+    body: "Dear {{customerName}},\n\nFollowing up regarding renewal for policy {{policyNumber}} expiring on {{expiryDate}}.\n\nPlease share confirmation or payment copy.\n\nBest regards,\nBima Headquarter",
     mediaUrl: "",
     mediaType: "IMAGE",
   },
   renewal_reminder: {
-    body: "Dear {{customerName}},\n\nYour {{policyType}} (Policy No: {{policyNumber}}) with {{companyName}} is due for renewal on {{expiryDate}} ({{daysLeft}}).\n\nPlease connect with us to ensure continuous coverage.\n\nRegards,\n{{companyName}}",
+    body: "Dear {{customerName}},\n\nThe Motor Insurance Policy for *{{customerName}}* with *{{companyName}}* is scheduled to expire soon.\n\n*Policy Number:* {{policyNumber}}\n*Vehicle:* {{vehicleName}}\n*Registration No.:* {{registrationNumber}}\n*Expiry Date:* {{expiryDate}}\n\nPlease connect with us in advance to ensure a smooth renewal, avoid any interruption in coverage, and explore the best renewal options available.\n\nPhone: +91 88188 89660\nWebsite: www.bimaheadquarter.com\n\n*Team BimaHeadquarter by InsureDesk IMF Pvt. Ltd.*\n_Your Trusted Insurance Partner_",
+    mediaUrl: "",
+    mediaType: "IMAGE",
+  },
+  birthday_wish: {
+    body: "Dear {{customerName}},\n\nWishing you a very Happy Birthday! 🎂 May this year bring you joy, health, and prosperity.\n\nBest regards,\n{{companyName}}",
     mediaUrl: "",
     mediaType: "IMAGE",
   },

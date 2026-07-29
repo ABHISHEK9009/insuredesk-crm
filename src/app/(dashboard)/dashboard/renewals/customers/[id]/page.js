@@ -8,6 +8,7 @@ import ModalPortal from "@/app/components/shared/ModalPortal";
 import {
   Phone,
   MessageSquare,
+  MessageCircle,
   ArrowLeft,
   MoreVertical,
   Eye,
@@ -21,6 +22,13 @@ import {
   LayoutGrid,
   MapPin,
   Shield,
+  Tag,
+  Users,
+  Upload,
+  ZoomIn,
+  X,
+  Check,
+  FileText,
 } from "lucide-react";
 import BrandLogo from "@/app/components/brand/BrandLogo";
 
@@ -2913,339 +2921,466 @@ export default function CustomerProfilePage(props) {
         )}
 
       {/* WHATSAPP TEMPLATE PREVIEW MODAL */}
-      {whatsappPreviewOpen &&
-        renderPortal(
+      {whatsappPreviewOpen && (
+        <ModalPortal>
           <div
-            className="tb-modal-backdrop renewal-action-modal-backdrop"
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(15, 23, 42, 0.75)",
+              backdropFilter: "blur(8px)",
+              zIndex: 99999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
             onClick={() => setWhatsAppPreviewOpen(false)}
           >
             <div
-              className="tb-modal-content"
-              style={{ maxWidth: "760px", maxHeight: "90vh", overflowY: "auto" }}
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: "960px",
+                maxHeight: "90vh",
+                background: "#ffffff",
+                borderRadius: "20px",
+                boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderBottom: "1px solid var(--rn-border)",
-                  paddingBottom: "12px",
-                }}
-              >
-                <h3>WhatsApp Reminder Preview</h3>
+              {/* Modal Header */}
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#334155" }}>
+                    <MessageCircle size={19} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "#0f172a", letterSpacing: "-0.01em" }}>
+                      WhatsApp Reminder Preview
+                    </h3>
+                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
+                      Configure recipient destination, template message & calculation quote images
+                    </p>
+                  </div>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setWhatsAppPreviewOpen(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px" }}
+                  style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#475569", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, transition: "all 0.2s" }}
                 >
-                  &times;
+                  <X size={18} style={{ strokeWidth: 2 }} />
                 </button>
               </div>
 
               {whatsappTemplates && (
                 <>
-                <div style={{ marginTop: "16px" }}>
-                  <WhatsAppRecipientPicker
-                    type={whatsappRecipientType}
-                    onTypeChange={(value) => {
-                      setWhatsAppRecipientType(value);
-                      if (value === "individual") setWhatsAppGroupId("");
-                    }}
-                    groupId={whatsappGroupId}
-                    onGroupChange={setWhatsAppGroupId}
-                    contactPhone={whatsappPhone}
-                    disabled={actionLoading}
-                  />
-                </div>
-                <div className="rn-whatsapp-preview-layout" style={{ marginTop: "12px" }}>
-                  <div className="rn-whatsapp-preview-main">
-                  <div>
-                    <label className="customer-meta-label">View</label>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "4px" }}>
-                      {[
-                        ["message", "Message Preview"],
-                        ["fields", "Custom Fields"],
-                      ].map(([value, label]) => (
-                        <button key={value} type="button" className="rn-btn" onClick={() => setWhatsAppPreviewView(value)}
-                          style={whatsappPreviewView === value ? { background: "var(--rn-primary-light)", color: "var(--rn-primary)", borderColor: "var(--rn-primary)" } : undefined}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                {/* Scrollable Content Body */}
+                <div style={{ padding: "20px 24px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {/* Destination Card */}
+                  <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px" }}>
+                    <WhatsAppRecipientPicker
+                      type={whatsappRecipientType}
+                      onTypeChange={(value) => {
+                        setWhatsAppRecipientType(value);
+                        if (value === "individual") setWhatsAppGroupId("");
+                      }}
+                      groupId={whatsappGroupId}
+                      onGroupChange={setWhatsAppGroupId}
+                      contactPhone={whatsappPhone}
+                      disabled={actionLoading}
+                    />
                   </div>
 
-                  {whatsappPreviewView === "fields" ? (
-                    <div style={{ overflowX: "auto" }}>
-                      <table className="rn-table" style={{ minWidth: "620px" }}>
-                        <thead><tr><th>Field Name</th><th>Placeholder</th><th>Example Value</th></tr></thead>
-                        <tbody>
-                          {whatsappCustomFields.map((field) => (
-                            <tr key={field.placeholder}>
-                              <td>{field.label}</td>
-                              <td><code>{field.placeholder}</code></td>
-                              <td>{field.example}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <>
-                      {whatsappRecipientGroups.length > 1 ? (
-                        <div className="rn-badge rn-badge-active" style={{ alignSelf: "flex-start" }}>
-                          This portfolio will be sent as {whatsappRecipientGroups.length} separate messages by renewal recipient.
-                        </div>
-                      ) : null}
-                      <div>
-                        <label className="customer-meta-label">Template Context</label>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "4px" }}>
-                          {Object.keys(whatsappTemplates).map((type) => (
+                  {/* Main Grid: Left Editor (65%) vs Right Contact Card (35%) */}
+                  <div className="rn-whatsapp-preview-layout">
+                    <div className="rn-whatsapp-preview-main">
+                      {/* Navigation View Switcher */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", gap: "4px", background: "#f8fafc", padding: "3px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                          {[
+                            ["message", "Message Preview"],
+                            ["fields", "Custom Fields"],
+                          ].map(([value, label]) => (
                             <button
-                              key={type}
+                              key={value}
                               type="button"
-                              className="rn-btn"
+                              onClick={() => setWhatsAppPreviewView(value)}
                               style={{
+                                padding: "5px 12px",
                                 fontSize: "12px",
-                                padding: "6px 10px",
-                                ...(selectedTemplateType === type && {
-                                  background: "var(--rn-primary-light)",
-                                  color: "var(--rn-primary)",
-                                  borderColor: "var(--rn-primary)",
-                                }),
-                              }}
-                              onClick={() => {
-                                setSelectedTemplateType(type);
-                                setEditedWhatsAppMessage(whatsappTemplates[type]);
+                                fontWeight: 500,
+                                borderRadius: "6px",
+                                border: whatsappPreviewView === value ? "1px solid #cbd5e1" : "none",
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                ...(whatsappPreviewView === value
+                                  ? { background: "#ffffff", color: "#0f172a", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }
+                                  : { background: "transparent", color: "#64748b" }),
                               }}
                             >
-                              {type.replaceAll("_", " ").toUpperCase()}
+                              {value === "message" ? <MessageSquare size={14} /> : <Tag size={14} />}
+                              {label}
                             </button>
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <label className="customer-meta-label">Message Preview & Edit</label>
-                        <textarea
-                          className="rn-input"
-                          style={{ width: "100%", height: "180px", marginTop: "4px", fontFamily: "monospace", fontSize: "13px", lineHeight: "1.4" }}
-                          value={editedWhatsAppMessage}
-                          onChange={(e) => setEditedWhatsAppMessage(e.target.value)}
-                        />
-                      </div>
-                      <div style={{ marginTop: "12px", border: "1px solid var(--rn-border)", borderRadius: "10px", padding: "12px", background: "#f8fafc" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                          <div>
-                            <label className="customer-meta-label">Renewal Quotes (Auto Detected)</label>
-                            <p style={{ marginTop: "2px", fontSize: "12px", color: "var(--rn-text-muted)" }}>
-                              Quotes captured from the Renewal Quote New group for this vehicle.
-                            </p>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            {renewalQuotesLoading ? <span className="rn-badge rn-badge-neutral">Searching…</span> : null}
-                            <button
-                              type="button"
-                              className="rn-btn-secondary"
-                              style={{ padding: "3px 8px", fontSize: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                              onClick={() => {
-                                fetchGroupQuotesGallery();
-                                setShowGroupGalleryModal(true);
-                              }}
-                            >
-                              📱 Select from Group
-                            </button>
-                            <button
-                              type="button"
-                              className="rn-btn-secondary"
-                              style={{ padding: "3px 8px", fontSize: "12px", cursor: "pointer" }}
-                              onClick={() => setShowAddQuoteForm(!showAddQuoteForm)}
-                            >
-                              {showAddQuoteForm ? "Cancel" : "+ Upload Quote"}
-                            </button>
-                          </div>
-                        </div>
 
-                        {showAddQuoteForm && (
-                          <div style={{ marginTop: "10px", padding: "10px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#ffffff" }}>
-                            <label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px", color: "#334155" }}>
-                              Upload Quote Image / Enter Details
+                      {whatsappPreviewView === "fields" ? (
+                        <div style={{ overflowX: "auto" }}>
+                          <table className="rn-table" style={{ minWidth: "100%" }}>
+                            <thead><tr><th>Field Name</th><th>Placeholder</th><th>Example Value</th></tr></thead>
+                            <tbody>
+                              {whatsappCustomFields.map((field) => (
+                                <tr key={field.placeholder}>
+                                  <td>{field.label}</td>
+                                  <td><code>{field.placeholder}</code></td>
+                                  <td>{field.example}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <>
+                          {whatsappRecipientGroups.length > 1 ? (
+                            <div style={{ fontSize: "12px", padding: "8px 12px", borderRadius: "8px", background: "#f8fafc", border: "1px solid #e2e8f0", color: "#334155", fontWeight: 500 }}>
+                              ℹ️ This portfolio will be sent as {whatsappRecipientGroups.length} separate messages by renewal recipient.
+                            </div>
+                          ) : null}
+
+                          {/* Template Context Pills */}
+                          <div>
+                            <label style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#64748b", display: "block", marginBottom: "6px" }}>
+                              Template Context
                             </label>
-                            <div style={{ marginBottom: "8px" }}>
-                              <input
-                                type="file"
-                                accept="image/*,.pdf"
-                                style={{ fontSize: "12px" }}
-                                onChange={handleQuoteFileUpload}
-                              />
-                              {manualQuoteFileName && (
-                                <div style={{ fontSize: "11px", color: "#0284c7", marginTop: "2px" }}>
-                                  Selected: {manualQuoteFileName}
-                                </div>
-                              )}
-                              {manualQuoteFileBase64 && manualQuoteFileBase64.startsWith("data:image") && (
-                                <div style={{ marginTop: "6px" }}>
-                                  <img
-                                    src={manualQuoteFileBase64}
-                                    alt="Quote Preview"
-                                    style={{ maxHeight: "80px", borderRadius: "4px", border: "1px solid #cbd5e1", objectFit: "cover" }}
-                                  />
-                                </div>
-                              )}
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                              {Object.keys(whatsappTemplates).map((type) => {
+                                const isActive = selectedTemplateType === type;
+                                return (
+                                  <button
+                                    key={type}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedTemplateType(type);
+                                      setEditedWhatsAppMessage(whatsappTemplates[type]);
+                                    }}
+                                    style={{
+                                      fontSize: "12px",
+                                      fontWeight: isActive ? 600 : 500,
+                                      padding: "5px 13px",
+                                      borderRadius: "6px",
+                                      border: isActive ? "1.5px solid #0f172a" : "1px solid #e2e8f0",
+                                      cursor: "pointer",
+                                      transition: "all 0.15s ease",
+                                      background: "#ffffff",
+                                      boxShadow: isActive ? "0 1px 3px rgba(15,23,42,0.06)" : "none",
+                                    }}
+                                  >
+                                    <span style={{ color: isActive ? "#0f172a" : "#64748b", fontWeight: isActive ? 600 : 500 }}>
+                                      {type.replaceAll("_", " ").toUpperCase()}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Message Editor Textarea */}
+                          <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                              <label style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#64748b" }}>
+                                Message Content (Editable)
+                              </label>
+                              <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                                {editedWhatsAppMessage ? `${editedWhatsAppMessage.length} characters` : ""}
+                              </span>
                             </div>
                             <textarea
-                              className="rn-input"
-                              style={{ width: "100%", height: "65px", fontSize: "12px", fontFamily: "monospace", padding: "6px" }}
-                              placeholder="e.g. TATA AIG - OD: ₹452, TP: ₹714, Total: ₹999..."
-                              value={manualQuoteText}
-                              onChange={(e) => setManualQuoteText(e.target.value)}
+                              style={{
+                                width: "100%",
+                                height: "170px",
+                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                                fontSize: "13px",
+                                lineHeight: "1.5",
+                                padding: "12px 14px",
+                                borderRadius: "10px",
+                                border: "1px solid #cbd5e1",
+                                background: "#fafafa",
+                                color: "#0f172a",
+                                outline: "none",
+                                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
+                                resize: "vertical",
+                              }}
+                              value={editedWhatsAppMessage}
+                              onChange={(e) => setEditedWhatsAppMessage(e.target.value)}
                             />
-                            <div style={{ marginTop: "6px", display: "flex", justifyContent: "flex-end", gap: "6px" }}>
-                              <button
-                                type="button"
-                                className="rn-btn-secondary"
-                                style={{ padding: "3px 8px", fontSize: "11px", cursor: "pointer" }}
-                                onClick={() => {
-                                  setShowAddQuoteForm(false);
-                                  setManualQuoteFileBase64("");
-                                  setManualQuoteFileName("");
-                                }}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                className="rn-btn-primary"
-                                style={{ padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}
-                                disabled={savingManualQuote || (!manualQuoteText.trim() && !manualQuoteFileBase64)}
-                                onClick={handleSaveManualQuote}
-                              >
-                                {savingManualQuote ? "Saving..." : "Attach Quote Image"}
-                              </button>
+                          </div>
+
+                          {/* Renewal Quotes (Auto Detected) Section */}
+                          <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", padding: "14px", background: "#f8fafc" }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                              <div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                  <h4 style={{ margin: 0, fontSize: "13.5px", fontWeight: 600, color: "#0f172a" }}>
+                                    Renewal Quote Images (Auto-Detected)
+                                  </h4>
+                                  {renewalQuotesLoading ? (
+                                    <span style={{ fontSize: "10px", background: "#e2e8f0", color: "#475569", padding: "2px 8px", borderRadius: "10px", fontWeight: 500 }}>
+                                      Searching…
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
+                                  Captured calculation sheets for this vehicle from <strong>Renwal Quote New</strong>.
+                                </p>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <button
+                                  type="button"
+                                  style={{ padding: "5px 11px", fontSize: "12px", fontWeight: 500, cursor: "pointer", background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                  onClick={() => {
+                                    fetchGroupQuotesGallery();
+                                    setShowGroupGalleryModal(true);
+                                  }}
+                                >
+                                  <Users size={14} /> Select from Group
+                                </button>
+                                <button
+                                  type="button"
+                                  style={{ padding: "5px 11px", fontSize: "12px", fontWeight: 500, cursor: "pointer", background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                  onClick={() => setShowAddQuoteForm(!showAddQuoteForm)}
+                                >
+                                  {showAddQuoteForm ? (
+                                    <><X size={14} /> Cancel Upload</>
+                                  ) : (
+                                    <><Upload size={14} /> Upload Quote</>
+                                  )}
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )}
 
-                        {renewalQuotes.length === 0 && !showAddQuoteForm ? (
-                          <div style={{ marginTop: "8px", padding: "10px", borderRadius: "8px", background: "#fff", color: "var(--rn-text-muted)", fontSize: "12px" }}>
-                            No matching quote found for this vehicle yet. Click "+ Attach Quote" to upload or enter a quote image manually.
-                          </div>
-                        ) : null}
+                            {showAddQuoteForm && (
+                              <div style={{ marginTop: "12px", padding: "14px", border: "1px solid #e2e8f0", borderRadius: "10px", background: "#ffffff" }}>
+                                <label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "8px", color: "#0f172a" }}>
+                                  Upload Quote Image / Calculation Sheet
+                                </label>
+                                <div style={{ marginBottom: "12px" }}>
+                                  <input
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    style={{ fontSize: "12px", color: "#334155" }}
+                                    onChange={handleQuoteFileUpload}
+                                  />
+                                  {manualQuoteFileName && (
+                                    <div style={{ fontSize: "11px", color: "#0f172a", marginTop: "6px", fontWeight: 500 }}>
+                                      Selected file: <code>{manualQuoteFileName}</code>
+                                    </div>
+                                  )}
+                                  {manualQuoteFileBase64 && manualQuoteFileBase64.startsWith("data:image") && (
+                                    <div style={{ marginTop: "8px" }}>
+                                      <img
+                                        src={manualQuoteFileBase64}
+                                        alt="Quote Preview"
+                                        style={{ maxHeight: "100px", borderRadius: "6px", border: "1px solid #cbd5e1", objectFit: "cover" }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                <textarea
+                                  className="rn-input"
+                                  style={{ width: "100%", height: "65px", fontSize: "12px", fontFamily: "monospace", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#fafafa" }}
+                                  placeholder="Optional notes e.g. TATA AIG - OD: ₹452, TP: ₹714, Total: ₹999..."
+                                  value={manualQuoteText}
+                                  onChange={(e) => setManualQuoteText(e.target.value)}
+                                />
+                                <div style={{ marginTop: "10px", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                                  <button
+                                    type="button"
+                                    style={{ padding: "5px 11px", fontSize: "12px", fontWeight: 500, cursor: "pointer", background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: "6px" }}
+                                    onClick={() => {
+                                      setShowAddQuoteForm(false);
+                                      setManualQuoteFileBase64("");
+                                      setManualQuoteFileName("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    style={{ padding: "5px 13px", fontSize: "12px", fontWeight: 600, cursor: "pointer", background: "#ffffff", color: "#0f172a", border: "1px solid #0f172a", borderRadius: "6px" }}
+                                    disabled={savingManualQuote || (!manualQuoteText.trim() && !manualQuoteFileBase64)}
+                                    onClick={handleSaveManualQuote}
+                                  >
+                                    {savingManualQuote ? "Saving..." : "Attach Quote Image"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
 
-                        {renewalQuotes.length > 0 && (
-                          <div style={{ marginTop: "8px", display: "grid", gap: "8px" }}>
-                            {renewalQuotes.map((quote) => {
-                              const imageSrc = quote.mediaBase64 || quote.attachmentUrl || (quote.attachmentData ? (quote.attachmentData.startsWith("data:") ? quote.attachmentData : `data:image/jpeg;base64,${quote.attachmentData}`) : null);
-                              return (
-                                <div key={quote.id} style={{ border: "1px solid #dbeafe", borderRadius: "8px", background: "#fff", padding: "10px" }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
-                                    <div>
-                                      <div style={{ fontSize: "12px", fontWeight: 700 }}>{quote.vehicleNumber}</div>
-                                      <div style={{ fontSize: "11px", color: "var(--rn-text-muted)" }}>{quote.groupName}</div>
-                                    </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                      <span className="rn-badge rn-badge-active">Matched</span>
-                                      <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--rn-text-muted)", cursor: "pointer" }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={selectedRenewalQuoteIds.includes(quote.id)}
-                                          onChange={() => toggleRenewalQuoteSelection(quote.id)}
-                                        />
-                                        Send Image
-                                      </label>
-                                    </div>
-                                  </div>
-                                  {imageSrc ? (
-                                    <div style={{ marginTop: "10px", padding: "8px", background: "#f1f5f9", borderRadius: "8px", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-                                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                        <div style={{ position: "relative", cursor: "pointer" }} onClick={() => setPreviewQuoteImage(imageSrc)}>
-                                          <img
-                                            src={imageSrc}
-                                            alt="Quote Calculation"
-                                            style={{ height: "60px", width: "90px", objectFit: "cover", borderRadius: "6px", border: "1px solid #94a3b8", display: "block" }}
-                                          />
-                                          <div style={{ position: "absolute", bottom: "2px", right: "2px", background: "rgba(0,0,0,0.6)", color: "#fff", borderRadius: "3px", padding: "1px 4px", fontSize: "9px" }}>
-                                            🔍 Zoom
-                                          </div>
+                            {renewalQuotes.length === 0 && !showAddQuoteForm ? (
+                              <div style={{ marginTop: "10px", padding: "10px", borderRadius: "8px", background: "#ffffff", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "12px", textAlign: "center" }}>
+                                No matching quote captured for this vehicle yet. Click <strong>Upload Quote</strong> or <strong>Select from Group</strong> to attach calculation image.
+                              </div>
+                            ) : null}
+
+                            {renewalQuotes.length > 0 && (
+                              <div style={{ marginTop: "10px", display: "grid", gap: "8px" }}>
+                                {renewalQuotes.map((quote) => {
+                                  const imageSrc = quote.mediaBase64 || quote.attachmentUrl || (quote.attachmentData ? (quote.attachmentData.startsWith("data:") ? quote.attachmentData : `data:image/jpeg;base64,${quote.attachmentData}`) : null);
+                                  const isSelected = selectedRenewalQuoteIds.includes(quote.id);
+                                  return (
+                                    <div key={quote.id} style={{ border: isSelected ? "1px solid #0f172a" : "1px solid #e2e8f0", borderRadius: "8px", background: "#ffffff", padding: "10px" }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                          {quote.vehicleNumber ? (
+                                            <>
+                                              <span style={{ fontSize: "12px", fontWeight: 600, color: "#0f172a", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "2.5px 8px", borderRadius: "6px" }}>
+                                                {quote.vehicleNumber}
+                                              </span>
+                                              {quote.groupName && (
+                                                <span style={{ fontSize: "11px", color: "#64748b" }}>
+                                                  {quote.groupName}
+                                                </span>
+                                              )}
+                                            </>
+                                          ) : (
+                                            <span style={{ fontSize: "11.5px", fontWeight: 500, color: "#0f172a", background: "#f8fafc", border: "1px solid #cbd5e1", padding: "2.5px 8px", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                              <FileText size={13} style={{ color: "#475569" }} />
+                                              {quote.groupName || "Manual Upload"}
+                                            </span>
+                                          )}
                                         </div>
-                                        <div>
-                                          <div style={{ fontSize: "12px", fontWeight: 600, color: "#0f172a" }}>
-                                            Quote Image Attached
-                                          </div>
-                                          <div style={{ fontSize: "11px", color: "#64748b" }}>
-                                            Click preview to view full calculation sheet
-                                          </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                          <span style={{ fontSize: "11px", background: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: "6px", fontWeight: 500 }}>
+                                            Matched
+                                          </span>
+                                          <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: 500, color: "#0f172a", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => toggleRenewalQuoteSelection(quote.id)}
+                                              style={{ width: "15px", height: "15px", minWidth: "15px", minHeight: "15px", accentColor: "#0f172a", margin: 0, padding: 0, cursor: "pointer", appearance: "checkbox", WebkitAppearance: "checkbox" }}
+                                            />
+                                            <span style={{ whiteSpace: "nowrap" }}>Send Image</span>
+                                          </label>
                                         </div>
                                       </div>
-                                      <button
-                                        type="button"
-                                        className="rn-btn-secondary"
-                                        style={{ padding: "5px 10px", fontSize: "12px", cursor: "pointer", background: "#0284c7", color: "#ffffff", border: "none", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                                        onClick={() => setPreviewQuoteImage(imageSrc)}
-                                      >
-                                        <Eye size={14} /> Preview Image
-                                      </button>
+                                      {imageSrc ? (
+                                        <div style={{ marginTop: "8px", padding: "8px 10px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                            <div style={{ position: "relative", cursor: "pointer", overflow: "hidden", borderRadius: "4px" }} onClick={() => setPreviewQuoteImage(imageSrc)}>
+                                              <img
+                                                src={imageSrc}
+                                                alt="Quote Calculation"
+                                                style={{ height: "55px", width: "85px", objectFit: "cover", border: "1px solid #cbd5e1", display: "block" }}
+                                              />
+                                              <div style={{ position: "absolute", bottom: "2px", right: "2px", background: "rgba(15, 23, 42, 0.75)", color: "#ffffff", borderRadius: "3px", padding: "1px 5px", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                                                <ZoomIn size={10} /> Zoom
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>
+                                                Quote Image Attached
+                                              </div>
+                                              <div style={{ fontSize: "11px", color: "#64748b" }}>
+                                                Click preview to view calculation sheet
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 600, cursor: "pointer", background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                            onClick={() => setPreviewQuoteImage(imageSrc)}
+                                          >
+                                            <Eye size={14} /> Preview Image
+                                          </button>
+                                        </div>
+                                      ) : null}
+                                      {quote.messageBody && quote.messageBody !== quote.vehicleNumber ? (
+                                        <div style={{ marginTop: "6px", fontSize: "12px", color: "#475569", whiteSpace: "pre-wrap" }}>
+                                          {quote.messageBody}
+                                        </div>
+                                      ) : null}
                                     </div>
-                                  ) : null}
-                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "var(--rn-text-muted)", whiteSpace: "pre-wrap" }}>
-                                    {quote.messageBody}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                        </>
+                      )}
+                    </div>
+                    {whatsappRecipientType === "individual" ? <WhatsAppContactCard
+                      details={whatsappContactDetails}
+                      onEdit={() => {
+                        const policy = policies.find((item) => item.id === whatsappContactDetails?.policyId);
+                        setWhatsAppPreviewOpen(false);
+                        if (policy) handleEditRenewal(policy);
+                      }}
+                    /> : null}
                   </div>
-                  {whatsappRecipientType === "individual" ? <WhatsAppContactCard
-                    details={whatsappContactDetails}
-                    onEdit={() => {
-                      const policy = policies.find((item) => item.id === whatsappContactDetails?.policyId);
-                      setWhatsAppPreviewOpen(false);
-                      if (policy) handleEditRenewal(policy);
-                    }}
-                  /> : null}
                 </div>
                 </>
               )}
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderTop: "1px solid var(--rn-border)",
-                  marginTop: "24px",
-                  paddingTop: "12px",
-                }}
-              >
+              {/* Modal Footer Actions Bar */}
+              <div style={{ padding: "14px 24px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <button
                   type="button"
-                  className="rn-btn"
                   onClick={handleCopyMessage}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
                 >
-                  <Clipboard size={14} /> Copy text
+                  <Clipboard size={14} /> Copy Text
                 </button>
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button type="button" className="rn-btn" onClick={() => setWhatsAppPreviewOpen(false)}>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setWhatsAppPreviewOpen(false)}
+                    style={{ padding: "8px 16px", fontSize: "13px", fontWeight: 600, background: "#ffffff", color: "#475569", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer" }}
+                  >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    className="rn-btn"
                     onClick={handleSendWhatsApp}
                     disabled={whatsappRecipientType === "group"
                       ? !whatsappGroupId
                       : whatsappRecipientGroups.length === 0 && String(whatsappPhone || "").replace(/\D/g, "").length < 10}
-                    style={{ background: "#25d366", color: "#fff", borderColor: "#25d366" }}
+                    style={{
+                      padding: "8px 22px",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      background: "#16a34a",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "6px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+                      opacity: (whatsappRecipientType === "group" ? !whatsappGroupId : whatsappRecipientGroups.length === 0 && String(whatsappPhone || "").replace(/\D/g, "").length < 10) ? 0.6 : 1,
+                    }}
                   >
-                    <Send size={14} /> Send WhatsApp
+                    <Send size={15} style={{ color: "#ffffff" }} />
+                    <span style={{ color: "#ffffff", fontWeight: 700 }}>Send WhatsApp</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>,
-        )}
+          </div>
+        </ModalPortal>
+      )}
       {showGroupGalleryModal && (
         <ModalPortal>
           <div

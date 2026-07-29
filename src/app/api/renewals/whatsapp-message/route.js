@@ -322,12 +322,39 @@ Please connect with us to avoid any interruption in coverage.
 Regards,
 ${orgName} Team`;
 
+      // Load Organization Custom Templates from WhatsApp Setup
+      const customTemplates = await prisma.whatsAppTemplate.findMany({
+        where: { organizationId: orgId },
+      });
+      const customMap = {};
+      customTemplates.forEach((t) => {
+        customMap[t.name] = t.body;
+      });
+
+      const compileCustomTemplate = (tmplName, fallbackText) => {
+        if (!customMap[tmplName]) return fallbackText;
+        let text = customMap[tmplName];
+        const vehicleName = [p.vehicleMake, p.vehicleModel].filter(Boolean).join(" ") || p.makeModel || policyType;
+        const regNum = String(p.vehicleNumber || p.registrationNumber || "N/A").trim();
+        const netPrem = p.netPremium ? String(p.netPremium) : "N/A";
+        return text
+          .replace(/\{\{customerName\}\}/g, contactName)
+          .replace(/\{\{companyName\}\}/g, orgName)
+          .replace(/\{\{policyNumber\}\}/g, policyNumber)
+          .replace(/\{\{policyType\}\}/g, policyType)
+          .replace(/\{\{expiryDate\}\}/g, expiryDate)
+          .replace(/\{\{vehicleName\}\}/g, vehicleName)
+          .replace(/\{\{registrationNumber\}\}/g, regNum)
+          .replace(/\{\{netPremium\}\}/g, netPrem)
+          .replace(/\{\{agentName\}\}/g, user.name || "Agent");
+      };
+
       templates = {
-        due_soon: dueSoonText,
-        today: expiringTodayText,
-        expired: alreadyExpiredText,
-        follow_up: followUpText,
-        renewal_msg: renewalMessage,
+        due_soon: compileCustomTemplate("due_soon", dueSoonText),
+        today: compileCustomTemplate("today", expiringTodayText),
+        expired: compileCustomTemplate("expired", alreadyExpiredText),
+        follow_up: compileCustomTemplate("follow_up", followUpText),
+        renewal_msg: compileCustomTemplate("renewal_reminder", renewalMessage),
       };
 
     }
