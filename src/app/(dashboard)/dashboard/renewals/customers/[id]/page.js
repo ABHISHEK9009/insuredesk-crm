@@ -223,6 +223,9 @@ export default function CustomerProfilePage(props) {
   const [renewalQuotes, setRenewalQuotes] = useState([]);
   const [renewalQuotesLoading, setRenewalQuotesLoading] = useState(false);
   const [selectedRenewalQuoteIds, setSelectedRenewalQuoteIds] = useState([]);
+  const [showAddQuoteForm, setShowAddQuoteForm] = useState(false);
+  const [manualQuoteText, setManualQuoteText] = useState("");
+  const [savingManualQuote, setSavingManualQuote] = useState(false);
 
   const [teamMembers, setTeamMembers] = useState([]);
   const [portfolioOptions, setPortfolioOptions] = useState([]);
@@ -817,6 +820,41 @@ export default function CustomerProfilePage(props) {
     setSelectedRenewalQuoteIds((prev) => (
       prev.includes(quoteId) ? prev.filter((item) => item !== quoteId) : [...prev, quoteId]
     ));
+  };
+
+  const handleSaveManualQuote = async () => {
+    if (!manualQuoteText.trim()) return;
+    const policy = (policies || []).find((p) => p.id === whatsappPolicyId) || (policies || [])[0] || null;
+    const vehicleNumber = String(policy?.vehicleNumber || policy?.registrationNumber || "").trim();
+
+    setSavingManualQuote(true);
+    try {
+      const res = await fetch("/api/operations/whatsapp/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicleNumber: vehicleNumber || "MP04UC1162",
+          groupName: "Manual Entry",
+          messageBody: manualQuoteText.trim(),
+        }),
+      });
+      const payload = await res.json();
+      if (res.ok && payload.success) {
+        setManualQuoteText("");
+        setShowAddQuoteForm(false);
+        await fetchRenewalQuotes(policy);
+        if (payload.quote?.id) {
+          setSelectedRenewalQuoteIds((prev) => [...prev, payload.quote.id]);
+        }
+      } else {
+        window.alert(payload.error || "Failed to save quote");
+      }
+    } catch (err) {
+      console.error(err);
+      window.alert("Failed to save quote");
+    } finally {
+      setSavingManualQuote(false);
+    }
   };
 
   const handleSendWhatsApp = async () => {
@@ -2927,13 +2965,59 @@ export default function CustomerProfilePage(props) {
                               Quotes captured from the Renewal Quote New group for this vehicle.
                             </p>
                           </div>
-                          {renewalQuotesLoading ? <span className="rn-badge rn-badge-neutral">Searching…</span> : null}
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {renewalQuotesLoading ? <span className="rn-badge rn-badge-neutral">Searching…</span> : null}
+                            <button
+                              type="button"
+                              className="rn-btn-secondary"
+                              style={{ padding: "3px 8px", fontSize: "12px", cursor: "pointer" }}
+                              onClick={() => setShowAddQuoteForm(!showAddQuoteForm)}
+                            >
+                              {showAddQuoteForm ? "Cancel" : "+ Attach Quote"}
+                            </button>
+                          </div>
                         </div>
-                        {renewalQuotes.length === 0 ? (
+
+                        {showAddQuoteForm && (
+                          <div style={{ marginTop: "10px", padding: "10px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#ffffff" }}>
+                            <label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px", color: "#334155" }}>
+                              Paste / Enter Quote Details
+                            </label>
+                            <textarea
+                              className="rn-input"
+                              style={{ width: "100%", height: "75px", fontSize: "12px", fontFamily: "monospace", padding: "6px" }}
+                              placeholder="e.g. TATA AIG - OD: ₹452, TP: ₹714, Total: ₹999..."
+                              value={manualQuoteText}
+                              onChange={(e) => setManualQuoteText(e.target.value)}
+                            />
+                            <div style={{ marginTop: "6px", display: "flex", justifyContent: "flex-end", gap: "6px" }}>
+                              <button
+                                type="button"
+                                className="rn-btn-secondary"
+                                style={{ padding: "3px 8px", fontSize: "11px", cursor: "pointer" }}
+                                onClick={() => setShowAddQuoteForm(false)}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                className="rn-btn-primary"
+                                style={{ padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}
+                                disabled={savingManualQuote || !manualQuoteText.trim()}
+                                onClick={handleSaveManualQuote}
+                              >
+                                {savingManualQuote ? "Saving..." : "Attach Quote"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {renewalQuotes.length === 0 && !showAddQuoteForm ? (
                           <div style={{ marginTop: "8px", padding: "10px", borderRadius: "8px", background: "#fff", color: "var(--rn-text-muted)", fontSize: "12px" }}>
                             No matching quote found for this vehicle yet.
                           </div>
-                        ) : (
+                        ) : null}
+                          {renewalQuotes.length > 0 && (
                           <div style={{ marginTop: "8px", display: "grid", gap: "8px" }}>
                             {renewalQuotes.map((quote) => (
                               <div key={quote.id} style={{ border: "1px solid #dbeafe", borderRadius: "8px", background: "#fff", padding: "10px" }}>
