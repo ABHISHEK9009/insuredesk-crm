@@ -2,12 +2,13 @@ const tataAigWarehouse = require("./tata-aig/warehouse.cjs");
 const iciciLombardHealth = require("./icici-lombard/health.cjs");
 const hdfcErgoHealth = require("./hdfc-ergo/health.cjs");
 const iffcoTokioMotor = require("./iffco-tokio/motor.cjs");
+const tataAigMotor = require("./tata-aig/motor.cjs");
 const libertyMotor = require("./liberty/motor.cjs");
 const goDigitMotor = require("./go-digit/motor.cjs");
 const newIndiaMotor = require("./new-india/motor.cjs");
 const bajajAllianzMotor = require("./bajaj-allianz/motor.cjs");
 
-const trainers = [tataAigWarehouse, iciciLombardHealth, hdfcErgoHealth, iffcoTokioMotor, libertyMotor, goDigitMotor, newIndiaMotor, bajajAllianzMotor];
+const trainers = [tataAigWarehouse, iciciLombardHealth, hdfcErgoHealth, iffcoTokioMotor, tataAigMotor, libertyMotor, goDigitMotor, newIndiaMotor, bajajAllianzMotor];
 const ICICI_LOMBARD_HEALTH_FORMAT = "ICICI_LOMBARD_HEALTH_ELEVATE_V1";
 const HDFC_ERGO_HEALTH_FORMAT = "HDFC_ERGO_HEALTH_OPTIMA_SECURE_V1";
 const protectedScopeFields = [
@@ -86,6 +87,7 @@ function isHdfcErgoOptimaSecureHealth(result = {}, context = {}) {
 
 function isGoDigitMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
+  if (/TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text)) return false;
   return (
     /Go\s+Digit|godigit\.com|Digit\s+Two-Wheeler/i.test(text) &&
     /Motor|Two-Wheeler|Private\s+Car|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
@@ -106,8 +108,20 @@ function isNewIndiaMotor(result = {}, context = {}) {
   );
 }
 
+function isTataAigMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  return (
+    /TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text) &&
+    /Auto\s*Secure|Private\s+Car\s+Package\s+Policy|Vehicle\s+Details|Chassis\s+No/i.test(text)
+  );
+}
+
 function deriveTrainingScope(result = {}, context = {}) {
-  const insurer = isGoDigitMotor(result, context)
+  const insurer = isTataAigMotor(result, context)
+    ? "tata-aig"
+    : isGoDigitMotor(result, context)
     ? "go-digit"
     : isNewIndiaMotor(result, context)
       ? "new-india"
@@ -143,6 +157,14 @@ function establishTrainingIdentity(result = {}, context = {}) {
       ...result,
       insuranceCompany: "Go Digit General Insurance Limited",
       companyName: "Go Digit General Insurance Limited",
+    };
+  }
+  if (isTataAigMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Tata AIG General Insurance Company Limited",
+      companyName: "Tata AIG General Insurance Company Limited",
+      documentCategory: "Motor Insurance",
     };
   }
   if (isNewIndiaMotor(result, context)) {
