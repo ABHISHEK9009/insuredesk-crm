@@ -64,6 +64,16 @@ describe("lead generation data separation", () => {
     expect(senderRoute).toContain("sendWhatsAppText(recipient, signedMessage)");
   });
 
+  it("supports WhatsApp group recipients through the CRM and gateway send path", () => {
+    const crmClient = read("src/lib/whatsapp/whatsapp-client.js");
+    const gatewayManager = read("whatsapp-gateway/baileys-manager.js");
+
+    expect(crmClient).toContain("/^[a-z0-9._:-]+@g\\.us$/i");
+    expect(gatewayManager).toContain("const GROUP_JID_PATTERN = /^[a-z0-9._:-]+@g\\.us$/i");
+    expect(crmClient).toContain('if (res.success === false)');
+    expect(crmClient).toContain("WhatsApp gateway could not send the message.");
+  });
+
   it("filters lead profiles from clickable KPI cards", () => {
     const leadPage = read("src/app/(dashboard)/dashboard/manual-entry/customer-profiling/page.js");
 

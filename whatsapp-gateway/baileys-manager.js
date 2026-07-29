@@ -31,7 +31,7 @@ let connectionState = "DISCONNECTED"; // DISCONNECTED | CONNECTING | QR_READY | 
 let currentQrDataUrl = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
-const GROUP_JID_PATTERN = /^[0-9-]+@g\.us$/i;
+const GROUP_JID_PATTERN = /^[a-z0-9._:-]+@g\.us$/i;
 let groupRefreshPromise = null;
 
 /**

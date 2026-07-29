@@ -20,7 +20,7 @@ const API_KEY =
 function formatRecipient(recipient) {
   if (!recipient) return "";
   const raw = recipient.toString().trim();
-  if (/^[0-9-]+@g\.us$/i.test(raw)) return raw.toLowerCase();
+  if (/^[a-z0-9._:-]+@g\.us$/i.test(raw)) return raw.toLowerCase();
   if (raw.toLowerCase().endsWith("@g.us")) throw new Error("Invalid WhatsApp group ID");
 
   let cleaned = raw.replace(/@(c\.us|s\.whatsapp\.net)$/i, "").replace(/\D/g, "");
@@ -115,6 +115,9 @@ export async function sendWhatsAppText(to, content) {
     to: recipient,
     content,
   });
+  if (res.success === false) {
+    throw new Error(res.error || res.message || "WhatsApp gateway could not send the message.");
+  }
   return {
     id: res.id || null,
     success: res.success || false,
@@ -131,6 +134,9 @@ export async function sendWhatsAppImage(to, fileData, filename, caption) {
     caption: caption || "",
     type: "image",
   });
+  if (res.success === false) {
+    throw new Error(res.error || res.message || "WhatsApp gateway could not send the image.");
+  }
   return {
     id: res.id || null,
     success: res.success || false,
@@ -147,6 +153,9 @@ export async function sendWhatsAppFile(to, fileData, filename, caption) {
     caption: caption || "",
     type: "document",
   });
+  if (res.success === false) {
+    throw new Error(res.error || res.message || "WhatsApp gateway could not send the file.");
+  }
   return {
     id: res.id || null,
     success: res.success || false,
