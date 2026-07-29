@@ -19,6 +19,31 @@ export async function GET(request) {
     let entries = await readRenewalQuoteEntries();
 
     if (fetchAll || !vehicleNumber) {
+      if (entries.length === 0) {
+        try {
+          const remoteMsgs = await searchGroupMessages("Renwal Quote New", "");
+          if (Array.isArray(remoteMsgs) && remoteMsgs.length > 0) {
+            for (const msg of remoteMsgs) {
+              const msgId = msg.id || msg.key?.id || "";
+              let mediaBase64 = "";
+              if (msgId) {
+                mediaBase64 = await downloadWhatsAppMedia(msgId);
+              }
+              const entry = await buildRenewalQuoteEntry({
+                groupName: msg.groupName || "Renwal Quote New",
+                senderName: msg.senderName || msg.pushName || "Agent",
+                messageBody: msg.body || msg.caption || "Renwal Quote Image",
+                mediaBase64,
+                sourceMessageId: msgId,
+              });
+              await storeRenewalQuoteEntry(entry);
+            }
+            entries = await readRenewalQuoteEntries();
+          }
+        } catch (_err) {
+          // Fallback gracefully
+        }
+      }
       return NextResponse.json({ success: true, quotes: entries.slice(0, 50) });
     }
 

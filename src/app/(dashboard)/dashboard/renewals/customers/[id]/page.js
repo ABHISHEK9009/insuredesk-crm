@@ -3264,13 +3264,23 @@ export default function CustomerProfilePage(props) {
                     Select an image quote captured from the WhatsApp group to attach to this customer.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontWeight: 700, color: "#64748b" }}
-                  onClick={() => setShowGroupGalleryModal(false)}
-                >
-                  ✕
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="rn-btn-secondary"
+                    style={{ padding: "4px 8px", fontSize: "11px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    onClick={fetchGroupQuotesGallery}
+                  >
+                    🔄 Sync WhatsApp Photos
+                  </button>
+                  <button
+                    type="button"
+                    style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontWeight: 700, color: "#64748b" }}
+                    onClick={() => setShowGroupGalleryModal(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               <div style={{ overflowY: "auto", flex: 1, paddingRight: "4px" }}>
