@@ -749,9 +749,9 @@ export default function CustomerProfilePage(props) {
     try {
       const res = await fetch(`/api/operations/whatsapp/quotes?vehicleNumber=${encodeURIComponent(vehicleNumber)}`);
       const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error || "Failed to load renewal quotes");
-      setRenewalQuotes(Array.isArray(payload.quotes) ? payload.quotes : []);
-      setSelectedRenewalQuoteIds([]);
+      const quotes = Array.isArray(payload.quotes) ? payload.quotes : [];
+      setRenewalQuotes(quotes);
+      setSelectedRenewalQuoteIds(quotes.length > 0 ? [quotes[0].id] : []);
     } catch (error) {
       console.error("Failed to load renewal quotes", error);
       setRenewalQuotes([]);
