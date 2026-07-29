@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { createWorker } from "tesseract.js";
 
 const RENEWAL_QUOTE_GROUP_PATTERN = /ren(e)?wal\s*quote/i;
 const VEHICLE_NUMBER_PATTERNS = [
@@ -8,6 +9,23 @@ const VEHICLE_NUMBER_PATTERNS = [
   /\b([A-Z0-9]{2,10}[ -]?[0-9]{3,6})\b/i,
 ];
 const STORAGE_PATH = path.join(process.cwd(), "storage", "whatsapp", "renewal-quotes.json");
+
+export async function extractOcrTextFromImage(imageInput) {
+  if (!imageInput) return "";
+  try {
+    let input = imageInput;
+    if (typeof imageInput === "string" && !imageInput.startsWith("data:") && !imageInput.startsWith("http")) {
+      input = `data:image/jpeg;base64,${imageInput}`;
+    }
+    const worker = await createWorker("eng");
+    const result = await worker.recognize(input);
+    await worker.terminate();
+    return result?.data?.text || "";
+  } catch (error) {
+    console.warn("WhatsApp quote OCR fallback failed:", error?.message || error);
+    return "";
+  }
+}
 
 export function extractVehicleNumber(text = "") {
   const normalized = String(text || "")
@@ -36,9 +54,17 @@ export function isRenewalQuoteGroup(groupName = "") {
   return RENEWAL_QUOTE_GROUP_PATTERN.test(normalized) || normalized.includes("quote new") || normalized.includes("renwal");
 }
 
-export function buildRenewalQuoteEntry({ groupName, senderName, body, caption, timestamp, attachmentUrl = "", sourceMessageId = "" } = {}) {
-  const cleanedBody = String(body || caption || "").trim();
-  const vehicleNumber = extractVehicleNumber(cleanedBody);
+export async function buildRenewalQuoteEntry({ groupName, senderName, body, caption, mediaBase64, timestamp, attachmentUrl = "", sourceMessageId = "" } = {}) {
+  let cleanedBody = String(body || caption || "").trim();
+  let vehicleNumber = extractVehicleNumber(cleanedBody);
+
+  if (!vehicleNumber && mediaBase64) {
+    const ocrText = await extractOcrTextFromImage(mediaBase64);
+    if (ocrText) {
+      cleanedBody = [cleanedBody, ocrText].filter(Boolean).join("\n");
+      vehicleNumber = extractVehicleNumber(cleanedBody);
+    }
+  }
 
   if (!vehicleNumber) {
     return null;

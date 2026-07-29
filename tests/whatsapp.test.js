@@ -55,8 +55,8 @@ describe("Renewal quote capture", () => {
     expect(isRenewalQuoteGroup("Some Other Group")).toBe(false);
   });
 
-  it("builds a quote entry with the extracted vehicle number and message body", () => {
-    const entry = buildRenewalQuoteEntry({
+  it("builds a quote entry with the extracted vehicle number and message body", async () => {
+    const entry = await buildRenewalQuoteEntry({
       groupName: "Renwal Quote New",
       senderName: "Anand",
       body: "MP04CL3716\nICICI Lombard",

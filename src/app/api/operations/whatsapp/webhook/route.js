@@ -63,11 +63,13 @@ export async function POST(request) {
       const senderName = message.sender?.name || message.chat?.contact?.name || "Unknown";
 
       if (isGroup && isRenewalQuoteGroup(groupName)) {
-        const entry = buildRenewalQuoteEntry({
+        const mediaBase64 = message.mediaData?.data || (typeof message.body === "string" && (message.body.startsWith("data:image") || message.body.length > 500) ? message.body : "");
+        const entry = await buildRenewalQuoteEntry({
           groupName,
           senderName,
           body: bodyText,
           caption: message.caption,
+          mediaBase64,
           timestamp: message.messageTimestamp ? new Date(Number(message.messageTimestamp) * 1000) : new Date(),
           sourceMessageId: message.id || message.key?.id || "",
         });
