@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { isRenewalQuoteGroup, buildRenewalQuoteEntry, storeRenewalQuoteEntry } from "@/lib/whatsapp/renewal-quote-capture";
+import { downloadWhatsAppMedia } from "@/lib/whatsapp/whatsapp-client";
 
 export const runtime = "nodejs";
 
@@ -63,7 +64,17 @@ export async function POST(request) {
       const senderName = message.sender?.name || message.chat?.contact?.name || "Unknown";
 
       if (isGroup && isRenewalQuoteGroup(groupName)) {
-        const mediaBase64 = message.mediaData?.data || (typeof message.body === "string" && (message.body.startsWith("data:image") || message.body.length > 500) ? message.body : "");
+        let mediaBase64 = message.mediaData?.data || (typeof message.body === "string" && (message.body.startsWith("data:image") || message.body.length > 500) ? message.body : "") || message.base64 || message.jpegThumbnail || "";
+        const sourceMessageId = message.id || message.key?.id || "";
+
+        if (!mediaBase64 && sourceMessageId && (message.isMedia || message.type === "image" || message.mimetype?.startsWith("image/"))) {
+          try {
+            mediaBase64 = await downloadWhatsAppMedia(sourceMessageId);
+          } catch (err) {
+            console.warn("Could not download media from gateway for quote:", err?.message || err);
+          }
+        }
+
         const entry = await buildRenewalQuoteEntry({
           groupName,
           senderName,
@@ -71,7 +82,7 @@ export async function POST(request) {
           caption: message.caption,
           mediaBase64,
           timestamp: message.messageTimestamp ? new Date(Number(message.messageTimestamp) * 1000) : new Date(),
-          sourceMessageId: message.id || message.key?.id || "",
+          sourceMessageId,
         });
 
         if (entry) {

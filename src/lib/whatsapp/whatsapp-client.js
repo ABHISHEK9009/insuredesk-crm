@@ -202,6 +202,16 @@ export async function refreshWhatsAppGroups() {
   return Array.isArray(groups) ? groups : [];
 }
 
+export async function downloadWhatsAppMedia(messageId) {
+  if (!messageId) return "";
+  try {
+    const res = await callGateway("POST", "download-media", { messageId });
+    return res.mediaBase64 || res.data || res.base64 || "";
+  } catch (error) {
+    return "";
+  }
+}
+
 export const getOpenwaStatus = getWhatsAppStatus;
 export const getOpenwaQrCode = getWhatsAppQrCode;
 export const sendOpenwaText = sendWhatsAppText;
