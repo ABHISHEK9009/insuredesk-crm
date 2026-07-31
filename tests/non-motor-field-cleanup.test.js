@@ -96,10 +96,11 @@ Total Amount (Rounded Off): Rs.16,420.00
 
     expect(visibleKeys).toContain("totalPremium");
     expect(visibleKeys).toContain("netPremium");
+    expect(visibleKeys).toContain("modeOfPayment");
+    expect(visibleKeys).not.toContain("placeOfSupply");
     expect(visibleKeys).not.toContain("tpPremium");
     expect(visibleKeys).not.toContain("dueCollection");
     expect(visibleKeys).not.toContain("collectedAmount");
-    expect(visibleKeys).not.toContain("modeOfPayment");
     expect(visibleKeys).not.toContain("odPremium");
     expect(visibleKeys).not.toContain("tpDriverOwner");
   });

@@ -388,7 +388,6 @@ export const FIELD_GROUPS = [
       "modeOfPayment",
       "invoiceDate",
       "gstin",
-      "placeOfSupply",
     ],
   },
   {
@@ -712,6 +711,8 @@ export function getReviewValidation(upload, options = {}) {
   const docAndSourceFields = new Set(FIELD_GROUPS.find((g) => g.title === "Document & Source")?.fields || []);
   visibleFields = visibleFields.filter(([, key]) => !docAndSourceFields.has(key));
 
+  visibleFields = visibleFields.filter(([, key]) => key !== "placeOfSupply");
+
   if (resolvedSchema?.groupId === "motor") {
     const nonMotorFields = new Set([
       ...(FIELD_GROUPS.find((g) => g.title === "Warehouse & Property")?.fields || []),
@@ -729,7 +730,6 @@ export function getReviewValidation(upload, options = {}) {
       "cgst",
       "sgst",
       "igst",
-      "placeOfSupply",
       "collectedAmount",
       "dueCollection",
     ]);
@@ -741,7 +741,6 @@ export function getReviewValidation(upload, options = {}) {
       "odPremium",
       "dueCollection",
       "collectedAmount",
-      "modeOfPayment",
     ]);
     visibleFields = visibleFields.filter(([, key]) => !motorOnlyFields.has(key));
   }
