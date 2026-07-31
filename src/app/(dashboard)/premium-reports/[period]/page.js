@@ -184,6 +184,85 @@ export default async function PremiumReportPage({ params, searchParams }) {
                   : config.grouping === "day"
                     ? "Day-wise category breakdown"
                     : "Current page breakdown"}
+              </h2>
+            </div>
+            {config.grouping !== "records" && (
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <span className="record-code" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>
+                  <strong>Motor:</strong> {categoryTotals.motor} policies
+                </span>
+                <span className="record-code" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>
+                  <strong>Health:</strong> {categoryTotals.health} policies
+                </span>
+                <span className="record-code" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>
+                  <strong>Warehouse:</strong> {categoryTotals.warehouse} policies
+                </span>
+                <span className="record-code" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>
+                  <strong>Non-Motor:</strong> {categoryTotals.nonMotor} policies
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="table-wrap">
+            <table className="records-table">
+              <thead>
+                <tr>
+                  <th>
+                    {config.grouping === "month"
+                      ? "Month"
+                      : config.grouping === "day"
+                        ? "Date"
+                        : "Uploaded By"}
+                  </th>
+                  {config.grouping !== "records" && <th>Motor</th>}
+                  {config.grouping !== "records" && <th>Health</th>}
+                  {config.grouping !== "records" && <th>Warehouse</th>}
+                  {config.grouping !== "records" && <th>Non-Motor</th>}
+                  <th>Total Policies</th>
+                  <th>Total Premium</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pivotRows.map((row) => (
+                  <tr key={row.key}>
+                    <td>
+                      <strong>{row.label}</strong>
+                    </td>
+                    {config.grouping !== "records" && <td>{row.motor || 0}</td>}
+                    {config.grouping !== "records" && <td>{row.health || 0}</td>}
+                    {config.grouping !== "records" && <td>{row.warehouse || 0}</td>}
+                    {config.grouping !== "records" && <td>{row.nonMotor || 0}</td>}
+                    <td>
+                      <strong>{row.count}</strong>
+                    </td>
+                    <td>
+                      <span className="record-code">{formatMoney(row.premium)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {config.grouping !== "records" && pivotRows.length > 1 && (
+                <tfoot>
+                  <tr style={{ fontWeight: "bold", borderTop: "2px solid var(--border-color, #e5e7eb)" }}>
+                    <td>Total</td>
+                    <td>{categoryTotals.motor}</td>
+                    <td>{categoryTotals.health}</td>
+                    <td>{categoryTotals.warehouse}</td>
+                    <td>{categoryTotals.nonMotor}</td>
+                    <td>{categoryTotals.count}</td>
+                    <td>
+                      <span className="record-code">{formatMoney(categoryTotals.premium)}</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="glass-panel report-detail-table">
+        <div className="panel-head">
           <div>
             <p className="eyebrow">Policy Records</p>
             <h2>{reportId === "eod" ? "Today uploads" : "Matching policies"}</h2>
