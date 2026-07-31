@@ -13,7 +13,7 @@ function buildWarehouseLegacyData({ sourceFile, sourceText, data, documentFormat
     sourceText,
     status: "saved",
     documentFormat,
-    documentCategory: "Warehouse Insurance",
+    documentCategory: data.documentCategory || "Warehouse Insurance",
     sourceDocumentType: documentFormat,
     insuranceCompany,
     companyName: insuranceCompany,

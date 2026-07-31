@@ -1739,11 +1739,13 @@ function buildIntelligentResult(legacyData, policyUnderstanding, policySchema, s
   // GSTIN is a manual-only field; do not automatically populate it from PDF text
   mergedData.gstin = "";
 
-  if (mergedData.idv && Number(String(mergedData.idv).replace(/,/g, "")) > 50000000) {
-    mergedData.idv = "";
-  }
-  if (mergedData.sumInsured && Number(String(mergedData.sumInsured).replace(/,/g, "")) > 50000000) {
-    mergedData.sumInsured = mergedData.idv || "";
+  if (isMotorExtraction(mergedData, policyUnderstanding)) {
+    if (mergedData.idv && Number(String(mergedData.idv).replace(/,/g, "")) > 50000000) {
+      mergedData.idv = "";
+    }
+    if (mergedData.sumInsured && Number(String(mergedData.sumInsured).replace(/,/g, "")) > 50000000) {
+      mergedData.sumInsured = mergedData.idv || "";
+    }
   }
   if (mergedData.insuredName) {
     mergedData.insuredName = cleanInsuredName(mergedData.insuredName);

@@ -7,8 +7,22 @@ const libertyMotor = require("./liberty/motor.cjs");
 const goDigitMotor = require("./go-digit/motor.cjs");
 const newIndiaMotor = require("./new-india/motor.cjs");
 const bajajAllianzMotor = require("./bajaj-allianz/motor.cjs");
+const unitedIndiaWarehouse = require("./united-india/warehouse.cjs");
+const unitedIndiaBurglary = require("./united-india/burglary.cjs");
 
-const trainers = [tataAigWarehouse, iciciLombardHealth, hdfcErgoHealth, iffcoTokioMotor, tataAigMotor, libertyMotor, goDigitMotor, newIndiaMotor, bajajAllianzMotor];
+const trainers = [
+  tataAigWarehouse,
+  iciciLombardHealth,
+  hdfcErgoHealth,
+  iffcoTokioMotor,
+  tataAigMotor,
+  libertyMotor,
+  goDigitMotor,
+  newIndiaMotor,
+  bajajAllianzMotor,
+  unitedIndiaWarehouse,
+  unitedIndiaBurglary,
+];
 const ICICI_LOMBARD_HEALTH_FORMAT = "ICICI_LOMBARD_HEALTH_ELEVATE_V1";
 const HDFC_ERGO_HEALTH_FORMAT = "HDFC_ERGO_HEALTH_OPTIMA_SECURE_V1";
 const protectedScopeFields = [
