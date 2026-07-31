@@ -96,8 +96,7 @@ export default async function PremiumReportPage({ params, searchParams }) {
     sort,
   });
   const filteredRecords = report.records.map((record) => ({ ...normalizeRecord(record), reportDate: record.reportDate }));
-  const pivotRecords = config.grouping === "month" || config.grouping === "day" ? (report.pivotRecords || filteredRecords) : filteredRecords;
-  const pivotRows = buildPivotRows(pivotRecords, config.grouping);
+  const pivotRows = formatPivotSummary(report.pivotSummary, filteredRecords, config.grouping);
   const latestRecord = filteredRecords[0];
   const pageHref = (targetPage) => {
     const values = new globalThis.URLSearchParams();
@@ -272,6 +271,39 @@ export default async function PremiumReportPage({ params, searchParams }) {
       </nav>
     </main>
   );
+}
+
+function formatPivotSummary(pivotSummary = [], records = [], grouping) {
+  if (Array.isArray(pivotSummary) && pivotSummary.length > 0 && grouping !== "records") {
+    return pivotSummary.map((item) => {
+      let label = item.key;
+      if (grouping === "month" && item.key && item.key.includes("-")) {
+        const [yearStr, monthStr] = item.key.split("-");
+        const year = Number.parseInt(yearStr, 10);
+        const month = Number.parseInt(monthStr, 10);
+        if (!Number.isNaN(year) && !Number.isNaN(month)) {
+          const d = new Date(year, month - 1, 1);
+          label = d.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: REPORT_TIME_ZONE });
+        }
+      } else if (grouping === "day" && item.key && item.key.includes("-")) {
+        const [yearStr, monthStr, dayStr] = item.key.split("-");
+        const year = Number.parseInt(yearStr, 10);
+        const month = Number.parseInt(monthStr, 10);
+        const day = Number.parseInt(dayStr, 10);
+        if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+          const d = new Date(year, month - 1, day);
+          label = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: REPORT_TIME_ZONE });
+        }
+      }
+      return {
+        key: item.key,
+        label,
+        count: item.count,
+        premium: item.premium,
+      };
+    });
+  }
+  return buildPivotRows(records, grouping);
 }
 
 function buildPivotRows(records, grouping) {

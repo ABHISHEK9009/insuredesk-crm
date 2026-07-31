@@ -137,6 +137,13 @@ export async function loadPremiumReportPage({
     `%${normalizedQuery}%`,
   ];
   const offset = (page - 1) * limit;
+  const pivotGroupExpr =
+    reportId === "mtd"
+      ? "TO_CHAR(saved_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')"
+      : "TO_CHAR(saved_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM')";
+
+  const pivotQuery = `${base} SELECT ${pivotGroupExpr} AS key, COUNT(*)::integer AS count, COALESCE(SUM(premium), 0)::numeric AS premium FROM filtered GROUP BY 1 ORDER BY 1 DESC`;
+
   const [aggregateRows, idRows, pivotRows] = await Promise.all([
     prisma.$queryRawUnsafe(
       `${base} SELECT COUNT(*)::integer AS count, COALESCE(SUM(premium), 0)::numeric AS premium FROM filtered`,
@@ -148,10 +155,7 @@ export async function loadPremiumReportPage({
       limit,
       offset,
     ),
-    prisma.$queryRawUnsafe(
-      `${base} SELECT report_date, premium FROM filtered`,
-      ...params,
-    ),
+    prisma.$queryRawUnsafe(pivotQuery, ...params),
   ]);
   const ids = idRows.map((row) => row.id);
   const records = ids.length
@@ -163,7 +167,11 @@ export async function loadPremiumReportPage({
 
   return {
     records: ids.map((id) => ({ ...byId.get(id), reportDate: reportDateById.get(id) })).filter((record) => record.id),
-    pivotRecords: (pivotRows || []).map((row) => ({ reportDate: row.report_date, premium: Number(row.premium) || 0 })),
+    pivotSummary: (pivotRows || []).map((row) => ({
+      key: String(row.key || "unknown"),
+      count: Number(row.count) || 0,
+      premium: Number(row.premium) || 0,
+    })),
     totalCount,
     totalPremium: Number(aggregateRows[0]?.premium) || 0,
     page,
