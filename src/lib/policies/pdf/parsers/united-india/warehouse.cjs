@@ -30,10 +30,18 @@ function extractUnitedIndiaWarehouse(text = "") {
   const insuredBlock = source.match(/\bInsured\s*\n\s*([^\n]+)\s*\n\s*([^\n]+)/i);
   const insuredName = cleanName(insuredBlock?.[1]);
   const mailingAddress = cleanLine(insuredBlock?.[2]);
-  const locationAddressMatch =
-    source.match(/Location\s+Address\s+Location\s+Name[\s\S]*?\n([^\n]+?)\s+[A-Z\s.]+\s+Storage/i) ||
-    source.match(/Location\s+Address\s*\/\s*Sitation[\s\S]*?\n(?:\d{8,15}\s+)?([^\n]+)/i);
-  const riskLocation = locationAddressMatch?.[1]?.trim() || mailingAddress;
+
+  const fireLocMatch = source.match(/Location\s+Address[\s\S]*?Sum\s+Insured\([^)]*\)([\s\S]+?)(?=\s*Storage\s+of|\s*RENEWAL|\s*Warranties|\s*Special\s+Condition)/i);
+  let rawFireLocation = (fireLocMatch?.[1] || "").replace(/[\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+  rawFireLocation = rawFireLocation
+    .replace(/\s+(?:S\.\s*PODDAR\s*I\s*NFRA|SHREEJI\s*EXP\s*ORT)$/i, "")
+    .replace(/N\s+O\./g, "NO.")
+    .replace(/K\s+UTCH/g, "KUTCH")
+    .replace(/KACHCH\s+H/g, "KACHCHH")
+    .replace(/I\s+NFRA/g, "INFRA")
+    .trim();
+
+  const riskLocation = rawFireLocation || mailingAddress;
   const policyNumber = match(source, /\bPOLICY\s+NO\.?\s*:?\s*([A-Z0-9]+)/i) || match(source, /\bPolicy\s+Number\s*:?\s*([A-Z0-9]+)/i);
   const startDate = match(source, /\bFrom\s+(?:\d{1,2}:\d{2}\s+)?(?:Hrs\s+of\s+|hrs\s+on\s+)?(\d{1,2}\/\d{1,2}\/\d{4})/i);
   const expiryDate = match(source, /\bTo\s+(?:Midnight\s+of\s+|Midnight\s+on\s+)?(\d{1,2}\/\d{1,2}\/\d{4})/i);

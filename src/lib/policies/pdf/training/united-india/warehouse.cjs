@@ -72,21 +72,23 @@ function train({ text = "", result = {} }) {
   const agentMatch = text.match(/Agent\s+Name\s*:?\s*([^\n]+)[\s\S]{0,50}?Agent\s+Code\s*:?\s*([A-Z0-9]+)/i);
   const businessAssociateCode = matchGroup(text, /\b(BAS[0-9]+)\b/i) || matchGroup(text, /Business\s+Associate\s+Code\s*:?\s*([A-Z0-9]+)/i) || result.businessAssociateCode || "";
 
-  const locationLine = matchGroup(text, /Location\s+Address\s+Location\s+Name[\s\S]*?\n\s*([^\n]+)/i);
-  const rawLocationAddress =
-    locationLine.split(/S\.\s*PODDAR|SHREEJI\s*EXPORT/i)[0]?.trim() ||
-    locationLine ||
-    matchGroup(text, /Location\s+Address\s*:?\s*([^\n]+)/i) ||
-    result.riskLocation ||
-    "";
+  const fireLocMatch = text.match(/Location\s+Address[\s\S]*?Sum\s+Insured\([^)]*\)([\s\S]+?)(?=\s*Storage\s+of|\s*RENEWAL|\s*Warranties|\s*Special\s+Condition)/i);
+  let rawLocationAddress = (fireLocMatch?.[1] || "").replace(/[\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+  rawLocationAddress = rawLocationAddress
+    .replace(/\s+(?:S\.\s*PODDAR\s*I\s*NFRA|SHREEJI\s*EXP\s*ORT)$/i, "")
+    .replace(/N\s+O\./g, "NO.")
+    .replace(/K\s+UTCH/g, "KUTCH")
+    .replace(/KACHCH\s+H/g, "KACHCHH")
+    .replace(/I\s+NFRA/g, "INFRA")
+    .trim() || result.riskLocation || "";
 
-  const tehsil = matchGroup(rawLocationAddress, /TEHSIL\s+([^,]+)/i) || result.tehsil || "";
+  const tehsil = matchGroup(rawLocationAddress, /TEHSIL\s+([^,]+)/i).replace(/K\s+ANDLA/i, "KANDLA") || result.tehsil || "";
   const district = matchGroup(rawLocationAddress, /DISTRICT\s+([^,]+)/i) || result.district || "";
   const state = matchGroup(rawLocationAddress, /(GUJARAT|MADHYA\s+PRADESH|MAHARASHTRA|RAJASTHAN|UTTAR\s+PRADESH)/i).toUpperCase() || result.state || "";
   const pincode =
     matchGroup(rawLocationAddress, /(?:Pin-?|pincode:?\s*)(\d{6})\b/i) ||
-    matchGroup(text, /(?:Pin-?|Pin\s*Code\s*\n?\s*)(\d{6})\b/i) ||
     matchGroup(rawLocationAddress, /\b(\d{6})\b/) ||
+    matchGroup(text, /(?:Pin-?|Pin\s*Code\s*\n?\s*)(\d{6})\b/i) ||
     result.pincode ||
     "";
 

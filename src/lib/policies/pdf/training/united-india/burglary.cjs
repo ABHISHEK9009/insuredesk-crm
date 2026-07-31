@@ -61,8 +61,11 @@ function train({ text = "", result = {} }) {
     matchGroup(text, /Location\s+Id[\s\S]*?\n\s*(\d{8,15})/i) ||
     matchGroup(text, /\b(\d{11})\b\s+M\/S/i) ||
     "";
-  const locationAddressMatch = text.match(/Location\s+Address\s*\/\s*Sitation[\s\S]*?\n(?:\d{8,15}\s+)?([^\n]+)/i);
-  let rawLocationAddress = (locationAddressMatch?.[1]?.trim() || result.riskLocation || "")
+  const locMatch = text.match(/Location\s+Address\s*\/\s*Sitation[\s\S]*?(?:235517\d{5}\s*)?([\s\S]+?)(?=\s*Risk\s+No\.|\s*Others\s*-|\s*Subject\s+to)/i);
+  let rawLocationAddress = (locMatch?.[1] || result.riskLocation || "")
+    .replace(/[\n\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^.*?\b(M\/[Ss]\b)/i, "M/S")
     .replace(/\s+(\d{6})\s+\1$/g, " $1")
     .trim();
 
