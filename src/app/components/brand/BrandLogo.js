@@ -10,6 +10,7 @@ export default function BrandLogo({ href, className = "", compact = false, prefe
         alt="Bima Headquarter"
         width={1024}
         height={570}
+        unoptimized
       />
     </span>
   );
