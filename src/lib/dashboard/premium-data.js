@@ -139,8 +139,8 @@ export async function loadPremiumReportPage({
   const offset = (page - 1) * limit;
   const pivotGroupExpr =
     reportId === "mtd"
-      ? "TO_CHAR(saved_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')"
-      : "TO_CHAR(saved_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM')";
+      ? "TO_CHAR(report_date AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')"
+      : "TO_CHAR(report_date AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM')";
 
   const pivotQuery = `${base} SELECT ${pivotGroupExpr} AS key, COUNT(*)::integer AS count, COALESCE(SUM(premium), 0)::numeric AS premium FROM filtered GROUP BY 1 ORDER BY 1 DESC`;
 
