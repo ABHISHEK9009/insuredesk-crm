@@ -1746,6 +1746,11 @@ function buildIntelligentResult(legacyData, policyUnderstanding, policySchema, s
     if (mergedData.sumInsured && Number(String(mergedData.sumInsured).replace(/,/g, "")) > 50000000) {
       mergedData.sumInsured = mergedData.idv || "";
     }
+  } else {
+    mergedData.tpPremium = "";
+    mergedData.dueCollection = "";
+    mergedData.collectedAmount = "";
+    mergedData.modeOfPayment = "";
   }
   if (mergedData.insuredName) {
     mergedData.insuredName = cleanInsuredName(mergedData.insuredName);

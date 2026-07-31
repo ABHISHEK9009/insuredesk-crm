@@ -126,6 +126,7 @@ SAC Code: 997137 Invoice No. & Date: 1226I106344197 & 28/07/2026
     expect(result.theftPremium).toBe("248.50");
     expect(result.netPremium).toBe("469.00");
     expect(result.totalPremium).toBe("554.00");
+    expect(result.riskLocation).toContain("M/S SHREEJI EXPORTS (NEW)");
     expect(result.tehsil).toBe("KANDLA");
     expect(result.pincode).toBe("370210");
   });

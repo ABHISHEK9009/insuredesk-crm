@@ -248,6 +248,11 @@ function protectWarehouseMergedFields(mergedData, legacyData) {
       mergedData[field] = value;
     }
   }
+
+  mergedData.tpPremium = "";
+  mergedData.dueCollection = "";
+  mergedData.collectedAmount = "";
+  mergedData.modeOfPayment = "";
 }
 
 // Start of coverageAmount (Lines 2298-2300)
