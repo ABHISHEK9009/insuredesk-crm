@@ -137,7 +137,7 @@ export async function loadPremiumReportPage({
     `%${normalizedQuery}%`,
   ];
   const offset = (page - 1) * limit;
-  const [aggregateRows, idRows] = await Promise.all([
+  const [aggregateRows, idRows, pivotRows] = await Promise.all([
     prisma.$queryRawUnsafe(
       `${base} SELECT COUNT(*)::integer AS count, COALESCE(SUM(premium), 0)::numeric AS premium FROM filtered`,
       ...params,
@@ -147,6 +147,10 @@ export async function loadPremiumReportPage({
       ...params,
       limit,
       offset,
+    ),
+    prisma.$queryRawUnsafe(
+      `${base} SELECT report_date, premium FROM filtered`,
+      ...params,
     ),
   ]);
   const ids = idRows.map((row) => row.id);
@@ -159,6 +163,7 @@ export async function loadPremiumReportPage({
 
   return {
     records: ids.map((id) => ({ ...byId.get(id), reportDate: reportDateById.get(id) })).filter((record) => record.id),
+    pivotRecords: (pivotRows || []).map((row) => ({ reportDate: row.report_date, premium: Number(row.premium) || 0 })),
     totalCount,
     totalPremium: Number(aggregateRows[0]?.premium) || 0,
     page,

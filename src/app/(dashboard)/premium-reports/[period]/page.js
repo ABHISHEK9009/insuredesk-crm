@@ -96,7 +96,8 @@ export default async function PremiumReportPage({ params, searchParams }) {
     sort,
   });
   const filteredRecords = report.records.map((record) => ({ ...normalizeRecord(record), reportDate: record.reportDate }));
-  const pivotRows = buildPivotRows(filteredRecords, config.grouping);
+  const pivotRecords = config.grouping === "month" || config.grouping === "day" ? (report.pivotRecords || filteredRecords) : filteredRecords;
+  const pivotRows = buildPivotRows(pivotRecords, config.grouping);
   const latestRecord = filteredRecords[0];
   const pageHref = (targetPage) => {
     const values = new globalThis.URLSearchParams();
