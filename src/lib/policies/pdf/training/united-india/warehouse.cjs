@@ -76,10 +76,17 @@ function train({ text = "", result = {} }) {
   let rawLocationAddress = (fireLocMatch?.[1] || "").replace(/[\n\t]+/g, " ").replace(/\s+/g, " ").trim();
   rawLocationAddress = rawLocationAddress
     .replace(/\s+(?:S\.\s*PODDAR\s*I\s*NFRA|SHREEJI\s*EXP\s*ORT)$/i, "")
+    .replace(/,\s*KACHCHH\s*,\s*GUJARAT\s*,\s*Pin-?\s*\d{6}$/i, "")
+    .replace(/GO\s+DOWN/gi, "GODOWN")
+    .replace(/BEH\s*IN\s*D\s+ACT/gi, "BEHIND ACT")
+    .replace(/BEHIN\s*D\s+ACT/gi, "BEHIND ACT")
     .replace(/N\s+O\./g, "NO.")
+    .replace(/K\s+ANDLA/g, "KANDLA")
     .replace(/K\s+UTCH/g, "KUTCH")
+    .replace(/GUJAR\s+AT/g, "GUJARAT")
     .replace(/KACHCH\s+H/g, "KACHCHH")
     .replace(/I\s+NFRA/g, "INFRA")
+    .replace(/Pi\s+n-/g, "Pin-")
     .trim() || result.riskLocation || "";
 
   const tehsil = matchGroup(rawLocationAddress, /TEHSIL\s+([^,]+)/i).replace(/K\s+ANDLA/i, "KANDLA") || result.tehsil || "";
@@ -92,7 +99,8 @@ function train({ text = "", result = {} }) {
     result.pincode ||
     "";
 
-  const itemDescription = matchGroup(text, /Item\s+Description[\s\S]*?\n(?:[^\n]+\n){0,2}?\s*([A-Z\s]{2,20})\s+[0-9,.]+/i) || "RICE";
+  const goodsStoredMatch = text.match(/\b(RICE|WHEAT|GRAINS|PULSES|SOYABEAN|COTTON)\s*[0-9]/i) || text.match(/Specific\s+Items\s*\n\s*([A-Z]{3,15})/i);
+  const itemDescription = goodsStoredMatch?.[1]?.toUpperCase() || "RICE";
 
   const financialInstitutions = extractFinancialInstitutions(text);
 

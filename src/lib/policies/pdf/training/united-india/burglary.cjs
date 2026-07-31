@@ -67,6 +67,12 @@ function train({ text = "", result = {} }) {
     .replace(/\s+/g, " ")
     .replace(/^.*?\b(M\/[Ss]\b)/i, "M/S")
     .replace(/\s+(\d{6})\s+\1$/g, " $1")
+    .replace(/GO\s+DOWN/gi, "GODOWN")
+    .replace(/BEH\s*IN\s*D\s+ACT/gi, "BEHIND ACT")
+    .replace(/BEHIN\s*D\s+ACT/gi, "BEHIND ACT")
+    .replace(/K\s+ANDLA/g, "KANDLA")
+    .replace(/K\s+UTCH/g, "KUTCH")
+    .replace(/GUJAR\s+AT/g, "GUJARAT")
     .trim();
 
   const textWithoutLocationIds = text.replace(/\b\d{8,15}\b/g, "");
