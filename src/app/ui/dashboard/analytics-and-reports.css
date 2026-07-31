@@ -1331,3 +1331,105 @@
     justify-content: center !important;
   }
 }
+
+/* Pivot Category Breakdown Summary & Table Polish */
+.pivot-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.pivot-cat-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(229, 231, 235, 0.8));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.pivot-cat-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.06);
+}
+
+.pivot-cat-pill.motor {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.22);
+}
+
+.pivot-cat-pill.health {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+.pivot-cat-pill.warehouse {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+.pivot-cat-pill.non-motor {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.22);
+}
+
+.pivot-cat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary, #6b7280);
+}
+
+.pivot-cat-count {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main, #111827);
+}
+
+.pivot-cat-pill.motor .pivot-cat-count { color: #1d4ed8; }
+.pivot-cat-pill.health .pivot-cat-count { color: #047857; }
+.pivot-cat-pill.warehouse .pivot-cat-count { color: #b45309; }
+.pivot-cat-pill.non-motor .pivot-cat-count { color: #6d28d9; }
+
+/* Pivot Table Cell Badges */
+.pivot-cell-val {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.pivot-cell-val.zero {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.pivot-cell-val.positive {
+  background: rgba(243, 244, 246, 0.8);
+  color: #111827;
+}
+
+.pivot-cell-val.total-count {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.pivot-tfoot-row {
+  background: rgba(249, 250, 251, 0.9);
+  font-weight: 700 !important;
+  border-top: 2px solid var(--border-color, #e5e7eb) !important;
+}
+
+.pivot-tfoot-row td {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  font-weight: 700 !important;
+}
