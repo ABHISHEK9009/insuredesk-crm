@@ -1,11 +1,11 @@
-/* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
+import { getReviewValidation } from "@/app/lib/dashboard-helpers.js";
 
 const require = createRequire(import.meta.url);
 const { extractPolicyFromText } = require("../src/lib/policies/pdf/extractor.cjs");
 
-describe("Non-Motor Extraction Field Cleanup (tpPremium, dueCollection, collectedAmount, modeOfPayment)", () => {
+describe("Non-Motor Extraction & UI Field Cleanup (tpPremium, dueCollection, collectedAmount, modeOfPayment)", () => {
   const warehouseText = `
 UNITED INDIA INSURANCE COMPANY LIMITED
 UNITED VALUE UDYAM SURAKSHA POLICY
@@ -48,7 +48,7 @@ Net Premium: Rs. 13,915.00
 Total Amount (Rounded Off): Rs.16,420.00
 `;
 
-  it("ensures United India Warehouse policy has tpPremium, dueCollection, collectedAmount, modeOfPayment cleared", () => {
+  it("ensures United India Warehouse policy has tpPremium, dueCollection, collectedAmount, modeOfPayment cleared in extraction", () => {
     const result = extractPolicyFromText(warehouseText, "Warehouse.pdf");
 
     expect(result.documentCategory).toBe("Warehouse Insurance");
@@ -58,7 +58,7 @@ Total Amount (Rounded Off): Rs.16,420.00
     expect(result.modeOfPayment || "").toBe("");
   });
 
-  it("ensures United India Burglary policy has tpPremium, dueCollection, collectedAmount, modeOfPayment cleared", () => {
+  it("ensures United India Burglary policy has tpPremium, dueCollection, collectedAmount, modeOfPayment cleared in extraction", () => {
     const result = extractPolicyFromText(burglaryText, "Burglary.pdf");
 
     expect(result.documentCategory).toBe("Burglary Insurance");
@@ -68,7 +68,7 @@ Total Amount (Rounded Off): Rs.16,420.00
     expect(result.modeOfPayment || "").toBe("");
   });
 
-  it("ensures Tata AIG Warehouse policy has tpPremium, dueCollection, collectedAmount, modeOfPayment cleared", () => {
+  it("ensures Tata AIG Warehouse policy has tpPremium, dueCollection, collectedAmount, modeOfPayment cleared in extraction", () => {
     const result = extractPolicyFromText(tataWarehouseText, "TataWarehouse.pdf");
 
     expect(result.documentCategory).toBe("Warehouse Insurance");
@@ -76,5 +76,31 @@ Total Amount (Rounded Off): Rs.16,420.00
     expect(result.dueCollection || "").toBe("");
     expect(result.collectedAmount || "").toBe("");
     expect(result.modeOfPayment || "").toBe("");
+  });
+
+  it("ensures getReviewValidation hides motor payment fields for non-motor policy UI previews", () => {
+    const upload = {
+      sourceFile: "Kamalguru_Warehouse.pdf",
+      extractedData: {
+        documentCategory: "Warehouse Insurance",
+        policyType: "Business Guard Laghu Package Policy",
+        insuredName: "KAMALGURU WAREHOUSE",
+        policyNumber: "5130027159",
+        netPremium: "13915.00",
+        totalPremium: "16420.00",
+      },
+    };
+
+    const validation = getReviewValidation(upload);
+    const visibleKeys = validation.visibleFields.map(([, key]) => key);
+
+    expect(visibleKeys).toContain("totalPremium");
+    expect(visibleKeys).toContain("netPremium");
+    expect(visibleKeys).not.toContain("tpPremium");
+    expect(visibleKeys).not.toContain("dueCollection");
+    expect(visibleKeys).not.toContain("collectedAmount");
+    expect(visibleKeys).not.toContain("modeOfPayment");
+    expect(visibleKeys).not.toContain("odPremium");
+    expect(visibleKeys).not.toContain("tpDriverOwner");
   });
 });

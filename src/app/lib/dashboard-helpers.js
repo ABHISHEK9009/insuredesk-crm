@@ -734,6 +734,16 @@ export function getReviewValidation(upload, options = {}) {
       "dueCollection",
     ]);
     visibleFields = visibleFields.filter(([, key]) => !nonMotorFields.has(key));
+  } else {
+    const motorOnlyFields = new Set([
+      "tpPremium",
+      "tpDriverOwner",
+      "odPremium",
+      "dueCollection",
+      "collectedAmount",
+      "modeOfPayment",
+    ]);
+    visibleFields = visibleFields.filter(([, key]) => !motorOnlyFields.has(key));
   }
 
   const hideIfEmptyFields = new Set([
