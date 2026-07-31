@@ -1,4 +1,4 @@
-﻿.brand-logo,
+.brand-logo,
 .brand-logo-link,
 .insurer-logo {
   display: inline-flex;
@@ -433,7 +433,7 @@
   transition: left 200ms cubic-bezier(0.4, 0, 0.2, 1), width 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* â”€â”€â”€ Collapsed State â”€â”€â”€ */
+/* ─── Collapsed State ─── */
 .app-shell.sidebar-collapsed .side-nav {
   width: 72px;
 }
@@ -447,77 +447,134 @@
   width: calc(100% - 72px);
 }
 
+/* Hide brand logo text/image in collapsed rail to prevent overlap */
 .side-nav.collapsed .portal-title {
-  min-height: 0;
-  padding: 16px 8px 14px;
-  margin-bottom: 0;
+  display: none !important;
 }
 
-.side-nav.collapsed .portal-title .brand-logo-link,
-.side-nav.collapsed .portal-title .brand-logo {
-  display: flex;
-  justify-content: center;
-  overflow: visible;
+/* Centered collapse/expand toggle button at top of rail */
+.side-nav.collapsed .side-nav-collapse-button {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  margin: 16px auto 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  border-radius: 10px !important;
+  background: #fafbfc !important;
+  border: 1px solid #eef0f3 !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
 }
 
-.side-nav.collapsed .portal-title .brand-logo-image {
-  width: 40px !important;
-  height: 40px !important;
-  object-fit: contain;
-  object-position: center;
+.side-nav.collapsed .side-nav-collapse-button:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
 }
 
-.side-nav.collapsed .portal-title p,
+/* Hide labels, chevrons, submenus */
 .side-nav.collapsed .side-nav-label,
 .side-nav.collapsed .side-nav-chevron,
 .side-nav.collapsed .side-nav-submenu {
-  display: none;
+  display: none !important;
 }
 
-.side-nav.collapsed .side-nav-collapse-button {
-  top: 16px;
-  right: 22px;
-}
-
+/* Collapsed nav container */
 .side-nav.collapsed nav {
-  padding: 12px 8px;
-  gap: 4px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 12px 0 !important;
+  gap: 6px !important;
 }
 
+/* Collapsed footer container */
 .side-nav.collapsed .side-footer {
-  padding: 10px 8px;
-  gap: 4px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 12px 0 16px !important;
+  gap: 6px !important;
+  border-top: 1px solid #f3f4f6 !important;
 }
 
+/* Collapsed nav buttons, links, group containers */
 .side-nav.collapsed nav > a,
+.side-nav.collapsed .side-nav-group,
 .side-nav.collapsed .side-nav-group > a,
 .side-nav.collapsed .side-nav-group > button,
 .side-nav.collapsed .side-footer > button {
-  justify-content: center;
-  padding: 0;
-  min-height: 38px;
-  border-radius: 8px;
+  width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  transition: all 0.15s ease !important;
 }
 
-.side-nav.collapsed nav > a:hover,
-.side-nav.collapsed .side-nav-group > a:hover,
-.side-nav.collapsed .side-nav-group > button:hover,
-.side-nav.collapsed .side-footer > button:hover {
-  transform: none;
-  background: #f3f4f6 !important;
+/* Default icon color */
+.side-nav.collapsed nav button,
+.side-nav.collapsed nav a,
+.side-nav.collapsed .side-footer button {
+  color: #64748b !important;
+  background: transparent !important;
 }
 
+.side-nav.collapsed nav button svg,
+.side-nav.collapsed nav a svg,
+.side-nav.collapsed .side-footer button svg {
+  color: #64748b !important;
+  width: 20px !important;
+  height: 20px !important;
+  transition: color 0.15s ease, transform 0.15s ease !important;
+}
+
+/* Hover state in collapsed rail */
+.side-nav.collapsed nav button:hover,
+.side-nav.collapsed nav a:hover,
+.side-nav.collapsed .side-footer button:hover {
+  background: #f8fafc !important;
+}
+
+.side-nav.collapsed nav button:hover svg,
+.side-nav.collapsed nav a:hover svg,
+.side-nav.collapsed .side-footer button:hover svg {
+  color: #0f172a !important;
+}
+
+/* Logout button specific hover tint */
+.side-nav.collapsed .side-footer button:last-child:hover {
+  background: #fef2f2 !important;
+}
+
+.side-nav.collapsed .side-footer button:last-child:hover svg {
+  color: #dc2626 !important;
+}
+
+/* Active state in collapsed rail - Light White/Grey Pill */
 .side-nav.collapsed nav > a.active,
 .side-nav.collapsed .side-nav-group > a.active,
 .side-nav.collapsed .side-nav-group > button.active {
   background: #f3f4f6 !important;
-  box-shadow: none !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
 .side-nav.collapsed nav > a.active svg,
 .side-nav.collapsed .side-nav-group > a.active svg,
 .side-nav.collapsed .side-nav-group > button.active svg {
-  color: #111827;
+  color: #111827 !important;
 }
 
 /* Expanded-only overrides */
