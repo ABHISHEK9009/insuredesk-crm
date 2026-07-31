@@ -20,7 +20,7 @@ const ROUTE_MAP = {
   renewals: "/dashboard/renewals",
   endorsements: "/dashboard/endorsements",
   analytics: "/dashboard/reports",
-  "field-setup": "/field-setup",
+
   "user-management": "/admin/users",
   settings: "/settings",
   "upload-history": "/upload-history",
@@ -78,7 +78,7 @@ export default function SideNav({
     if (pathname.startsWith("/dashboard/renewals")) return "renewals";
     if (pathname.startsWith("/dashboard/endorsements")) return "operations";
     if (pathname === "/analytics-reports" || pathname.startsWith("/dashboard/reports")) return "analytics";
-    if (pathname === "/field-setup") return "field-setup";
+
     if (pathname === "/settings") return "settings";
     if (pathname === "/admin/users") return "user-management";
     if (pathname === "/upload-history") return "upload-history";

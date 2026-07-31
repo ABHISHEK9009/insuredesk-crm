@@ -1140,8 +1140,8 @@ th {
 
 @media (max-width: 1280px) {
   .top-bar {
-    left: 240px;
-    width: calc(100% - 240px);
+    left: 250px;
+    width: calc(100% - 250px);
     padding-left: 16px;
   }
 
