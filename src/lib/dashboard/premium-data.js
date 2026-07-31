@@ -36,6 +36,15 @@ function premiumBaseCTE() {
         COALESCE(renewal_status, 'ACTIVE') AS renewal_status,
         ${premiumExpression()} AS premium,
         COALESCE(reviewed_data->>'expiryDate', reviewed_data->>'policyEndDate', data->>'expiryDate', data->>'policyEndDate') AS raw_expiry,
+        COALESCE(
+          NULLIF(reviewed_data->>'documentCategory', ''),
+          NULLIF(data->>'documentCategory', ''),
+          NULLIF(selected_service_category, ''),
+          NULLIF(detected_service_category, ''),
+          NULLIF(reviewed_data->>'policyType', ''),
+          NULLIF(data->>'policyType', ''),
+          ''
+        ) AS raw_category,
         LOWER(CONCAT_WS(' ',
           reviewed_data->>'insuredName', data->>'insuredName',
           reviewed_data->>'customerName', data->>'customerName',
@@ -49,7 +58,14 @@ function premiumBaseCTE() {
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
     ),
     dated AS (
-      SELECT parsed.*, (${expiryExpression}) AS expiry_date
+      SELECT parsed.*,
+        (${expiryExpression}) AS expiry_date,
+        CASE
+          WHEN raw_category ~* 'motor|vehicle|private\\s*car|two\\s*wheeler|commercial\\s*vehicle|gcv|pcv|car|scooter|bike' THEN 'Motor'
+          WHEN raw_category ~* 'health|mediclaim|medical|hospital|personal\\s*accident' THEN 'Health'
+          WHEN raw_category ~* 'warehouse|godown' THEN 'Warehouse'
+          ELSE 'Non-Motor'
+        END AS policy_category
       FROM parsed
     ),
     renewed_matched AS (
@@ -109,13 +125,13 @@ export async function loadPremiumReportPage({
   }[reportId];
   const filteredCTE = reportId === "renewed"
     ? `filtered AS (
-        SELECT d.id, rm.activity_at AS report_date, d.premium
+        SELECT d.id, rm.activity_at AS report_date, d.premium, d.policy_category
         FROM renewed_matched rm
         JOIN dated d USING (id)
         WHERE ($8 = '' OR d.search_text LIKE $9)
       )`
     : `filtered AS (
-        SELECT id, saved_at AS report_date, premium
+        SELECT id, saved_at AS report_date, premium, policy_category
         FROM dated
         WHERE ${periodCondition || "FALSE"}
           AND ($8 = '' OR search_text LIKE $9)
@@ -142,7 +158,7 @@ export async function loadPremiumReportPage({
       ? "TO_CHAR(report_date AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')"
       : "TO_CHAR(report_date AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM')";
 
-  const pivotQuery = `${base} SELECT ${pivotGroupExpr} AS key, COUNT(*)::integer AS count, COALESCE(SUM(premium), 0)::numeric AS premium FROM filtered GROUP BY 1 ORDER BY 1 DESC`;
+  const pivotQuery = `${base} SELECT ${pivotGroupExpr} AS key, policy_category, COUNT(*)::integer AS count, COALESCE(SUM(premium), 0)::numeric AS premium FROM filtered GROUP BY 1, 2 ORDER BY 1 DESC, 2 ASC`;
 
   const [aggregateRows, idRows, pivotRows] = await Promise.all([
     prisma.$queryRawUnsafe(
@@ -169,6 +185,7 @@ export async function loadPremiumReportPage({
     records: ids.map((id) => ({ ...byId.get(id), reportDate: reportDateById.get(id) })).filter((record) => record.id),
     pivotSummary: (pivotRows || []).map((row) => ({
       key: String(row.key || "unknown"),
+      category: String(row.policy_category || "Non-Motor"),
       count: Number(row.count) || 0,
       premium: Number(row.premium) || 0,
     })),

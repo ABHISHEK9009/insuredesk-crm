@@ -97,6 +97,18 @@ export default async function PremiumReportPage({ params, searchParams }) {
   });
   const filteredRecords = report.records.map((record) => ({ ...normalizeRecord(record), reportDate: record.reportDate }));
   const pivotRows = formatPivotSummary(report.pivotSummary, filteredRecords, config.grouping);
+  const categoryTotals = pivotRows.reduce(
+    (acc, r) => {
+      acc.motor += r.motor || 0;
+      acc.health += r.health || 0;
+      acc.warehouse += r.warehouse || 0;
+      acc.nonMotor += r.nonMotor || 0;
+      acc.count += r.count || 0;
+      acc.premium += r.premium || 0;
+      return acc;
+    },
+    { motor: 0, health: 0, warehouse: 0, nonMotor: 0, count: 0, premium: 0 }
+  );
   const latestRecord = filteredRecords[0];
   const pageHref = (targetPage) => {
     const values = new globalThis.URLSearchParams();
@@ -163,53 +175,15 @@ export default async function PremiumReportPage({ params, searchParams }) {
 
       {pivotRows.length ? (
         <section className="glass-panel report-detail-table">
-          <div className="panel-head">
+          <div className="panel-head" style={{ flexDirection: "column", alignItems: "flex-start", gap: "12px" }}>
             <div>
               <p className="eyebrow">Pivot Report</p>
               <h2>
                 {config.grouping === "month"
-                  ? "Month-wise premium"
+                  ? "Month-wise category breakdown"
                   : config.grouping === "day"
-                    ? "Day-wise premium"
+                    ? "Day-wise category breakdown"
                     : "Current page breakdown"}
-              </h2>
-            </div>
-          </div>
-          <div className="table-wrap">
-            <table className="records-table">
-              <thead>
-                <tr>
-                  <th>
-                    {config.grouping === "month"
-                      ? "Month"
-                      : config.grouping === "day"
-                        ? "Date"
-                        : "Uploaded By"}
-                  </th>
-                  <th>Policies</th>
-                  <th>Total Premium</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pivotRows.map((row) => (
-                  <tr key={row.key}>
-                    <td>
-                      <strong>{row.label}</strong>
-                    </td>
-                    <td>{row.count}</td>
-                    <td>
-                      <span className="record-code">{formatMoney(row.premium)}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="glass-panel report-detail-table">
-        <div className="panel-head">
           <div>
             <p className="eyebrow">Policy Records</p>
             <h2>{reportId === "eod" ? "Today uploads" : "Matching policies"}</h2>
@@ -275,18 +249,21 @@ export default async function PremiumReportPage({ params, searchParams }) {
 
 function formatPivotSummary(pivotSummary = [], records = [], grouping) {
   if (Array.isArray(pivotSummary) && pivotSummary.length > 0 && grouping !== "records") {
-    return pivotSummary.map((item) => {
-      let label = item.key;
-      if (grouping === "month" && item.key && item.key.includes("-")) {
-        const [yearStr, monthStr] = item.key.split("-");
+    const rowMap = new Map();
+
+    for (const item of pivotSummary) {
+      const key = item.key;
+      let label = key;
+      if (grouping === "month" && key && key.includes("-")) {
+        const [yearStr, monthStr] = key.split("-");
         const year = Number.parseInt(yearStr, 10);
         const month = Number.parseInt(monthStr, 10);
         if (!Number.isNaN(year) && !Number.isNaN(month)) {
           const d = new Date(year, month - 1, 1);
           label = d.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: REPORT_TIME_ZONE });
         }
-      } else if (grouping === "day" && item.key && item.key.includes("-")) {
-        const [yearStr, monthStr, dayStr] = item.key.split("-");
+      } else if (grouping === "day" && key && key.includes("-")) {
+        const [yearStr, monthStr, dayStr] = key.split("-");
         const year = Number.parseInt(yearStr, 10);
         const month = Number.parseInt(monthStr, 10);
         const day = Number.parseInt(dayStr, 10);
@@ -295,13 +272,35 @@ function formatPivotSummary(pivotSummary = [], records = [], grouping) {
           label = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: REPORT_TIME_ZONE });
         }
       }
-      return {
-        key: item.key,
+
+      const existing = rowMap.get(key) || {
+        key,
         label,
-        count: item.count,
-        premium: item.premium,
+        motor: 0,
+        health: 0,
+        warehouse: 0,
+        nonMotor: 0,
+        count: 0,
+        premium: 0,
       };
-    });
+
+      const cat = String(item.category || "").toLowerCase();
+      if (cat === "motor") {
+        existing.motor += item.count;
+      } else if (cat === "health") {
+        existing.health += item.count;
+      } else if (cat === "warehouse") {
+        existing.warehouse += item.count;
+      } else {
+        existing.nonMotor += item.count;
+      }
+
+      existing.count += item.count;
+      existing.premium += item.premium;
+      rowMap.set(key, existing);
+    }
+
+    return Array.from(rowMap.values()).sort((a, b) => b.key.localeCompare(a.key));
   }
   return buildPivotRows(records, grouping);
 }
@@ -336,7 +335,18 @@ function buildPivotRows(records, grouping) {
         : "Unknown month";
     }
 
-    const current = groups.get(key) || { key, label, count: 0, premium: 0 };
+    const catKey = getRecordCategory(record);
+    const current = groups.get(key) || {
+      key,
+      label,
+      motor: 0,
+      health: 0,
+      warehouse: 0,
+      nonMotor: 0,
+      count: 0,
+      premium: 0,
+    };
+    current[catKey] = (current[catKey] || 0) + 1;
     current.count += 1;
     current.premium += getPremium(record);
     groups.set(key, current);
@@ -345,15 +355,40 @@ function buildPivotRows(records, grouping) {
   return Array.from(groups.values()).sort((a, b) => b.key.localeCompare(a.key));
 }
 
+function getRecordCategory(record = {}) {
+  const haystack = [
+    record.documentCategory,
+    record.selectedServiceCategory,
+    record.detectedServiceCategory,
+    record.policyType,
+    record.selectedPolicyType,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (/\b(motor|vehicle|private\s*car|two\s*wheeler|commercial\s*vehicle|gcv|pcv|car|scooter|bike)\b/.test(haystack)) {
+    return "motor";
+  }
+  if (/\b(health|mediclaim|medical|hospital|personal\s*accident)\b/.test(haystack)) {
+    return "health";
+  }
+  if (/\b(warehouse|godown)\b/.test(haystack)) {
+    return "warehouse";
+  }
+  return "nonMotor";
+}
+
 function getSavedDate(record) {
-  const value = record.reportDate || record.savedAt || record.uploadedAt;
+  const value = record?.reportDate || record?.savedAt || record?.uploadedAt;
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function getPremium(record) {
-  return parseMoney(record.netPremium || record.totalPremium || record.premium);
+  if (typeof record?.premium === "number") return record.premium;
+  return parseMoney(record?.netPremium || record?.totalPremium || record?.premium);
 }
 
 function formatDateTime(value) {
