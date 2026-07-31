@@ -175,7 +175,7 @@ export default async function PremiumReportPage({ params, searchParams }) {
 
       {pivotRows.length ? (
         <section className="glass-panel report-detail-table">
-          <div className="panel-head" style={{ flexDirection: "column", alignItems: "flex-start", gap: "14px" }}>
+          <div className="panel-head">
             <div>
               <p className="eyebrow">Pivot Report</p>
               <h2>
@@ -186,44 +186,24 @@ export default async function PremiumReportPage({ params, searchParams }) {
                     : "Current page breakdown"}
               </h2>
             </div>
-            {config.grouping !== "records" && (
-              <div className="pivot-category-grid">
-                <div className="pivot-cat-pill motor">
-                  <span className="pivot-cat-label">Motor</span>
-                  <span className="pivot-cat-count">{categoryTotals.motor}</span>
-                </div>
-                <div className="pivot-cat-pill health">
-                  <span className="pivot-cat-label">Health</span>
-                  <span className="pivot-cat-count">{categoryTotals.health}</span>
-                </div>
-                <div className="pivot-cat-pill warehouse">
-                  <span className="pivot-cat-label">Warehouse</span>
-                  <span className="pivot-cat-count">{categoryTotals.warehouse}</span>
-                </div>
-                <div className="pivot-cat-pill non-motor">
-                  <span className="pivot-cat-label">Non-Motor</span>
-                  <span className="pivot-cat-count">{categoryTotals.nonMotor}</span>
-                </div>
-              </div>
-            )}
           </div>
           <div className="table-wrap">
-            <table className="records-table">
+            <table className="records-table pivot-table-spacious">
               <thead>
                 <tr>
-                  <th>
+                  <th style={{ width: "20%" }}>
                     {config.grouping === "month"
                       ? "Month"
                       : config.grouping === "day"
                         ? "Date"
                         : "Uploaded By"}
                   </th>
-                  {config.grouping !== "records" && <th>Motor</th>}
-                  {config.grouping !== "records" && <th>Health</th>}
-                  {config.grouping !== "records" && <th>Warehouse</th>}
-                  {config.grouping !== "records" && <th>Non-Motor</th>}
-                  <th>Total Policies</th>
-                  <th>Total Premium</th>
+                  {config.grouping !== "records" && <th className="text-center" style={{ width: "12%" }}>Motor</th>}
+                  {config.grouping !== "records" && <th className="text-center" style={{ width: "12%" }}>Health</th>}
+                  {config.grouping !== "records" && <th className="text-center" style={{ width: "12%" }}>Warehouse</th>}
+                  {config.grouping !== "records" && <th className="text-center" style={{ width: "12%" }}>Non-Motor</th>}
+                  <th className="text-center" style={{ width: "14%" }}>Total Policies</th>
+                  <th className="text-right" style={{ width: "18%" }}>Total Premium</th>
                 </tr>
               </thead>
               <tbody>
@@ -233,37 +213,37 @@ export default async function PremiumReportPage({ params, searchParams }) {
                       <strong>{row.label}</strong>
                     </td>
                     {config.grouping !== "records" && (
-                      <td>
-                        <span className={`pivot-cell-val ${row.motor ? "positive" : "zero"}`}>
+                      <td className="text-center">
+                        <span className={`pivot-num-cell ${row.motor ? "" : "dimmed"}`}>
                           {row.motor || 0}
                         </span>
                       </td>
                     )}
                     {config.grouping !== "records" && (
-                      <td>
-                        <span className={`pivot-cell-val ${row.health ? "positive" : "zero"}`}>
+                      <td className="text-center">
+                        <span className={`pivot-num-cell ${row.health ? "" : "dimmed"}`}>
                           {row.health || 0}
                         </span>
                       </td>
                     )}
                     {config.grouping !== "records" && (
-                      <td>
-                        <span className={`pivot-cell-val ${row.warehouse ? "positive" : "zero"}`}>
+                      <td className="text-center">
+                        <span className={`pivot-num-cell ${row.warehouse ? "" : "dimmed"}`}>
                           {row.warehouse || 0}
                         </span>
                       </td>
                     )}
                     {config.grouping !== "records" && (
-                      <td>
-                        <span className={`pivot-cell-val ${row.nonMotor ? "positive" : "zero"}`}>
+                      <td className="text-center">
+                        <span className={`pivot-num-cell ${row.nonMotor ? "" : "dimmed"}`}>
                           {row.nonMotor || 0}
                         </span>
                       </td>
                     )}
-                    <td>
-                      <span className="pivot-cell-val total-count">{row.count}</span>
+                    <td className="text-center">
+                      <span className="pivot-num-cell total-bold">{row.count}</span>
                     </td>
-                    <td>
+                    <td className="text-right">
                       <span className="record-code">{formatMoney(row.premium)}</span>
                     </td>
                   </tr>
@@ -271,14 +251,14 @@ export default async function PremiumReportPage({ params, searchParams }) {
               </tbody>
               {config.grouping !== "records" && pivotRows.length > 1 && (
                 <tfoot>
-                  <tr className="pivot-tfoot-row">
+                  <tr className="pivot-tfoot-clean">
                     <td>Total</td>
-                    <td>{categoryTotals.motor}</td>
-                    <td>{categoryTotals.health}</td>
-                    <td>{categoryTotals.warehouse}</td>
-                    <td>{categoryTotals.nonMotor}</td>
-                    <td>{categoryTotals.count}</td>
-                    <td>
+                    <td className="text-center">{categoryTotals.motor}</td>
+                    <td className="text-center">{categoryTotals.health}</td>
+                    <td className="text-center">{categoryTotals.warehouse}</td>
+                    <td className="text-center">{categoryTotals.nonMotor}</td>
+                    <td className="text-center">{categoryTotals.count}</td>
+                    <td className="text-right">
                       <span className="record-code">{formatMoney(categoryTotals.premium)}</span>
                     </td>
                   </tr>
