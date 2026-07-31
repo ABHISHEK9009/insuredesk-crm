@@ -1,8 +1,6 @@
-// app/ui/dashboard/constants.js
 import {
   BarChart3,
   BriefcaseBusiness,
-  FileCog,
   FileText,
   Settings,
   Upload,
@@ -17,7 +15,6 @@ export const NAV_ITEMS = [
   { id: "customers", label: "Customer Management", icon: Users },
   { id: "renewals", label: "Renewals", icon: RefreshCw },
   { id: "analytics", label: "Reports", icon: BarChart3 },
-  { id: "field-setup", label: "Field Setup", icon: FileCog },
   {
     id: "user-management",
     label: "User Management",

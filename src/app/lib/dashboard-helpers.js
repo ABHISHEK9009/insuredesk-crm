@@ -857,7 +857,7 @@ export function pageTitle(page) {
     records: "Policy Records",
     customers: "Customer Management",
     analytics: "Analytics & Reports",
-    "field-setup": "Field Setup",
+
     settings: "Settings",
   }[page];
 }
@@ -870,7 +870,7 @@ export function pageSubtitle(page) {
     records: "Search, export, and manage saved policy data.",
     customers: "Browse insured parties and policy summaries.",
     analytics: "Review premium totals, insured value, and district coverage.",
-    "field-setup": "See how the Prisma model maps to the intake fields.",
+
     settings: "Review database connectivity and current app status.",
   }[page];
 }
