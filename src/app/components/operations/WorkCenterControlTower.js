@@ -396,18 +396,25 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               key={stage.id}
               onClick={() => setActiveStage(stage.id === activeStage ? "ALL" : stage.id)}
               className={`ct-pipeline-stage ${activeStage === stage.id ? "active" : ""}`}
+              style={{ borderTop: `3px solid ${stage.color}` }}
             >
-              <div className="flex items-center justify-between">
-                <span className="ct-stage-name">{stage.label}</span>
+              <div className="flex items-center justify-between gap-1.5 min-w-0">
+                <span className="ct-stage-name truncate font-extrabold text-[10.5px] text-slate-600 tracking-wider">
+                  {stage.label}
+                </span>
                 <span
-                  className="h-2 w-2 rounded-full"
+                  className="h-2 w-2 rounded-full shrink-0 shadow-xs"
                   style={{ backgroundColor: stage.color }}
                 />
               </div>
-              <div className="ct-stage-count">{stage.count}</div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="ct-stage-sub">{stage.revenue}</span>
-                <span className="text-[10px] text-slate-400 font-semibold">{stage.sla}</span>
+              <div className="ct-stage-count my-1 font-black text-2xl text-slate-900 leading-none">
+                {stage.count}
+              </div>
+              <div className="flex items-center justify-between gap-1 mt-auto pt-1">
+                <span className="ct-stage-sub font-bold text-xs text-slate-700">{stage.revenue}</span>
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                  {stage.sla}
+                </span>
               </div>
             </div>
           ))}
@@ -453,8 +460,8 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
             </div>
 
             {/* Department Filter Bar */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+            <div className="ct-dept-bar">
+              <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
                 Dept:
               </span>
               {DEPARTMENTS.map((dept) => (
@@ -464,7 +471,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                     setSelectedDept(dept.id);
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition border ${selectedDept === dept.id ? "bg-white text-indigo-700 border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
+                  className={`ct-dept-pill ${selectedDept === dept.id ? "active" : ""}`}
                 >
                   {dept.label}
                 </button>
@@ -511,7 +518,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               <table className="ct-table">
                 <thead>
                   <tr>
-                    <th className="w-8 text-center whitespace-nowrap">
+                    <th className="w-10 text-center whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={
@@ -525,111 +532,119 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                     <th className="whitespace-nowrap">Task &amp; Reference</th>
                     <th className="whitespace-nowrap">Module</th>
                     <th className="whitespace-nowrap">Customer</th>
-                    <th className="whitespace-nowrap">Priority</th>
-                    <th className="whitespace-nowrap">Due Date</th>
-                    <th className="whitespace-nowrap">Status</th>
+                    <th className="whitespace-nowrap text-center">Priority</th>
+                    <th className="whitespace-nowrap text-center">Due Date</th>
+                    <th className="whitespace-nowrap text-center">Status</th>
                     <th className="text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedTasks.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-slate-400 text-xs font-semibold">
+                      <td colSpan={8} className="text-center py-10 text-slate-400 text-xs font-semibold">
                         No operational tasks match your search or department filter.
                       </td>
                     </tr>
                   ) : (
-                    pagedTasks.map((task) => (
-                      <tr key={task.id}>
-                        <td className="text-center whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={selectedTaskIds.includes(task.id)}
-                            onChange={() => toggleSelectTask(task.id)}
-                            className="rounded border-slate-300"
-                          />
-                        </td>
-                        <td className="max-w-md">
-                          <div className="font-bold text-slate-900 text-xs break-words whitespace-normal leading-snug">
-                            {task.title}
-                          </div>
-                          {task.description && (
-                            <div className="text-[11px] text-slate-500 break-words whitespace-normal leading-snug mt-0.5">
-                              {task.description}
+                    pagedTasks.map((task) => {
+                      const isSelected = selectedTaskIds.includes(task.id);
+                      const isHighPriority = ["high", "critical"].includes(String(task.priority || "").toLowerCase());
+                      return (
+                        <tr key={task.id} className={isSelected ? "bg-indigo-50/40" : ""}>
+                          <td className="text-center whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelectTask(task.id)}
+                              className="rounded border-slate-300"
+                            />
+                          </td>
+                          <td className="max-w-lg">
+                            <div className="font-bold text-slate-900 text-xs break-words whitespace-normal leading-snug hover:text-indigo-600 transition-colors">
+                              {String(task.title || "").replace(/,/g, ", ")}
                             </div>
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] uppercase tracking-wider whitespace-nowrap inline-block">
-                            {task.module || "Operations"}
-                          </span>
-                        </td>
-                        <td className="max-w-[220px] break-words whitespace-normal">
-                          <span className="font-semibold text-slate-800 text-xs break-words whitespace-normal leading-snug block">
-                            {task.customerName || "General Customer"}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap">
-                          <span
-                            className={`px-2 py-0.5 rounded font-extrabold text-[10px] uppercase whitespace-nowrap inline-block ${String(task.priority).toLowerCase() === "high" || String(task.priority).toLowerCase() === "critical" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-800"}`}
-                          >
-                            {task.priority || "MEDIUM"}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap">
-                          <span className="text-xs text-slate-600 font-medium whitespace-nowrap inline-block">
-                            {task.dueAt
-                              ? new Date(task.dueAt).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })
-                              : "Today"}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold whitespace-nowrap inline-block">
-                            {task.status || "OPEN"}
-                          </span>
-                        </td>
-                        <td className="text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {["NEW_POLICY_QUOTE", "RENEWAL_QUOTE"].includes(
-                              task.metadata?.requestType,
-                            ) && (
-                              <button
-                                onClick={() => {
-                                  setQuoteModalTask(task);
-                                  setQuoteForm({
-                                    amount: task.amount || "",
-                                    note: task.metadata?.quoteNote || "",
-                                    paymentLink: task.metadata?.paymentLink || "",
-                                  });
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 text-[11px] font-bold shadow-sm transition"
-                              >
-                                <FileEdit size={12} />
-                                <span>Quote</span>
-                              </button>
+                            {task.description && (
+                              <div className="text-[11px] text-slate-500 break-words whitespace-normal leading-relaxed mt-0.5">
+                                {String(task.description || "").replace(/,/g, ", ")}
+                              </div>
                             )}
-                            <button
-                              onClick={() => setAssignModalTask(task)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 text-[11px] font-bold shadow-sm transition"
+                          </td>
+                          <td className="whitespace-nowrap">
+                            <span className="px-2.5 py-1 rounded-md bg-slate-100/90 text-slate-700 font-bold text-[10.5px] uppercase tracking-wider border border-slate-200/70 whitespace-nowrap inline-block">
+                              {task.module || "Operations"}
+                            </span>
+                          </td>
+                          <td className="max-w-[240px] break-words whitespace-normal">
+                            <span className="font-bold text-slate-800 text-xs break-words whitespace-normal leading-snug block">
+                              {String(task.customerName || "General Customer").replace(/,/g, ", ")}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap text-center">
+                            <span
+                              className={`px-2.5 py-1 rounded-full font-extrabold text-[10.5px] uppercase whitespace-nowrap inline-block ${
+                                isHighPriority
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  : "bg-amber-50 text-amber-800 border border-amber-200"
+                              }`}
                             >
-                              <Users size={12} />
-                              <span>Assign</span>
-                            </button>
-                            <button
-                              onClick={() => handleCompleteTask(task.id)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 text-[11px] font-bold shadow-sm transition"
-                              title="Complete Task"
-                            >
-                              <CheckCircle2 size={13} />
-                              <span>Done</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                              {task.priority || "MEDIUM"}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap text-center">
+                            <span className="text-xs text-slate-600 font-semibold px-2 py-0.5 rounded bg-slate-100/80 border border-slate-200/60 whitespace-nowrap inline-block">
+                              {task.dueAt
+                                ? new Date(task.dueAt).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })
+                                : "Today"}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap text-center">
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold whitespace-nowrap inline-block">
+                              {task.status || "OPEN"}
+                            </span>
+                          </td>
+                          <td className="text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5 min-w-[140px]">
+                              {["NEW_POLICY_QUOTE", "RENEWAL_QUOTE"].includes(
+                                task.metadata?.requestType,
+                              ) && (
+                                <button
+                                  onClick={() => {
+                                    setQuoteModalTask(task);
+                                    setQuoteForm({
+                                      amount: task.amount || "",
+                                      note: task.metadata?.quoteNote || "",
+                                      paymentLink: task.metadata?.paymentLink || "",
+                                    });
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 text-[11px] font-extrabold shadow-2xs whitespace-nowrap inline-flex items-center gap-1 shrink-0 transition-all"
+                                >
+                                  <FileEdit size={12} className="shrink-0 text-emerald-600" />
+                                  <span>Quote</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setAssignModalTask(task)}
+                                className="px-2.5 py-1.5 rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:text-indigo-600 hover:border-slate-400 text-[11px] font-bold shadow-2xs whitespace-nowrap inline-flex items-center gap-1 shrink-0 transition-all"
+                              >
+                                <Users size={12} className="shrink-0 text-slate-500" />
+                                <span>Assign</span>
+                              </button>
+                              <button
+                                onClick={() => handleCompleteTask(task.id)}
+                                className="px-2.5 py-1.5 rounded-lg bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 hover:border-emerald-400 text-[11px] font-bold shadow-2xs whitespace-nowrap inline-flex items-center gap-1 shrink-0 transition-all"
+                                title="Complete Task"
+                              >
+                                <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
+                                <span>Done</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -668,93 +683,9 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               </div>
             )}
           </div>
-
-          {/* CUSTOMER WAITING QUEUE & DOCUMENT PROCESSING */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Customer Waiting Queue */}
-            <div className="ct-panel">
-              <div className="ct-section-header">
-                <div className="ct-section-title">
-                  <Clock size={16} className="text-amber-600" />
-                  <span>Customer Waiting Queue</span>
-                </div>
-                <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
-                  {waitingQueueList.length} Items Hold
-                </span>
-              </div>
-
-              <div className="ct-scroll-box">
-                {waitingQueueList.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                    No customer SLA holds active.
-                  </div>
-                ) : (
-                  waitingQueueList.map((item) => (
-                    <div key={item.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-                      <div>
-                        <div className="font-bold text-xs text-slate-900">{item.customerName || item.title}</div>
-                        <div className="text-[11px] text-amber-700 font-semibold">{item.status.replaceAll("_", " ")}</div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <a
-                          href={`https://wa.me/${(item.customerMobile || "").replace(/[^0-9]/g, "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                          title="Send WhatsApp Reminder"
-                        >
-                          <MessageSquare size={14} />
-                        </a>
-                        <a
-                          href={`tel:${item.customerMobile || ""}`}
-                          className="p-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
-                          title="Call Customer"
-                        >
-                          <PhoneCall size={14} />
-                        </a>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Document Processing / OCR Queue */}
-            <div className="ct-panel">
-              <div className="ct-section-header">
-                <div className="ct-section-title">
-                  <FileCheck size={16} className="text-indigo-600" />
-                  <span>OCR &amp; PDF Processing Engine</span>
-                </div>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                  Auto-Parsing
-                </span>
-              </div>
-
-              <div className="ct-scroll-box">
-                {(data.activities || []).length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                    No active PDF extraction queue.
-                  </div>
-                ) : (
-                  (data.activities || []).slice(0, 5).map((doc, idx) => (
-                    <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-xs text-slate-900 truncate">{doc.description || doc.action}</div>
-                        <div className="text-[11px] text-slate-500 font-semibold">{doc.module || "System Engine"}</div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                        PROCESSED
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* RIGHT COLUMN: AI ASSISTANT, APPROVALS & TEAM WORKLOAD */}
+        {/* RIGHT COLUMN: AI ASSISTANT, QUEUES, APPROVALS & TEAM WORKLOAD */}
         <div className="flex flex-col gap-5">
           {/* AI OPERATIONS ASSISTANT */}
           <div className="ct-panel bg-white border border-slate-200 shadow-sm text-slate-900">
@@ -796,6 +727,87 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                     : "No blocked revenue detected across active pipeline."}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* CUSTOMER WAITING QUEUE */}
+          <div className="ct-panel">
+            <div className="ct-section-header">
+              <div className="ct-section-title">
+                <Clock size={16} className="text-amber-600" />
+                <span>Customer Waiting Queue</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                {waitingQueueList.length} Items Hold
+              </span>
+            </div>
+
+            <div className="ct-scroll-box">
+              {waitingQueueList.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                  No customer SLA holds active.
+                </div>
+              ) : (
+                waitingQueueList.map((item) => (
+                  <div key={item.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-slate-900 truncate">{item.customerName || item.title}</div>
+                      <div className="text-[11px] text-amber-700 font-semibold">{item.status.replaceAll("_", " ")}</div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <a
+                        href={`https://wa.me/${(item.customerMobile || "").replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        title="Send WhatsApp Reminder"
+                      >
+                        <MessageSquare size={14} />
+                      </a>
+                      <a
+                        href={`tel:${item.customerMobile || ""}`}
+                        className="p-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        title="Call Customer"
+                      >
+                        <PhoneCall size={14} />
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* OCR & PDF PROCESSING ENGINE */}
+          <div className="ct-panel">
+            <div className="ct-section-header">
+              <div className="ct-section-title">
+                <FileCheck size={16} className="text-indigo-600" />
+                <span>OCR &amp; PDF Processing Engine</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                Auto-Parsing
+              </span>
+            </div>
+
+            <div className="ct-scroll-box">
+              {(data.activities || []).length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                  No active PDF extraction queue.
+                </div>
+              ) : (
+                (data.activities || []).slice(0, 5).map((doc, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-slate-900 truncate">{doc.description || doc.action}</div>
+                      <div className="text-[11px] text-slate-500 font-semibold">{doc.module || "System Engine"}</div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 shrink-0">
+                      PROCESSED
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -851,34 +863,53 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                 <Users size={18} className="text-indigo-600" />
                 <span>Team Workload &amp; Capacity</span>
               </div>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold">
+                {teamWorkloadList.filter((e) => (e.pendingTasks || 0) > 0).length} Active
+              </span>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="ct-scroll-box max-h-[280px]">
               {teamWorkloadList.length === 0 ? (
                 <div className="text-center py-6 text-slate-400 text-xs font-semibold">
                   No team members configured.
                 </div>
               ) : (
-                teamWorkloadList.map((emp) => {
-                  const capacityPct = Math.min(Math.round(((emp.pendingTasks || 0) / 15) * 100), 100);
-                  return (
-                    <div key={emp.userId} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <div>
-                          <strong className="text-slate-900">{emp.user}</strong>
-                          <span className="text-slate-400 ml-1.5 font-normal">({emp.role})</span>
+                [...teamWorkloadList]
+                  .sort((a, b) => (b.pendingTasks || 0) - (a.pendingTasks || 0))
+                  .map((emp) => {
+                    const count = emp.pendingTasks || 0;
+                    const capacityPct = Math.min(Math.round((count / 15) * 100), 100);
+                    return (
+                      <div
+                        key={emp.userId}
+                        className="p-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-1.5 hover:bg-white hover:border-slate-300 transition shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-extrabold text-slate-900 truncate">{emp.user}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-600 text-[9.5px] font-bold uppercase shrink-0">
+                              {emp.role || "AGENT"}
+                            </span>
+                          </div>
+                          <span
+                            className={`font-black text-xs shrink-0 ${count > 10 ? "text-rose-600" : count > 0 ? "text-indigo-600" : "text-slate-400"}`}
+                          >
+                            {count} {count === 1 ? "Task" : "Tasks"}
+                          </span>
                         </div>
-                        <span className="font-extrabold text-indigo-700">{emp.pendingTasks} Tasks</span>
+                        {count > 0 ? (
+                          <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${capacityPct > 80 ? "bg-rose-500" : capacityPct > 50 ? "bg-amber-500" : "bg-emerald-500"}`}
+                              style={{ width: `${capacityPct}%` }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-slate-400 font-medium">Available for assignment</div>
+                        )}
                       </div>
-                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${capacityPct > 80 ? "bg-rose-500" : "bg-emerald-500"}`}
-                          style={{ width: `${capacityPct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               )}
             </div>
           </div>
