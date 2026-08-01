@@ -46,18 +46,6 @@ import {
   Zap,
 } from "lucide-react";
 
-const PIPELINE_STAGES = [
-  { id: "LEAD", label: "Lead", count: 12, revenue: "₹2,45,000", sla: "12h avg", color: "#6366f1" },
-  { id: "QUOTATION", label: "Quotation", count: 8, revenue: "₹4,10,000", sla: "4h avg", color: "#8b5cf6" },
-  { id: "PROPOSAL", label: "Proposal", count: 15, revenue: "₹8,90,000", sla: "6h avg", color: "#ec4899" },
-  { id: "PAYMENT_PENDING", label: "Payment Pending", count: 6, revenue: "₹3,75,000", sla: "24h avg", color: "#f59e0b" },
-  { id: "PAYMENT_VERIFIED", label: "Payment Verified", count: 4, revenue: "₹5,20,000", sla: "1h avg", color: "#10b981" },
-  { id: "POLICY_ISSUANCE", label: "Policy Issuance", count: 9, revenue: "₹11,40,000", sla: "3h avg", color: "#06b6d4" },
-  { id: "QUALITY_CHECK", label: "Quality Check", count: 3, revenue: "₹1,80,000", sla: "2h avg", color: "#3b82f6" },
-  { id: "CUSTOMER_DELIVERY", label: "Customer Delivery", count: 5, revenue: "₹2,90,000", sla: "30m avg", color: "#14b8a6" },
-  { id: "COMPLETED", label: "Completed", count: 42, revenue: "₹45,000,000", sla: "Done", color: "#22c55e" },
-];
-
 const DEPARTMENTS = [
   { id: "ALL", label: "All Departments" },
   { id: "RENEWALS", label: "Renewals" },
@@ -189,6 +177,82 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
     }
   };
 
+  // Dynamic Pipeline Stages calculated from real database tasks
+  const pipelineStages = useMemo(() => {
+    const tasks = data.tasks || [];
+    const getStageTasks = (condition) => tasks.filter(condition);
+    const sumRevenue = (items) => items.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+    const formatCurrency = (val) => (val > 0 ? `₹${val.toLocaleString("en-IN")}` : "₹0");
+
+    const leadTasks = getStageTasks((t) => t.type === "LEAD" || t.status === "DRAFT");
+    const quoteTasks = getStageTasks(
+      (t) =>
+        t.metadata?.requestType === "NEW_POLICY_QUOTE" ||
+        t.metadata?.requestType === "RENEWAL_QUOTE" ||
+        t.type === "QUOTE",
+    );
+    const proposalTasks = getStageTasks((t) => t.type === "PROPOSAL" || t.module === "Proposals");
+    const payPendingTasks = getStageTasks(
+      (t) => t.metadata?.paymentRequested || t.status === "WAITING_CUSTOMER",
+    );
+    const payVerifiedTasks = getStageTasks(
+      (t) => t.metadata?.paymentVerified || t.status === "WAITING_INSURANCE_COMPANY",
+    );
+    const issuanceTasks = getStageTasks(
+      (t) => t.module === "Policy Issuance" || t.module === "Operations" || t.type === "ISSUANCE",
+    );
+    const qcTasks = getStageTasks((t) => t.status === "WAITING_DOCUMENTS" || t.module === "Compliance");
+    const deliveryTasks = getStageTasks((t) => t.type === "DELIVERY" || t.status === "IN_PROGRESS");
+    const completedTasks = getStageTasks((t) => t.status === "COMPLETED" || t.status === "CLOSED");
+
+    return [
+      { id: "LEAD", label: "Lead", count: leadTasks.length, revenue: formatCurrency(sumRevenue(leadTasks)), sla: "Live", color: "#6366f1" },
+      { id: "QUOTATION", label: "Quotation", count: quoteTasks.length, revenue: formatCurrency(sumRevenue(quoteTasks)), sla: "Live", color: "#8b5cf6" },
+      { id: "PROPOSAL", label: "Proposal", count: proposalTasks.length, revenue: formatCurrency(sumRevenue(proposalTasks)), sla: "Live", color: "#ec4899" },
+      { id: "PAYMENT_PENDING", label: "Payment Pending", count: payPendingTasks.length, revenue: formatCurrency(sumRevenue(payPendingTasks)), sla: "Live", color: "#f59e0b" },
+      { id: "PAYMENT_VERIFIED", label: "Payment Verified", count: payVerifiedTasks.length, revenue: formatCurrency(sumRevenue(payVerifiedTasks)), sla: "Live", color: "#10b981" },
+      { id: "POLICY_ISSUANCE", label: "Policy Issuance", count: issuanceTasks.length, revenue: formatCurrency(sumRevenue(issuanceTasks)), sla: "Live", color: "#06b6d4" },
+      { id: "QUALITY_CHECK", label: "Quality Check", count: qcTasks.length, revenue: formatCurrency(sumRevenue(qcTasks)), sla: "Live", color: "#3b82f6" },
+      { id: "CUSTOMER_DELIVERY", label: "Customer Delivery", count: deliveryTasks.length, revenue: formatCurrency(sumRevenue(deliveryTasks)), sla: "Live", color: "#14b8a6" },
+      { id: "COMPLETED", label: "Completed", count: completedTasks.length, revenue: formatCurrency(sumRevenue(completedTasks)), sla: "Done", color: "#22c55e" },
+    ];
+  }, [data.tasks]);
+
+  // Dynamic Critical Alert Count from real database data
+  const criticalAlertCount = useMemo(() => {
+    const overdue = (data.tasks || []).filter(
+      (t) => t.dueAt && new Date(t.dueAt) < new Date(),
+    ).length;
+    const escalationsCount = (data.escalations || []).length;
+    return overdue + escalationsCount;
+  }, [data.tasks, data.escalations]);
+
+  // Dynamic Customer Waiting Queue from real database tasks
+  const waitingQueueList = useMemo(() => {
+    const tasks = data.tasks || [];
+    return tasks.filter(
+      (t) =>
+        ["WAITING_CUSTOMER", "WAITING_INSURANCE_COMPANY", "WAITING_DOCUMENTS"].includes(t.status) ||
+        t.priority === "HIGH" ||
+        t.priority === "CRITICAL",
+    );
+  }, [data.tasks]);
+
+  // Dynamic Team Workload from database
+  const teamWorkloadList = useMemo(() => {
+    return data.teamWorkload || [];
+  }, [data.teamWorkload]);
+
+  // Dynamic Approvals from database
+  const approvalsList = useMemo(() => {
+    return data.approvals || [];
+  }, [data.approvals]);
+
+  // Dynamic Events / Agenda from database
+  const agendaEventsList = useMemo(() => {
+    return data.events || [];
+  }, [data.events]);
+
   return (
     <div className="control-tower-root">
       {/* Toast Notification */}
@@ -264,7 +328,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
           >
             <Bell size={15} />
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[9px] font-extrabold text-white">
-              {data.notifications?.length || 5}
+              {data.notifications?.length || 0}
             </span>
           </button>
         </div>
@@ -279,10 +343,10 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
             </div>
             <div>
               <div className="ct-alert-title">
-                22 Critical Operations Items Breaching SLA or Expiring Today
+                {criticalAlertCount} Operations Items Breaching SLA or Pending Action
               </div>
               <div className="ct-alert-desc">
-                Includes 4 unissued policies with verified payment &amp; 18 overdue renewal notices.
+                Includes overdue renewals, customer SLA holds &amp; active escalations.
               </div>
             </div>
           </div>
@@ -327,7 +391,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
         </div>
 
         <div className="ct-pipeline-grid">
-          {PIPELINE_STAGES.map((stage) => (
+          {pipelineStages.map((stage) => (
             <div
               key={stage.id}
               onClick={() => setActiveStage(stage.id === activeStage ? "ALL" : stage.id)}
@@ -612,41 +676,43 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                   <span>Customer Waiting Queue</span>
                 </div>
                 <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
-                  SLA Hold
+                  {waitingQueueList.length} Items Hold
                 </span>
               </div>
 
               <div className="ct-scroll-box">
-                {[
-                  { name: "SHIVOM WAREHOUSE", reason: "Waiting for Surveyor Report", time: "2h ago", phone: "+91 98260 12345" },
-                  { name: "KACHWAH WAREHOUSING", reason: "Waiting for KYC Documents", time: "4h ago", phone: "+91 94250 67890" },
-                  { name: "SONGARA WAREHOUSE", reason: "Waiting for Premium Payment", time: "1d ago", phone: "+91 99810 54321" },
-                ].map((item, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-bold text-xs text-slate-900">{item.name}</div>
-                      <div className="text-[11px] text-amber-700 font-semibold">{item.reason}</div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <a
-                        href={`https://wa.me/${item.phone.replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                        title="Send WhatsApp Reminder"
-                      >
-                        <MessageSquare size={14} />
-                      </a>
-                      <a
-                        href={`tel:${item.phone}`}
-                        className="p-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
-                        title="Call Customer"
-                      >
-                        <PhoneCall size={14} />
-                      </a>
-                    </div>
+                {waitingQueueList.length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                    No customer SLA holds active.
                   </div>
-                ))}
+                ) : (
+                  waitingQueueList.map((item) => (
+                    <div key={item.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-bold text-xs text-slate-900">{item.customerName || item.title}</div>
+                        <div className="text-[11px] text-amber-700 font-semibold">{item.status.replaceAll("_", " ")}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={`https://wa.me/${(item.customerMobile || "").replace(/[^0-9]/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          title="Send WhatsApp Reminder"
+                        >
+                          <MessageSquare size={14} />
+                        </a>
+                        <a
+                          href={`tel:${item.customerMobile || ""}`}
+                          className="p-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                          title="Call Customer"
+                        >
+                          <PhoneCall size={14} />
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -663,21 +729,23 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               </div>
 
               <div className="ct-scroll-box">
-                {[
-                  { file: "ICICI_Lombard_Fire_Policy_450107.pdf", status: "VERIFIED", conf: "99.4%" },
-                  { file: "Tata_AIG_Warehouse_Policy_9912.pdf", status: "VERIFIED", conf: "98.2%" },
-                  { file: "Bajaj_Allianz_WC_Policy_001.pdf", status: "MANUAL_REVIEW", conf: "84.0%" },
-                ].map((doc, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-xs text-slate-900 truncate">{doc.file}</div>
-                      <div className="text-[11px] text-slate-500 font-semibold">AI Confidence: {doc.conf}</div>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${doc.status === "VERIFIED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                      {doc.status}
-                    </span>
+                {(data.activities || []).length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                    No active PDF extraction queue.
                   </div>
-                ))}
+                ) : (
+                  (data.activities || []).slice(0, 5).map((doc, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs text-slate-900 truncate">{doc.description || doc.action}</div>
+                        <div className="text-[11px] text-slate-500 font-semibold">{doc.module || "System Engine"}</div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                        PROCESSED
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -701,10 +769,16 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-amber-700 mb-1">⚡ Workload Rebalancing Suggested</div>
                 <div className="text-slate-600 leading-relaxed">
-                  Executive <strong>Abhishek Verma</strong> has 18 open renewals. Reassign 5 tasks to <strong>Pooja Sharma</strong> to ensure zero SLA breaches today.
+                  {teamWorkloadList[0] ? (
+                    <>
+                      Executive <strong>{teamWorkloadList[0].user}</strong> has {teamWorkloadList[0].pendingTasks} open tasks.
+                    </>
+                  ) : (
+                    "Analyzing workload distribution across team members..."
+                  )}
                 </div>
                 <button
-                  onClick={() => showToast("AI Reassigned 5 tasks automatically!")}
+                  onClick={() => showToast("AI Reassigned tasks automatically!")}
                   className="mt-2.5 px-3 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 hover:bg-slate-50 font-bold text-[11px] shadow-sm"
                 >
                   Auto-Balance Workload
@@ -714,7 +788,9 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-emerald-700 mb-1">💰 Revenue Blocker Detected</div>
                 <div className="text-slate-600 leading-relaxed">
-                  ₹16,025 payment verified for <strong>SHIVOM WAREHOUSE</strong>. Policy issuance is pending quality check.
+                  {(data.tasks || []).find((t) => t.amount)
+                    ? `₹${Number((data.tasks || []).find((t) => t.amount)?.amount).toLocaleString("en-IN")} pending for ${(data.tasks || []).find((t) => t.amount)?.customerName || "Customer"}.`
+                    : "No blocked revenue detected across active pipeline."}
                 </div>
               </div>
             </div>
@@ -728,38 +804,40 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                 <span>Operational Approvals</span>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
-                {data.approvals?.length || 3} Pending
+                {approvalsList.length} Pending
               </span>
             </div>
 
             <div className="ct-scroll-box">
-              {[
-                { title: "Special Premium Discount (5%)", requester: "Rahul Sharma", amount: "₹1,250", type: "DISCOUNT" },
-                { title: "Claim Settlement Approval", requester: "Ankit Gupta", amount: "₹45,000", type: "CLAIM" },
-                { title: "Manual Policy Correction", requester: "Pooja Verma", amount: "N/A", type: "POLICY" },
-              ].map((app, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900">{app.title}</span>
-                    <span className="text-[11px] font-extrabold text-indigo-700">{app.amount}</span>
-                  </div>
-                  <div className="text-[11px] text-slate-500">Requested by {app.requester}</div>
-                  <div className="flex items-center justify-end gap-2 mt-1">
-                    <button
-                      onClick={() => showToast("Approval Rejected")}
-                      className="px-2.5 py-1 rounded bg-white border border-slate-300 text-slate-700 text-[11px] font-bold hover:bg-slate-50 shadow-sm"
-                    >
-                      Reject
-                    </button>
-                    <button
-                      onClick={() => showToast("Approval Granted!")}
-                      className="px-2.5 py-1 rounded bg-white border border-emerald-300 text-emerald-700 text-[11px] font-bold hover:bg-emerald-50 shadow-sm"
-                    >
-                      Approve
-                    </button>
-                  </div>
+              {approvalsList.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                  No pending operational approvals.
                 </div>
-              ))}
+              ) : (
+                approvalsList.map((app) => (
+                  <div key={app.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900">{app.title}</span>
+                      <span className="text-[11px] font-extrabold text-indigo-700">{app.module || "Approval"}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Status: {app.status}</div>
+                    <div className="flex items-center justify-end gap-2 mt-1">
+                      <button
+                        onClick={() => showToast("Approval Rejected")}
+                        className="px-2.5 py-1 rounded bg-white border border-slate-300 text-slate-700 text-[11px] font-bold hover:bg-slate-50 shadow-sm"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => showToast("Approval Granted!")}
+                        className="px-2.5 py-1 rounded bg-white border border-emerald-300 text-emerald-700 text-[11px] font-bold hover:bg-emerald-50 shadow-sm"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -773,27 +851,32 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
             </div>
 
             <div className="flex flex-col gap-3">
-              {[
-                { name: "Abhishek Verma", role: "Ops Manager", open: 18, high: 5, capacity: 85 },
-                { name: "Pooja Sharma", role: "Renewals Exec", open: 6, high: 1, capacity: 35 },
-                { name: "Ankit Gupta", role: "Claims Manager", open: 9, high: 3, capacity: 60 },
-              ].map((emp, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <div>
-                      <strong className="text-slate-900">{emp.name}</strong>
-                      <span className="text-slate-400 ml-1.5 font-normal">({emp.role})</span>
-                    </div>
-                    <span className="font-extrabold text-indigo-700">{emp.open} Tasks</span>
-                  </div>
-                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${emp.capacity > 80 ? "bg-rose-500" : "bg-emerald-500"}`}
-                      style={{ width: `${emp.capacity}%` }}
-                    />
-                  </div>
+              {teamWorkloadList.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                  No team members configured.
                 </div>
-              ))}
+              ) : (
+                teamWorkloadList.map((emp) => {
+                  const capacityPct = Math.min(Math.round(((emp.pendingTasks || 0) / 15) * 100), 100);
+                  return (
+                    <div key={emp.userId} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <div>
+                          <strong className="text-slate-900">{emp.user}</strong>
+                          <span className="text-slate-400 ml-1.5 font-normal">({emp.role})</span>
+                        </div>
+                        <span className="font-extrabold text-indigo-700">{emp.pendingTasks} Tasks</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${capacityPct > 80 ? "bg-rose-500" : "bg-emerald-500"}`}
+                          style={{ width: `${capacityPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -807,20 +890,22 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
             </div>
 
             <div className="ct-scroll-box">
-              {[
-                { time: "11:30 AM", title: "Client Call: MPWLC Warehouse Insurance Review" },
-                { time: "02:00 PM", title: "Surveyor Inspection: Shivom Warehouse Claim" },
-                { time: "04:30 PM", title: "Renewal Discussion: S. Poddar Infra" },
-              ].map((evt, idx) => (
-                <div key={idx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
-                  <div className="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-extrabold text-[10px] shrink-0">
-                    {evt.time}
-                  </div>
-                  <div className="text-xs font-semibold text-slate-800 leading-snug">
-                    {evt.title}
-                  </div>
+              {agendaEventsList.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                  No events scheduled for today.
                 </div>
-              ))}
+              ) : (
+                agendaEventsList.map((evt) => (
+                  <div key={evt.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+                    <div className="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-extrabold text-[10px] shrink-0">
+                      {evt.startsAt ? new Date(evt.startsAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "Today"}
+                    </div>
+                    <div className="text-xs font-semibold text-slate-800 leading-snug">
+                      {evt.title || evt.description}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
