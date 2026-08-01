@@ -1,5 +1,6 @@
 import { Manrope, Be_Vietnam_Pro } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo/site";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import "./landing.css";
 
@@ -75,7 +76,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${beVietnamPro.variable} ${manrope.variable}`}>{children}</body>
+      <body className={`${beVietnamPro.variable} ${manrope.variable}`}>
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
