@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import ModalPortal from "@/app/components/shared/ModalPortal";
 import "@/app/ui/dashboard/work-center-control-tower.css";
