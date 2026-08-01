@@ -605,23 +605,26 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                                     paymentLink: task.metadata?.paymentLink || "",
                                   });
                                 }}
-                                className="px-2.5 py-1 rounded bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 text-[11px] font-bold shadow-sm"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 text-[11px] font-bold shadow-sm transition"
                               >
-                                Quote
+                                <FileEdit size={12} />
+                                <span>Quote</span>
                               </button>
                             )}
                             <button
                               onClick={() => setAssignModalTask(task)}
-                              className="px-2.5 py-1 rounded bg-white text-indigo-700 border border-slate-300 hover:bg-slate-50 text-[11px] font-bold shadow-sm"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 text-[11px] font-bold shadow-sm transition"
                             >
-                              Assign
+                              <Users size={12} />
+                              <span>Assign</span>
                             </button>
                             <button
                               onClick={() => handleCompleteTask(task.id)}
-                              className="p-1 rounded bg-white border border-slate-300 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 text-[11px] font-bold shadow-sm transition"
                               title="Complete Task"
                             >
-                              <CheckCircle2 size={16} />
+                              <CheckCircle2 size={13} />
+                              <span>Done</span>
                             </button>
                           </div>
                         </td>
