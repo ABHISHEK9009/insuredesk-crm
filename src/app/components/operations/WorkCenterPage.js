@@ -6,6 +6,8 @@ import {
   Bell,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   ClipboardList,
   FileEdit,
@@ -267,11 +269,24 @@ export default function WorkCenterPage() {
   );
 }
 
+const PAGE_SIZE = 15;
+
 function TaskList({ tasks, onComplete, onUpdated, loading }) {
+  const [currentPage, setCurrentPage] = useState(1);
   const [quoteTask, setQuoteTask] = useState(null);
   const [quoteForm, setQuoteForm] = useState({ quoteAmount: "", quoteNote: "", paymentLink: "" });
   const [quoteError, setQuoteError] = useState("");
   const [savingQuote, setSavingQuote] = useState(false);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tasks]);
+
+  const totalPages = Math.ceil(tasks.length / PAGE_SIZE) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, tasks.length);
+  const pagedTasks = tasks.slice(startIndex, endIndex);
 
   const openQuote = (task) => {
     setQuoteTask(task);
@@ -314,7 +329,7 @@ function TaskList({ tasks, onComplete, onUpdated, loading }) {
   return (
     <>
       <div className="task-list">
-        {tasks.map((task) => (
+        {pagedTasks.map((task) => (
           <article key={task.id} className={`task-row priority-${String(task.priority).toLowerCase()}`}>
             <div className="task-icon">
               <ListTodo size={18} />
@@ -370,6 +385,51 @@ function TaskList({ tasks, onComplete, onUpdated, loading }) {
           </article>
         ))}
       </div>
+
+      {tasks.length > 0 && (
+        <nav
+          className="table-pagination mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200"
+          aria-label="Task pagination"
+        >
+          <span className="text-xs font-semibold text-slate-500">
+            Showing <strong className="text-slate-900">{startIndex + 1}</strong> to{" "}
+            <strong className="text-slate-900">{endIndex}</strong> of{" "}
+            <strong className="text-slate-900">{tasks.length}</strong> tasks
+          </span>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={15} />
+                <span>Previous</span>
+              </button>
+
+              <div className="flex items-center gap-1 px-2 text-xs font-bold text-slate-600">
+                <span>Page</span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-900 font-extrabold">
+                  {safePage}
+                </span>
+                <span>of {totalPages}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span>Next</span>
+                <ChevronRight size={15} />
+              </button>
+            </div>
+          )}
+        </nav>
+      )}
       {quoteTask ? (
         <ModalPortal>
           <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-md">
