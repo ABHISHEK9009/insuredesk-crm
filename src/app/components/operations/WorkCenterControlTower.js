@@ -292,13 +292,13 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                 setSelectedDept("RENEWALS");
                 setActiveStage("ALL");
               }}
-              className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition"
+              className="px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-rose-700 text-xs font-bold hover:bg-rose-50 transition shadow-sm"
             >
               Resolve Now
             </button>
             <button
               onClick={() => showToast("Escalated to Operations Head & Team Manager!")}
-              className="px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-rose-700 text-xs font-bold hover:bg-rose-50 transition"
+              className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-800 text-xs font-bold hover:bg-slate-50 transition shadow-sm"
             >
               Escalate All
             </button>
@@ -319,7 +319,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveStage("ALL")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition ${activeStage === "ALL" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+              className="px-3 py-1 rounded-lg text-xs font-bold transition bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 shadow-sm"
             >
               View All Pipeline Stages
             </button>
@@ -400,7 +400,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                     setSelectedDept(dept.id);
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition border ${selectedDept === dept.id ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition border ${selectedDept === dept.id ? "bg-white text-indigo-700 border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
                 >
                   {dept.label}
                 </button>
@@ -409,7 +409,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
 
             {/* Bulk Actions Bar */}
             {selectedTaskIds.length > 0 && (
-              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-indigo-950 text-white border border-indigo-800">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white text-slate-900 border border-slate-300 shadow-sm">
                 <span className="text-xs font-bold">
                   {selectedTaskIds.length} tasks selected
                 </span>
@@ -419,7 +419,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                       showToast(`Bulk reassigned ${selectedTaskIds.length} tasks!`);
                       setSelectedTaskIds([]);
                     }}
-                    className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
+                    className="px-3 py-1 rounded-lg bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 text-xs font-bold shadow-sm"
                   >
                     Reassign
                   </button>
@@ -428,13 +428,13 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                       showToast(`Bulk priority updated!`);
                       setSelectedTaskIds([]);
                     }}
-                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+                    className="px-3 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs font-bold shadow-sm"
                   >
                     Mark High Priority
                   </button>
                   <button
                     onClick={() => setSelectedTaskIds([])}
-                    className="text-xs text-slate-300 hover:text-white"
+                    className="text-xs text-slate-500 hover:text-slate-800 font-bold"
                   >
                     Cancel
                   </button>
@@ -447,7 +447,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
               <table className="ct-table">
                 <thead>
                   <tr>
-                    <th className="w-8 text-center">
+                    <th className="w-8 text-center whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={
@@ -458,13 +458,13 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                         className="rounded border-slate-300"
                       />
                     </th>
-                    <th>Task &amp; Reference</th>
-                    <th>Module</th>
-                    <th>Customer</th>
-                    <th>Priority</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                    <th className="text-right">Actions</th>
+                    <th className="whitespace-nowrap">Task &amp; Reference</th>
+                    <th className="whitespace-nowrap">Module</th>
+                    <th className="whitespace-nowrap">Customer</th>
+                    <th className="whitespace-nowrap">Priority</th>
+                    <th className="whitespace-nowrap">Due Date</th>
+                    <th className="whitespace-nowrap">Status</th>
+                    <th className="text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -477,7 +477,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                   ) : (
                     pagedTasks.map((task) => (
                       <tr key={task.id}>
-                        <td className="text-center">
+                        <td className="text-center whitespace-nowrap">
                           <input
                             type="checkbox"
                             checked={selectedTaskIds.includes(task.id)}
@@ -495,24 +495,24 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                             </div>
                           )}
                         </td>
-                        <td>
+                        <td className="whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] uppercase tracking-wider">
                             {task.module || "Operations"}
                           </span>
                         </td>
-                        <td>
+                        <td className="whitespace-nowrap">
                           <span className="font-semibold text-slate-800 text-xs">
                             {task.customerName || "General Customer"}
                           </span>
                         </td>
-                        <td>
+                        <td className="whitespace-nowrap">
                           <span
                             className={`px-2 py-0.5 rounded font-extrabold text-[10px] uppercase ${String(task.priority).toLowerCase() === "high" || String(task.priority).toLowerCase() === "critical" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-800"}`}
                           >
                             {task.priority || "MEDIUM"}
                           </span>
                         </td>
-                        <td>
+                        <td className="whitespace-nowrap">
                           <span className="text-xs text-slate-600 font-medium">
                             {task.dueAt
                               ? new Date(task.dueAt).toLocaleDateString("en-IN", {
@@ -522,12 +522,12 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                               : "Today"}
                           </span>
                         </td>
-                        <td>
+                        <td className="whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
                             {task.status || "OPEN"}
                           </span>
                         </td>
-                        <td className="text-right">
+                        <td className="text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             {["NEW_POLICY_QUOTE", "RENEWAL_QUOTE"].includes(
                               task.metadata?.requestType,
@@ -541,20 +541,20 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                                     paymentLink: task.metadata?.paymentLink || "",
                                   });
                                 }}
-                                className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-[11px] font-bold"
+                                className="px-2.5 py-1 rounded bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 text-[11px] font-bold shadow-sm"
                               >
                                 Quote
                               </button>
                             )}
                             <button
                               onClick={() => setAssignModalTask(task)}
-                              className="px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-[11px] font-bold"
+                              className="px-2.5 py-1 rounded bg-white text-indigo-700 border border-slate-300 hover:bg-slate-50 text-[11px] font-bold shadow-sm"
                             >
                               Assign
                             </button>
                             <button
                               onClick={() => handleCompleteTask(task.id)}
-                              className="p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                              className="p-1 rounded bg-white border border-slate-300 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm"
                               title="Complete Task"
                             >
                               <CheckCircle2 size={16} />
@@ -686,34 +686,34 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
         {/* RIGHT COLUMN: AI ASSISTANT, APPROVALS & TEAM WORKLOAD */}
         <div className="flex flex-col gap-5">
           {/* AI OPERATIONS ASSISTANT */}
-          <div className="ct-panel bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-white border-indigo-800">
+          <div className="ct-panel bg-white border border-slate-200 shadow-sm text-slate-900">
             <div className="ct-section-header">
-              <div className="flex items-center gap-2 font-extrabold text-sm text-indigo-300">
-                <Sparkles size={18} className="text-indigo-400 animate-pulse" />
+              <div className="flex items-center gap-2 font-extrabold text-sm text-indigo-700">
+                <Sparkles size={18} className="text-indigo-600 animate-pulse" />
                 <span>AI Operations Copilot</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-200 text-[10px] font-bold border border-indigo-500/30">
+              <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">
                 Live Insights
               </span>
             </div>
 
             <div className="flex flex-col gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-white/10 border border-white/10">
-                <div className="font-bold text-amber-300 mb-1">⚡ Workload Rebalancing Suggested</div>
-                <div className="text-slate-300 leading-relaxed">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-amber-700 mb-1">⚡ Workload Rebalancing Suggested</div>
+                <div className="text-slate-600 leading-relaxed">
                   Executive <strong>Abhishek Verma</strong> has 18 open renewals. Reassign 5 tasks to <strong>Pooja Sharma</strong> to ensure zero SLA breaches today.
                 </div>
                 <button
                   onClick={() => showToast("AI Reassigned 5 tasks automatically!")}
-                  className="mt-2.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px]"
+                  className="mt-2.5 px-3 py-1 rounded-lg bg-white border border-slate-300 text-slate-900 hover:bg-slate-50 font-bold text-[11px] shadow-sm"
                 >
                   Auto-Balance Workload
                 </button>
               </div>
 
-              <div className="p-3 rounded-xl bg-white/10 border border-white/10">
-                <div className="font-bold text-emerald-300 mb-1">💰 Revenue Blocker Detected</div>
-                <div className="text-slate-300 leading-relaxed">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-emerald-700 mb-1">💰 Revenue Blocker Detected</div>
+                <div className="text-slate-600 leading-relaxed">
                   ₹16,025 payment verified for <strong>SHIVOM WAREHOUSE</strong>. Policy issuance is pending quality check.
                 </div>
               </div>
@@ -727,7 +727,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                 <ShieldCheck size={18} className="text-emerald-600" />
                 <span>Operational Approvals</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
                 {data.approvals?.length || 3} Pending
               </span>
             </div>
@@ -747,13 +747,13 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                   <div className="flex items-center justify-end gap-2 mt-1">
                     <button
                       onClick={() => showToast("Approval Rejected")}
-                      className="px-2.5 py-1 rounded bg-slate-200 text-slate-700 text-[11px] font-bold hover:bg-slate-300"
+                      className="px-2.5 py-1 rounded bg-white border border-slate-300 text-slate-700 text-[11px] font-bold hover:bg-slate-50 shadow-sm"
                     >
                       Reject
                     </button>
                     <button
                       onClick={() => showToast("Approval Granted!")}
-                      className="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700"
+                      className="px-2.5 py-1 rounded bg-white border border-emerald-300 text-emerald-700 text-[11px] font-bold hover:bg-emerald-50 shadow-sm"
                     >
                       Approve
                     </button>
