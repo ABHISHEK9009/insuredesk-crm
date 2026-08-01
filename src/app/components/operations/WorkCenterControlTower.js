@@ -1,0 +1,1029 @@
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import Image from "next/image";
+import ModalPortal from "@/app/components/shared/ModalPortal";
+import "@/app/ui/dashboard/work-center-control-tower.css";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Bot,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Download,
+  FileCheck,
+  FileEdit,
+  FilePlus,
+  FileText,
+  Filter,
+  Flame,
+  Headphones,
+  Kanban,
+  Layers,
+  ListCheck,
+  ListTodo,
+  Lock,
+  MessageSquare,
+  MoreHorizontal,
+  PhoneCall,
+  Plus,
+  RefreshCw,
+  Search,
+  Send,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  UserCheck,
+  UserPlus,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
+
+const PIPELINE_STAGES = [
+  { id: "LEAD", label: "Lead", count: 12, revenue: "₹2,45,000", sla: "12h avg", color: "#6366f1" },
+  { id: "QUOTATION", label: "Quotation", count: 8, revenue: "₹4,10,000", sla: "4h avg", color: "#8b5cf6" },
+  { id: "PROPOSAL", label: "Proposal", count: 15, revenue: "₹8,90,000", sla: "6h avg", color: "#ec4899" },
+  { id: "PAYMENT_PENDING", label: "Payment Pending", count: 6, revenue: "₹3,75,000", sla: "24h avg", color: "#f59e0b" },
+  { id: "PAYMENT_VERIFIED", label: "Payment Verified", count: 4, revenue: "₹5,20,000", sla: "1h avg", color: "#10b981" },
+  { id: "POLICY_ISSUANCE", label: "Policy Issuance", count: 9, revenue: "₹11,40,000", sla: "3h avg", color: "#06b6d4" },
+  { id: "QUALITY_CHECK", label: "Quality Check", count: 3, revenue: "₹1,80,000", sla: "2h avg", color: "#3b82f6" },
+  { id: "CUSTOMER_DELIVERY", label: "Customer Delivery", count: 5, revenue: "₹2,90,000", sla: "30m avg", color: "#14b8a6" },
+  { id: "COMPLETED", label: "Completed", count: 42, revenue: "₹45,000,000", sla: "Done", color: "#22c55e" },
+];
+
+const DEPARTMENTS = [
+  { id: "ALL", label: "All Departments" },
+  { id: "RENEWALS", label: "Renewals" },
+  { id: "CLAIMS", label: "Claims" },
+  { id: "OPERATIONS", label: "Operations & Issuance" },
+  { id: "FINANCE", label: "Finance & Premium" },
+  { id: "ENDORSEMENTS", label: "Endorsements" },
+  { id: "SUPPORT", label: "Customer Support" },
+  { id: "COMPLIANCE", label: "Compliance & Audit" },
+];
+
+export default function WorkCenterControlTower({ initialData, onRefresh }) {
+  const [data, setData] = useState(initialData || {});
+  const [refreshing, setRefreshing] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [activeStage, setActiveStage] = useState("ALL");
+  const [selectedDept, setSelectedDept] = useState("ALL");
+  const [activeView, setActiveView] = useState("TASKS"); // TASKS | PIPELINE | APPROVALS | QUEUE | WORKLOAD
+  const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [assignModalTask, setAssignModalTask] = useState(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [quoteModalTask, setQuoteModalTask] = useState(null);
+  const [quoteForm, setQuoteForm] = useState({ amount: "", note: "", paymentLink: "" });
+  const [quoteSaving, setQuoteSaving] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState("");
+
+  // Pagination state for Task Table
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 12;
+
+  useEffect(() => {
+    if (initialData) setData(initialData);
+  }, [initialData]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh?.();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const showToast = (msg) => {
+    setActionSuccessMsg(msg);
+    setTimeout(() => setActionSuccessMsg(""), 3500);
+  };
+
+  // Filter Tasks
+  const rawTasks = data.tasks || [];
+  const filteredTasks = useMemo(() => {
+    return rawTasks.filter((task) => {
+      const matchSearch =
+        !globalSearch ||
+        task.title?.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        task.customerName?.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        task.module?.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        task.id?.toLowerCase().includes(globalSearch.toLowerCase());
+
+      const matchDept = selectedDept === "ALL" || String(task.module || "").toUpperCase().includes(selectedDept);
+      const matchStage = activeStage === "ALL" || task.status === activeStage;
+
+      return matchSearch && matchDept && matchStage;
+    });
+  }, [rawTasks, globalSearch, selectedDept, activeStage]);
+
+  // Pagination bounds
+  const totalPages = Math.ceil(filteredTasks.length / PAGE_SIZE) || 1;
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, filteredTasks.length);
+  const pagedTasks = filteredTasks.slice(startIndex, endIndex);
+
+  // Bulk actions
+  const toggleSelectAll = () => {
+    if (selectedTaskIds.length === pagedTasks.length) {
+      setSelectedTaskIds([]);
+    } else {
+      setSelectedTaskIds(pagedTasks.map((t) => t.id));
+    }
+  };
+
+  const toggleSelectTask = (id) => {
+    setSelectedTaskIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const handleCompleteTask = async (taskId) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETED" }),
+      });
+      if (res.ok) {
+        setData((prev) => ({
+          ...prev,
+          tasks: (prev.tasks || []).filter((t) => t.id !== taskId),
+        }));
+        showToast("Task completed successfully!");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveQuote = async (e) => {
+    e.preventDefault();
+    if (!quoteModalTask) return;
+    setQuoteSaving(true);
+    try {
+      const res = await fetch(`/api/tasks/${quoteModalTask.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: quoteForm.amount,
+          metadata: { quoteNote: quoteForm.note, paymentLink: quoteForm.paymentLink },
+        }),
+      });
+      if (res.ok) {
+        setQuoteModalTask(null);
+        showToast("Quote updated & sent to customer workflow!");
+        handleRefresh();
+      }
+    } finally {
+      setQuoteSaving(false);
+    }
+  };
+
+  return (
+    <div className="control-tower-root">
+      {/* Toast Notification */}
+      {actionSuccessMsg && (
+        <div className="fixed top-5 right-5 z-[9999] flex items-center gap-2 rounded-xl bg-emerald-950 text-emerald-100 px-4 py-3 shadow-2xl border border-emerald-700 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle2 size={18} className="text-emerald-400" />
+          <span className="text-xs font-bold">{actionSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* 1. STICKY GLOBAL COMMAND BAR */}
+      <header className="ct-command-bar">
+        <div className="ct-search-box">
+          <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+          <input
+            type="text"
+            className="ct-search-input"
+            placeholder="Search Policy #, Claim #, Customer, GST, Vehicle, PAN, Mobile..."
+            value={globalSearch}
+            onChange={(e) => {
+              setGlobalSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+          {globalSearch && (
+            <button
+              onClick={() => setGlobalSearch("")}
+              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="ct-action-pills">
+          <button
+            onClick={() => setQuickCreateOpen(true)}
+            className="ct-btn ct-btn-primary"
+          >
+            <Plus size={15} />
+            <span>Quick Create</span>
+          </button>
+
+          <a href="/bulk-upload" className="ct-btn">
+            <FilePlus size={14} className="text-indigo-600" />
+            <span>Upload Policy PDF</span>
+          </a>
+
+          <a href="/claims" className="ct-btn">
+            <ShieldAlert size={14} className="text-rose-600" />
+            <span>Register Claim</span>
+          </a>
+
+          <a href="/renewals" className="ct-btn">
+            <RefreshCw size={14} className="text-emerald-600" />
+            <span>Renewals</span>
+          </a>
+
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="ct-btn"
+            title="Refresh Operations Data"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            <span>Refresh</span>
+          </button>
+
+          <button
+            onClick={() => setNotificationOpen(!notificationOpen)}
+            className="ct-btn relative"
+            title="Notifications"
+          >
+            <Bell size={15} />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[9px] font-extrabold text-white">
+              {data.notifications?.length || 5}
+            </span>
+          </button>
+        </div>
+      </header>
+
+      {/* 2. CRITICAL ALERTS BANNER */}
+      <section className="ct-alerts-container">
+        <div className="ct-alert-card">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-rose-100 text-rose-700 shrink-0">
+              <Flame size={18} />
+            </div>
+            <div>
+              <div className="ct-alert-title">
+                22 Critical Operations Items Breaching SLA or Expiring Today
+              </div>
+              <div className="ct-alert-desc">
+                Includes 4 unissued policies with verified payment &amp; 18 overdue renewal notices.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setSelectedDept("RENEWALS");
+                setActiveStage("ALL");
+              }}
+              className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition"
+            >
+              Resolve Now
+            </button>
+            <button
+              onClick={() => showToast("Escalated to Operations Head & Team Manager!")}
+              className="px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-rose-700 text-xs font-bold hover:bg-rose-50 transition"
+            >
+              Escalate All
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. LIVE OPERATIONS PIPELINE */}
+      <section className="ct-pipeline-wrapper">
+        <div className="ct-section-header">
+          <div className="ct-section-title">
+            <Kanban size={18} className="text-indigo-600" />
+            <span>Live Operations Pipeline</span>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200">
+              Real-time Workflow
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveStage("ALL")}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition ${activeStage === "ALL" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+            >
+              View All Pipeline Stages
+            </button>
+          </div>
+        </div>
+
+        <div className="ct-pipeline-grid">
+          {PIPELINE_STAGES.map((stage) => (
+            <div
+              key={stage.id}
+              onClick={() => setActiveStage(stage.id === activeStage ? "ALL" : stage.id)}
+              className={`ct-pipeline-stage ${activeStage === stage.id ? "active" : ""}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="ct-stage-name">{stage.label}</span>
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: stage.color }}
+                />
+              </div>
+              <div className="ct-stage-count">{stage.count}</div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="ct-stage-sub">{stage.revenue}</span>
+                <span className="text-[10px] text-slate-400 font-semibold">{stage.sla}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. MAIN WORKSPACE MULTI-COLUMN GRID */}
+      <div className="ct-workspace-grid">
+        {/* LEFT COLUMN: TASK CENTER & QUEUES */}
+        <div className="flex flex-col gap-5">
+          {/* TASK CENTER CONTROL BOARD */}
+          <div className="ct-panel">
+            <div className="ct-section-header">
+              <div className="ct-section-title">
+                <ListCheck size={18} className="text-indigo-600" />
+                <span>Task &amp; Work Operations Center</span>
+                <span className="text-xs font-semibold text-slate-400">
+                  ({filteredTasks.length} items)
+                </span>
+              </div>
+
+              {/* View Switcher Tabs */}
+              <div className="ct-tabs">
+                <button
+                  onClick={() => setActiveView("TASKS")}
+                  className={`ct-tab ${activeView === "TASKS" ? "active" : ""}`}
+                >
+                  Work Queue
+                </button>
+                <button
+                  onClick={() => setActiveView("APPROVALS")}
+                  className={`ct-tab ${activeView === "APPROVALS" ? "active" : ""}`}
+                >
+                  Approvals ({data.approvals?.length || 3})
+                </button>
+                <button
+                  onClick={() => setActiveView("QUEUE")}
+                  className={`ct-tab ${activeView === "QUEUE" ? "active" : ""}`}
+                >
+                  Waiting Queue
+                </button>
+              </div>
+            </div>
+
+            {/* Department Filter Bar */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                Dept:
+              </span>
+              {DEPARTMENTS.map((dept) => (
+                <button
+                  key={dept.id}
+                  onClick={() => {
+                    setSelectedDept(dept.id);
+                    setPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition border ${selectedDept === dept.id ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}
+                >
+                  {dept.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Bulk Actions Bar */}
+            {selectedTaskIds.length > 0 && (
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-indigo-950 text-white border border-indigo-800">
+                <span className="text-xs font-bold">
+                  {selectedTaskIds.length} tasks selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      showToast(`Bulk reassigned ${selectedTaskIds.length} tasks!`);
+                      setSelectedTaskIds([]);
+                    }}
+                    className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
+                  >
+                    Reassign
+                  </button>
+                  <button
+                    onClick={() => {
+                      showToast(`Bulk priority updated!`);
+                      setSelectedTaskIds([]);
+                    }}
+                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+                  >
+                    Mark High Priority
+                  </button>
+                  <button
+                    onClick={() => setSelectedTaskIds([])}
+                    className="text-xs text-slate-300 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TASK TABLE */}
+            <div className="ct-table-wrapper">
+              <table className="ct-table">
+                <thead>
+                  <tr>
+                    <th className="w-8 text-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          pagedTasks.length > 0 &&
+                          selectedTaskIds.length === pagedTasks.length
+                        }
+                        onChange={toggleSelectAll}
+                        className="rounded border-slate-300"
+                      />
+                    </th>
+                    <th>Task &amp; Reference</th>
+                    <th>Module</th>
+                    <th>Customer</th>
+                    <th>Priority</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedTasks.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-8 text-slate-400 text-xs font-semibold">
+                        No operational tasks match your search or department filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedTasks.map((task) => (
+                      <tr key={task.id}>
+                        <td className="text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedTaskIds.includes(task.id)}
+                            onChange={() => toggleSelectTask(task.id)}
+                            className="rounded border-slate-300"
+                          />
+                        </td>
+                        <td>
+                          <div className="font-bold text-slate-900 text-xs">
+                            {task.title}
+                          </div>
+                          {task.description && (
+                            <div className="text-[11px] text-slate-500 truncate max-w-xs">
+                              {task.description}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] uppercase tracking-wider">
+                            {task.module || "Operations"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="font-semibold text-slate-800 text-xs">
+                            {task.customerName || "General Customer"}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`px-2 py-0.5 rounded font-extrabold text-[10px] uppercase ${String(task.priority).toLowerCase() === "high" || String(task.priority).toLowerCase() === "critical" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-800"}`}
+                          >
+                            {task.priority || "MEDIUM"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-xs text-slate-600 font-medium">
+                            {task.dueAt
+                              ? new Date(task.dueAt).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                })
+                              : "Today"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                            {task.status || "OPEN"}
+                          </span>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {["NEW_POLICY_QUOTE", "RENEWAL_QUOTE"].includes(
+                              task.metadata?.requestType,
+                            ) && (
+                              <button
+                                onClick={() => {
+                                  setQuoteModalTask(task);
+                                  setQuoteForm({
+                                    amount: task.amount || "",
+                                    note: task.metadata?.quoteNote || "",
+                                    paymentLink: task.metadata?.paymentLink || "",
+                                  });
+                                }}
+                                className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-[11px] font-bold"
+                              >
+                                Quote
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setAssignModalTask(task)}
+                              className="px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-[11px] font-bold"
+                            >
+                              Assign
+                            </button>
+                            <button
+                              onClick={() => handleCompleteTask(task.id)}
+                              className="p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                              title="Complete Task"
+                            >
+                              <CheckCircle2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {filteredTasks.length > 0 && (
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs font-semibold text-slate-500">
+                  Showing <strong className="text-slate-900">{startIndex + 1}</strong> to{" "}
+                  <strong className="text-slate-900">{endIndex}</strong> of{" "}
+                  <strong className="text-slate-900">{filteredTasks.length}</strong> tasks
+                </span>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 disabled:opacity-40"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <span className="text-xs font-bold text-slate-700 px-2">
+                      Page {safePage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 disabled:opacity-40"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* CUSTOMER WAITING QUEUE & DOCUMENT PROCESSING */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Customer Waiting Queue */}
+            <div className="ct-panel">
+              <div className="ct-section-header">
+                <div className="ct-section-title">
+                  <Clock size={16} className="text-amber-600" />
+                  <span>Customer Waiting Queue</span>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                  SLA Hold
+                </span>
+              </div>
+
+              <div className="ct-scroll-box">
+                {[
+                  { name: "SHIVOM WAREHOUSE", reason: "Waiting for Surveyor Report", time: "2h ago", phone: "+91 98260 12345" },
+                  { name: "KACHWAH WAREHOUSING", reason: "Waiting for KYC Documents", time: "4h ago", phone: "+91 94250 67890" },
+                  { name: "SONGARA WAREHOUSE", reason: "Waiting for Premium Payment", time: "1d ago", phone: "+91 99810 54321" },
+                ].map((item, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-xs text-slate-900">{item.name}</div>
+                      <div className="text-[11px] text-amber-700 font-semibold">{item.reason}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <a
+                        href={`https://wa.me/${item.phone.replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        title="Send WhatsApp Reminder"
+                      >
+                        <MessageSquare size={14} />
+                      </a>
+                      <a
+                        href={`tel:${item.phone}`}
+                        className="p-1.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        title="Call Customer"
+                      >
+                        <PhoneCall size={14} />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Document Processing / OCR Queue */}
+            <div className="ct-panel">
+              <div className="ct-section-header">
+                <div className="ct-section-title">
+                  <FileCheck size={16} className="text-indigo-600" />
+                  <span>OCR &amp; PDF Processing Engine</span>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                  Auto-Parsing
+                </span>
+              </div>
+
+              <div className="ct-scroll-box">
+                {[
+                  { file: "ICICI_Lombard_Fire_Policy_450107.pdf", status: "VERIFIED", conf: "99.4%" },
+                  { file: "Tata_AIG_Warehouse_Policy_9912.pdf", status: "VERIFIED", conf: "98.2%" },
+                  { file: "Bajaj_Allianz_WC_Policy_001.pdf", status: "MANUAL_REVIEW", conf: "84.0%" },
+                ].map((doc, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-slate-900 truncate">{doc.file}</div>
+                      <div className="text-[11px] text-slate-500 font-semibold">AI Confidence: {doc.conf}</div>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${doc.status === "VERIFIED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                      {doc.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: AI ASSISTANT, APPROVALS & TEAM WORKLOAD */}
+        <div className="flex flex-col gap-5">
+          {/* AI OPERATIONS ASSISTANT */}
+          <div className="ct-panel bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-white border-indigo-800">
+            <div className="ct-section-header">
+              <div className="flex items-center gap-2 font-extrabold text-sm text-indigo-300">
+                <Sparkles size={18} className="text-indigo-400 animate-pulse" />
+                <span>AI Operations Copilot</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-200 text-[10px] font-bold border border-indigo-500/30">
+                Live Insights
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-white/10 border border-white/10">
+                <div className="font-bold text-amber-300 mb-1">⚡ Workload Rebalancing Suggested</div>
+                <div className="text-slate-300 leading-relaxed">
+                  Executive <strong>Abhishek Verma</strong> has 18 open renewals. Reassign 5 tasks to <strong>Pooja Sharma</strong> to ensure zero SLA breaches today.
+                </div>
+                <button
+                  onClick={() => showToast("AI Reassigned 5 tasks automatically!")}
+                  className="mt-2.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px]"
+                >
+                  Auto-Balance Workload
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/10 border border-white/10">
+                <div className="font-bold text-emerald-300 mb-1">💰 Revenue Blocker Detected</div>
+                <div className="text-slate-300 leading-relaxed">
+                  ₹16,025 payment verified for <strong>SHIVOM WAREHOUSE</strong>. Policy issuance is pending quality check.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* APPROVAL CENTER */}
+          <div className="ct-panel">
+            <div className="ct-section-header">
+              <div className="ct-section-title">
+                <ShieldCheck size={18} className="text-emerald-600" />
+                <span>Operational Approvals</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                {data.approvals?.length || 3} Pending
+              </span>
+            </div>
+
+            <div className="ct-scroll-box">
+              {[
+                { title: "Special Premium Discount (5%)", requester: "Rahul Sharma", amount: "₹1,250", type: "DISCOUNT" },
+                { title: "Claim Settlement Approval", requester: "Ankit Gupta", amount: "₹45,000", type: "CLAIM" },
+                { title: "Manual Policy Correction", requester: "Pooja Verma", amount: "N/A", type: "POLICY" },
+              ].map((app, idx) => (
+                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-900">{app.title}</span>
+                    <span className="text-[11px] font-extrabold text-indigo-700">{app.amount}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">Requested by {app.requester}</div>
+                  <div className="flex items-center justify-end gap-2 mt-1">
+                    <button
+                      onClick={() => showToast("Approval Rejected")}
+                      className="px-2.5 py-1 rounded bg-slate-200 text-slate-700 text-[11px] font-bold hover:bg-slate-300"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => showToast("Approval Granted!")}
+                      className="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* TEAM WORKLOAD & CAPACITY */}
+          <div className="ct-panel">
+            <div className="ct-section-header">
+              <div className="ct-section-title">
+                <Users size={18} className="text-indigo-600" />
+                <span>Team Workload &amp; Capacity</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {[
+                { name: "Abhishek Verma", role: "Ops Manager", open: 18, high: 5, capacity: 85 },
+                { name: "Pooja Sharma", role: "Renewals Exec", open: 6, high: 1, capacity: 35 },
+                { name: "Ankit Gupta", role: "Claims Manager", open: 9, high: 3, capacity: 60 },
+              ].map((emp, idx) => (
+                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <div>
+                      <strong className="text-slate-900">{emp.name}</strong>
+                      <span className="text-slate-400 ml-1.5 font-normal">({emp.role})</span>
+                    </div>
+                    <span className="font-extrabold text-indigo-700">{emp.open} Tasks</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${emp.capacity > 80 ? "bg-rose-500" : "bg-emerald-500"}`}
+                      style={{ width: `${emp.capacity}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* MINI CALENDAR & TODAY'S AGENDA */}
+          <div className="ct-panel">
+            <div className="ct-section-header">
+              <div className="ct-section-title">
+                <CalendarDays size={18} className="text-indigo-600" />
+                <span>Today's Agenda &amp; Follow-ups</span>
+              </div>
+            </div>
+
+            <div className="ct-scroll-box">
+              {[
+                { time: "11:30 AM", title: "Client Call: MPWLC Warehouse Insurance Review" },
+                { time: "02:00 PM", title: "Surveyor Inspection: Shivom Warehouse Claim" },
+                { time: "04:30 PM", title: "Renewal Discussion: S. Poddar Infra" },
+              ].map((evt, idx) => (
+                <div key={idx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
+                  <div className="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-extrabold text-[10px] shrink-0">
+                    {evt.time}
+                  </div>
+                  <div className="text-xs font-semibold text-slate-800 leading-snug">
+                    {evt.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* QUICK CREATE MODAL */}
+      {quickCreateOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <h3 className="text-base font-extrabold text-slate-900">Create New Operational Task</h3>
+                <button onClick={() => setQuickCreateOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setQuickCreateOpen(false);
+                  showToast("New Task Created & Assigned!");
+                }}
+                className="space-y-4 text-xs"
+              >
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Task Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Follow-up for Fire Policy Renewal"
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 mb-1 block">Department</label>
+                    <select className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600">
+                      <option>Renewals</option>
+                      <option>Claims</option>
+                      <option>Operations</option>
+                      <option>Finance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 mb-1 block">Priority</label>
+                    <select className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600">
+                      <option>MEDIUM</option>
+                      <option>HIGH</option>
+                      <option>CRITICAL</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Customer Name / Policy #</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. SHIVOM WAREHOUSE A/C MPWLC"
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickCreateOpen(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700"
+                  >
+                    Create Task
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* ASSIGNMENT MODAL */}
+      {assignModalTask && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h3 className="text-sm font-extrabold text-slate-900">Reassign Operational Task</h3>
+                <button onClick={() => setAssignModalTask(null)} className="text-slate-400 hover:text-slate-600">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="font-bold text-slate-900">{assignModalTask.title}</div>
+                  <div className="text-slate-500 text-[11px] mt-0.5">{assignModalTask.customerName || "Customer Record"}</div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Assign To Executive</label>
+                  <select className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600">
+                    <option>Abhishek Verma (Ops Manager)</option>
+                    <option>Pooja Sharma (Renewals Exec)</option>
+                    <option>Ankit Gupta (Claims Manager)</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setAssignModalTask(null)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAssignModalTask(null);
+                      showToast("Task reassigned successfully!");
+                    }}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700"
+                  >
+                    Confirm Assignment
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* QUOTE UPDATE MODAL */}
+      {quoteModalTask && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h3 className="text-sm font-extrabold text-slate-900">Update Policy Quotation</h3>
+                <button onClick={() => setQuoteModalTask(null)} className="text-slate-400 hover:text-slate-600">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveQuote} className="space-y-4 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Quotation Premium Amount (₹)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 16025"
+                    value={quoteForm.amount}
+                    onChange={(e) => setQuoteForm({ ...quoteForm, amount: e.target.value })}
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Payment Link (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://razorpay.me/..."
+                    value={quoteForm.paymentLink}
+                    onChange={(e) => setQuoteForm({ ...quoteForm, paymentLink: e.target.value })}
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Note for Customer</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Included Fire & Burglary coverage with MPWLC clause."
+                    value={quoteForm.note}
+                    onChange={(e) => setQuoteForm({ ...quoteForm, note: e.target.value })}
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-indigo-600"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuoteModalTask(null)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={quoteSaving}
+                    className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700"
+                  >
+                    {quoteSaving ? "Saving..." : "Publish & Notify Customer"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+    </div>
+  );
+}
