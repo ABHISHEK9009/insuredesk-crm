@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import {
   Smartphone,
@@ -20,9 +21,13 @@ import {
   Mail,
   MessageSquare,
   Radio,
+  Layers,
+  Info,
+  RotateCcw,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 import WhatsAppRecipientPicker from "@/app/components/whatsapp/WhatsAppRecipientPicker";
+import ModalPortal from "@/app/components/shared/ModalPortal";
 
 const TEMPLATE_VARIABLES = [
   { tag: "{{customerName}}", desc: "Customer's Full Name" },
