@@ -98,7 +98,9 @@
 
 .operations-search {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 10px;
   width: min(360px, 100%);
   min-height: 42px;
@@ -109,8 +111,14 @@
   color: var(--text-secondary);
 }
 
+.operations-search svg {
+  flex-shrink: 0;
+}
+
 .operations-search input {
+  flex: 1;
   width: 100%;
+  min-width: 0;
   min-height: 0;
   padding: 0;
   border: 0;
