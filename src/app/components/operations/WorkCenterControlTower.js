@@ -496,7 +496,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                           )}
                         </td>
                         <td className="whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] uppercase tracking-wider">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] uppercase tracking-wider whitespace-nowrap inline-block">
                             {task.module || "Operations"}
                           </span>
                         </td>
@@ -507,13 +507,13 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                         </td>
                         <td className="whitespace-nowrap">
                           <span
-                            className={`px-2 py-0.5 rounded font-extrabold text-[10px] uppercase ${String(task.priority).toLowerCase() === "high" || String(task.priority).toLowerCase() === "critical" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-800"}`}
+                            className={`px-2 py-0.5 rounded font-extrabold text-[10px] uppercase whitespace-nowrap inline-block ${String(task.priority).toLowerCase() === "high" || String(task.priority).toLowerCase() === "critical" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-800"}`}
                           >
                             {task.priority || "MEDIUM"}
                           </span>
                         </td>
                         <td className="whitespace-nowrap">
-                          <span className="text-xs text-slate-600 font-medium">
+                          <span className="text-xs text-slate-600 font-medium whitespace-nowrap inline-block">
                             {task.dueAt
                               ? new Date(task.dueAt).toLocaleDateString("en-IN", {
                                   day: "2-digit",
@@ -523,7 +523,7 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                           </span>
                         </td>
                         <td className="whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold whitespace-nowrap inline-block">
                             {task.status || "OPEN"}
                           </span>
                         </td>

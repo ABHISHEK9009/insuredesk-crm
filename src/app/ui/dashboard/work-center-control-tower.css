@@ -321,6 +321,12 @@
   word-break: break-word;
 }
 
+.ct-table td.whitespace-nowrap,
+.ct-table span.whitespace-nowrap {
+  white-space: nowrap !important;
+  word-break: normal !important;
+}
+
 .ct-table tr:hover td {
   background: #f8fafc;
 }
