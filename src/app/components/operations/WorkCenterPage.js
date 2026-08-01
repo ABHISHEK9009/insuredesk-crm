@@ -334,12 +334,9 @@ function TaskList({ tasks, onComplete, onUpdated, loading }) {
             <div className="task-icon">
               <ListTodo size={18} />
             </div>
-            <div className="task-body min-w-0">
+            <div className="task-body min-w-0 flex-1">
               <div className="task-title-line">
                 <h3 className="break-words font-bold text-slate-900">{task.title}</h3>
-                <span className={`status-pill compact status-${String(task.status).toLowerCase()}`}>
-                  {STATUS_LABELS[task.status] || task.status}
-                </span>
               </div>
               <p className="task-desc break-words">{task.description || task.module}</p>
               <div className="task-meta">
@@ -362,7 +359,10 @@ function TaskList({ tasks, onComplete, onUpdated, loading }) {
                 ) : null}
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0 self-center">
+              <span className={`status-pill compact status-${String(task.status).toLowerCase()}`}>
+                {STATUS_LABELS[task.status] || task.status}
+              </span>
               {["NEW_POLICY_QUOTE", "RENEWAL_QUOTE"].includes(task.metadata?.requestType) ? (
                 <button
                   type="button"
