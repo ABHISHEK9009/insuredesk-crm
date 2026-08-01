@@ -1,49 +1,32 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
+import Link from "next/link";
 import ModalPortal from "@/app/components/shared/ModalPortal";
 import "@/app/ui/dashboard/work-center-control-tower.css";
 import {
-  AlertTriangle,
-  ArrowRight,
   Bell,
-  Bot,
-  Building2,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   Clock,
-  Download,
   FileCheck,
   FileEdit,
   FilePlus,
-  FileText,
-  Filter,
   Flame,
-  Headphones,
   Kanban,
-  Layers,
   ListCheck,
-  ListTodo,
-  Lock,
   MessageSquare,
-  MoreHorizontal,
   PhoneCall,
   Plus,
   RefreshCw,
   Search,
-  Send,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
-  UserCheck,
-  UserPlus,
   Users,
   X,
-  Zap,
 } from "lucide-react";
 
 const DEPARTMENTS = [
@@ -296,20 +279,20 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
             <span>Quick Create</span>
           </button>
 
-          <a href="/bulk-upload" className="ct-btn">
+          <Link href="/bulk-upload" className="ct-btn">
             <FilePlus size={14} className="text-indigo-600" />
             <span>Upload Policy PDF</span>
-          </a>
+          </Link>
 
-          <a href="/claims" className="ct-btn">
+          <Link href="/claims" className="ct-btn">
             <ShieldAlert size={14} className="text-rose-600" />
             <span>Register Claim</span>
-          </a>
+          </Link>
 
-          <a href="/renewals" className="ct-btn">
+          <Link href="/renewals" className="ct-btn">
             <RefreshCw size={14} className="text-emerald-600" />
             <span>Renewals</span>
-          </a>
+          </Link>
 
           <button
             onClick={handleRefresh}
