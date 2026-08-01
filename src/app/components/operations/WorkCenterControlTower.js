@@ -485,12 +485,12 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                             className="rounded border-slate-300"
                           />
                         </td>
-                        <td>
-                          <div className="font-bold text-slate-900 text-xs">
+                        <td className="max-w-md">
+                          <div className="font-bold text-slate-900 text-xs break-words whitespace-normal leading-snug">
                             {task.title}
                           </div>
                           {task.description && (
-                            <div className="text-[11px] text-slate-500 truncate max-w-xs">
+                            <div className="text-[11px] text-slate-500 break-words whitespace-normal leading-snug mt-0.5">
                               {task.description}
                             </div>
                           )}
@@ -500,8 +500,8 @@ export default function WorkCenterControlTower({ initialData, onRefresh }) {
                             {task.module || "Operations"}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap">
-                          <span className="font-semibold text-slate-800 text-xs">
+                        <td className="max-w-[220px] break-words whitespace-normal">
+                          <span className="font-semibold text-slate-800 text-xs break-words whitespace-normal leading-snug block">
                             {task.customerName || "General Customer"}
                           </span>
                         </td>
