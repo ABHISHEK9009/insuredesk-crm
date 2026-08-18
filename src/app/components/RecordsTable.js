@@ -26,7 +26,7 @@ const DEFAULT_RECORD_COLUMNS = [
 
 function formatDate(value) {
   if (!value) return "-";
-  const str = String(value).trim();
+  const str = String(value).trim().replace(/^["']|["']$/g, "");
   const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
   if (ymdMatch) {
     const [, year, month, day] = ymdMatch;
@@ -57,14 +57,16 @@ function formatDate(value) {
 
 function formatDateTime(value) {
   if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
+  const cleanStr = String(value).trim().replace(/^["']|["']$/g, "");
+  const date = new Date(cleanStr);
+  if (Number.isNaN(date.getTime())) return cleanStr;
   return date.toLocaleString("en-IN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 }
 

@@ -28,7 +28,7 @@ const FIELD_OPTIONS = {
 
 const formatDate = (dateVal) => {
   if (!dateVal) return "";
-  const str = String(dateVal).trim();
+  const str = String(dateVal).trim().replace(/^["']|["']$/g, "");
   const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
   if (ymdMatch) {
     const [, year, month, day] = ymdMatch;
@@ -59,14 +59,16 @@ const formatDate = (dateVal) => {
 
 const formatDateTime = (dateVal) => {
   if (!dateVal) return "";
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return String(dateVal);
+  const str = String(dateVal).trim().replace(/^["']|["']$/g, "");
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str;
   return d.toLocaleString("en-IN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 };
 

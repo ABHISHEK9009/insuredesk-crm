@@ -1054,29 +1054,33 @@ export function getExportValueForRecord(record = {}, key = "") {
   if (key === "uploadedAt") {
     const raw = record.uploadedAt || record.createdAt;
     if (!raw) return "-";
-    const d = new Date(raw);
+    const cleanRaw = String(raw).trim().replace(/^["']|["']$/g, "");
+    const d = new Date(cleanRaw);
     return Number.isNaN(d.getTime())
-      ? String(raw)
+      ? cleanRaw
       : d.toLocaleString("en-IN", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
+          hour12: true,
         });
   }
   if (key === "savedAt") {
     const raw = record.savedAt;
     if (!raw) return "-";
-    const d = new Date(raw);
+    const cleanRaw = String(raw).trim().replace(/^["']|["']$/g, "");
+    const d = new Date(cleanRaw);
     return Number.isNaN(d.getTime())
-      ? String(raw)
+      ? cleanRaw
       : d.toLocaleString("en-IN", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
+          hour12: true,
         });
   }
   if (key === "clientId") {
