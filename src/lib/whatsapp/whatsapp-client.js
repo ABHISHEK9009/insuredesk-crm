@@ -13,7 +13,8 @@ const BASE_URL =
 
 const API_KEY =
   process.env.WHATSAPP_GATEWAY_API_KEY ||
-  process.env.OPENWA_API_KEY;
+  process.env.OPENWA_API_KEY ||
+  "bimaheadquarter-openwa-3mP4sV8qL2nR5aT1w";
 
 // ── Internal helpers ────────────────────────────────────────────────
 
