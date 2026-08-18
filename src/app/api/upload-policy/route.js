@@ -18,6 +18,7 @@ import { buildUploadDetection } from "@/lib/uploads/detection";
 import { getUserFacingErrorMessage } from "@/lib/errors/user-facing";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request) {
   try {

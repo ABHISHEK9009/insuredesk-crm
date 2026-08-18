@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const { extractPolicyFromText } = require("../../../../lib/policies/pdf/extractor.cjs");
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request) {
   try {

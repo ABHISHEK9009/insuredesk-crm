@@ -19,6 +19,7 @@ import { getUserFacingErrorMessage } from "@/lib/errors/user-facing";
 import { buildPolicyCustomerNameFields } from "@/lib/renewals/customer-name";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request) {
   try {
