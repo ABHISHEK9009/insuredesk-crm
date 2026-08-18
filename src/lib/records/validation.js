@@ -32,8 +32,9 @@ export function normalizeDateToYMD(dateStr) {
   let cleanStr = dateStr.trim();
   if (!cleanStr) return "";
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
-    return cleanStr;
+  const isoMatch = cleanStr.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s].*)?$/);
+  if (isoMatch) {
+    return isoMatch[1];
   }
 
   const dmyMatch = cleanStr.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);

@@ -27,6 +27,11 @@ const DEFAULT_RECORD_COLUMNS = [
 function formatDate(value) {
   if (!value) return "-";
   const str = String(value).trim();
+  const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (ymdMatch) {
+    const [, year, month, day] = ymdMatch;
+    return `${day}-${month}-${year}`;
+  }
   const num = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (num) {
     const day = num[1].padStart(2, "0");
@@ -465,7 +470,15 @@ export default function RecordsTable({
 
           ${renderPrintSection("Metadata", [
             ["Source PDF File", record.sourceFile],
-            ["Created By", record.uploadedByEmail || record.uploadedBy],
+            [
+              "Created By",
+              (typeof record.uploadedBy === "object" ? record.uploadedBy?.name || record.uploadedBy?.email : record.uploadedBy) ||
+                (typeof record.createdBy === "object" ? record.createdBy?.name || record.createdBy?.email : record.createdBy) ||
+                record.uploadedByEmail ||
+                record.createdByEmail ||
+                record.createdByName ||
+                "",
+            ],
             ["Saved Date", formatDateTimeLocal(record.savedAt)],
             ["Renewal Status", record.renewalStatus],
           ])}

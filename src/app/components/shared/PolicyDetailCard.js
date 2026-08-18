@@ -29,6 +29,11 @@ const FIELD_OPTIONS = {
 const formatDate = (dateVal) => {
   if (!dateVal) return "";
   const str = String(dateVal).trim();
+  const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (ymdMatch) {
+    const [, year, month, day] = ymdMatch;
+    return `${day}-${month}-${year}`;
+  }
   const num = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (num) {
     const day = num[1].padStart(2, "0");
@@ -412,7 +417,14 @@ export default function PolicyDetailCard({
                 <DetailField label="Source PDF File" value={record.sourceFile} wide />
                 <DetailField
                   label="Created By"
-                  value={record.uploadedByEmail || record.uploadedBy || record.createdByEmail || record.createdBy}
+                  value={
+                    (typeof record.uploadedBy === "object" ? record.uploadedBy?.name || record.uploadedBy?.email : record.uploadedBy) ||
+                    (typeof record.createdBy === "object" ? record.createdBy?.name || record.createdBy?.email : record.createdBy) ||
+                    record.uploadedByEmail ||
+                    record.createdByEmail ||
+                    record.createdByName ||
+                    ""
+                  }
                 />
                 <DetailField
                   label="Saved Date"

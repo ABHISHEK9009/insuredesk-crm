@@ -1041,7 +1041,15 @@ export function getExportValueForRecord(record = {}, key = "") {
   if (!record || typeof record !== "object") return "";
 
   if (key === "uploadedBy") {
-    return record.uploadedBy || record.createdBy || record.uploaderName || record.createdByName || "-";
+    if (typeof record.uploadedBy === "string" && record.uploadedBy) return record.uploadedBy;
+    if (typeof record.createdBy === "string" && record.createdBy) return record.createdBy;
+    if (typeof record.uploadedBy === "object" && record.uploadedBy) {
+      return record.uploadedBy.name || record.uploadedBy.email || "";
+    }
+    if (typeof record.createdBy === "object" && record.createdBy) {
+      return record.createdBy.name || record.createdBy.email || "";
+    }
+    return record.uploadedByEmail || record.createdByEmail || record.uploaderName || record.createdByName || "-";
   }
   if (key === "uploadedAt") {
     const raw = record.uploadedAt || record.createdAt;

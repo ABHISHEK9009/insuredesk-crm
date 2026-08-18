@@ -30,59 +30,28 @@ export function normalizeRecord(record) {
     uploadedAt = new Date("2026-06-29T12:00:00Z");
   }
 
-  const uploader = record.uploadedFile?.createdBy || record.createdBy || {};
-  const updater = record.updatedBy || {};
-  const insuredName =
-    payload.insuredName ||
-    legacy.insuredName ||
-    payload.customerName ||
-    legacy.customerName ||
-    payload["Insured Name"] ||
-    "";
-  const contactPersonName = resolvePolicyCustomerName(
-    record.contactPersonName,
-    payload,
-    legacy,
-    insuredName,
-  );
-  const renewalRecipientName = resolvePolicyCustomerName(
-    record.renewalRecipientName,
-    contactPersonName,
-    insuredName,
-  );
-  const contactNumber =
-    record.contactPersonMobile ||
-    payload.contactNumber ||
-    legacy.contactNumber ||
-    payload.customerMobile ||
-    legacy.customerMobile ||
-    payload.mobileNumber ||
-    legacy.mobileNumber ||
-    payload.phone ||
-    legacy.phone ||
-    payload["Contact No."] ||
-    payload["Mobile Number"] ||
-    "";
-  const customerId = record.customerPortfolioId || buildCustomerId(insuredName, contactNumber);
-  const insuranceCompany = normalizeInsuranceCompanyName(
-    payload.insuranceCompany ||
-      payload.insurerName ||
-      legacy.insuranceCompany ||
-      payload["Insurance Company"] ||
-      record.selectedCompany ||
-      record.detectedCompany ||
-      "",
-  );
+  const rawUploader = record.uploadedFile?.createdBy || record.createdBy || record.uploadedBy;
+  const uploaderObj = typeof rawUploader === "object" && rawUploader !== null ? rawUploader : {};
+  const rawUpdater = record.updatedBy;
+  const updaterObj = typeof rawUpdater === "object" && rawUpdater !== null ? rawUpdater : {};
 
-  const renewalRemarks = Array.isArray(payload.renewalRemarks)
-    ? payload.renewalRemarks
-    : Array.isArray(legacy.renewalRemarks)
-      ? legacy.renewalRemarks
-      : [];
-  const latestRenewalRemark = renewalRemarks[0] || null;
-  const renewalFollowUp = payload.renewalFollowUp || legacy.renewalFollowUp || null;
-  const createdByName = uploader.name || uploader.email || record.createdById || "";
-  const updatedByName = updater.name || updater.email || "";
+  const createdByName =
+    uploaderObj.name ||
+    uploaderObj.email ||
+    (typeof record.uploadedBy === "string" ? record.uploadedBy : "") ||
+    (typeof record.createdBy === "string" ? record.createdBy : "") ||
+    record.createdByName ||
+    record.uploadedByName ||
+    record.createdById ||
+    "";
+  const uploaderEmail = uploaderObj.email || record.uploadedByEmail || record.createdByEmail || "";
+  const updatedByName =
+    updaterObj.name ||
+    updaterObj.email ||
+    (typeof record.updatedBy === "string" ? record.updatedBy : "") ||
+    record.updatedByName ||
+    "";
+  const updaterEmail = updaterObj.email || record.updatedByEmail || "";
   const assignedTo =
     payload.assignedTo || legacy.assignedTo || renewalFollowUp?.assignedTo || createdByName || "";
 
@@ -96,11 +65,11 @@ export function normalizeRecord(record) {
     savedAt: policyNumber === "45140031260200003089" ? uploadedAt : record.savedAt,
     uploadedAt: uploadedAt,
     uploadedBy: createdByName,
-    uploadedByEmail: uploader.email || "",
+    uploadedByEmail: uploaderEmail,
     createdBy: createdByName,
-    createdByEmail: uploader.email || "",
+    createdByEmail: uploaderEmail,
     updatedBy: updatedByName,
-    updatedByEmail: updater.email || "",
+    updatedByEmail: updaterEmail,
     assignedTo,
     assignedToId: payload.assignedToId || legacy.assignedToId || "",
     assignedDate: payload.assignedDate || legacy.assignedDate || "",
