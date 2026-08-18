@@ -63,8 +63,8 @@ app.post("/ocr", async (req, res) => {
     }
     process.env.IS_RENDER_OCR_SERVICE = "true";
     const pdfBuffer = Buffer.from(pdfBase64, "base64");
-    const { extractTextFromPdf } = await import("../src/lib/policies/pdf/text.js");
-    const textResult = await extractTextFromPdf(pdfBuffer);
+    const { extractTextFromPdfInGateway } = await import("./ocr-engine.js");
+    const textResult = await extractTextFromPdfInGateway(pdfBuffer);
     const durationMs = Date.now() - startTime;
     console.log(`[OCR Engine] Synthesized text for PDF: ${textResult.rawText.length} chars in ${durationMs}ms`);
     
