@@ -26,12 +26,29 @@ export async function extractPolicyDataFromTextResult({ textResult = {}, sourceF
     validation,
     aiReview,
   });
+  const autoFilledData = { ...ruleBasedData };
+  const autoFilledFields = [];
+
+  for (const [field, update] of Object.entries(aiMergePreview?.eligibleUpdates || {})) {
+    if (update?.suggestedValue && (isInvalidFieldValue(field, autoFilledData[field]) || suspiciousFields.has(field))) {
+      autoFilledData[field] = update.suggestedValue;
+      if (field === "registrationNumber" && isInvalidFieldValue("vehicleNumber", autoFilledData.vehicleNumber)) {
+        autoFilledData.vehicleNumber = update.suggestedValue;
+      }
+      if (field === "vehicleNumber" && isInvalidFieldValue("registrationNumber", autoFilledData.registrationNumber)) {
+        autoFilledData.registrationNumber = update.suggestedValue;
+      }
+      autoFilledFields.push(field);
+    }
+  }
+
   const data = {
-    ...ruleBasedData,
+    ...autoFilledData,
     extractionQuality: {
       ...(ruleBasedData.extractionQuality || {}),
       aiReview,
       aiMergePreview,
+      autoFilledFields,
     },
   };
 
@@ -92,7 +109,15 @@ export function getMissingFields(data = {}) {
     "premium",
     "totalPremium",
   ];
-  return reviewFields.filter((field) => !String(data[field] || "").trim());
+  return reviewFields.filter((field) => isInvalidFieldValue(field, data[field]));
+}
+
+export function isInvalidFieldValue(field, val) {
+  const s = String(val || "").trim();
+  if (!s) return true;
+  if (/^(?:Policy|Policy No|Registration|Chassis|Engine|Name|Address)$/i.test(s)) return true;
+  if (field === "policyNumber" && (s.length < 5 || (!/\d/.test(s) && /^(?:Policy|Policy No|Certificate)$/i.test(s)))) return true;
+  return false;
 }
 
 export function getSuspiciousFields(validation = {}) {

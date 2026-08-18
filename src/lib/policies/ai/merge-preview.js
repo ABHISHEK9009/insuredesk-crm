@@ -19,7 +19,7 @@ export function buildAiMergePreview({
     const currentValue = currentData[field] || "";
     const suggestedValue = suggestion.value || "";
     const evidenceText = suggestion.evidenceText || "";
-    const fieldIsBlank = !String(currentValue || "").trim();
+    const fieldIsBlank = !String(currentValue || "").trim() || isInvalidFieldValue(field, currentValue);
     const fieldFailedValidation = hasValidationIssue(field, validation);
     const fieldIsSuspicious = suspiciousFields.has(field);
 
@@ -188,4 +188,12 @@ function normalizeText(value = "") {
     .replace(/[^a-z0-9]+/gi, " ")
     .trim()
     .toLowerCase();
+}
+
+function isInvalidFieldValue(field, val) {
+  const s = String(val || "").trim();
+  if (!s) return true;
+  if (/^(?:Policy|Policy No|Registration|Chassis|Engine|Name|Address)$/i.test(s)) return true;
+  if (field === "policyNumber" && (s.length < 5 || (!/\d/.test(s) && /^(?:Policy|Policy No|Certificate)$/i.test(s)))) return true;
+  return false;
 }
