@@ -53,6 +53,7 @@ async function extractPdfText(buffer) {
 async function runOcrFallbackInGateway(buffer) {
   try {
     const pageImages = await renderPdfPagesToPng(buffer);
+    console.log(`[OCR Engine] Rendered ${pageImages.length} page image(s) for OCR.`);
     if (!pageImages.length) {
       return {
         rawText: "",
@@ -62,16 +63,23 @@ async function runOcrFallbackInGateway(buffer) {
       };
     }
 
-    const worker = await createWorker("eng");
+    let worker;
+    try {
+      worker = await createWorker("eng");
+    } catch (wErr) {
+      console.error("[OCR Engine] Failed to initialize Tesseract worker:", wErr);
+      return { rawText: "", extractionMethod: "failed", pages: 0, warnings: [wErr.message] };
+    }
+
     const chunks = [];
 
     try {
       for (const image of pageImages) {
         const result = await worker.recognize(image);
-        chunks.push(result.data.text || "");
+        chunks.push(result.data?.text || "");
       }
     } finally {
-      await worker.terminate();
+      if (worker) await worker.terminate();
     }
 
     return {
@@ -81,6 +89,7 @@ async function runOcrFallbackInGateway(buffer) {
       warnings: [],
     };
   } catch (error) {
+    console.error("[OCR Engine Fallback Error]:", error);
     return {
       rawText: "",
       extractionMethod: "failed",
