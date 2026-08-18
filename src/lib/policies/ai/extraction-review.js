@@ -1,9 +1,9 @@
-import { hasCompanyEvidence } from "../company-detector";
+import { hasCompanyEvidence } from "../company-detector.js";
 
 const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_OPENAI_MODEL = "gpt-5.2";
-const DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
+const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const DEFAULT_GROQ_MODEL = "qwen/qwen3.6-27b";
 
 const AI_EXTRACTION_FIELDS = [
   "insuranceCompany",
@@ -419,21 +419,21 @@ function normalizePassiveReviewEntry(field, entry, sourceText) {
 }
 
 function getAiProvider() {
-  if (process.env.OPENAI_API_KEY) {
-    return {
-      provider: "openai",
-      url: OPENAI_CHAT_URL,
-      apiKey: process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
-    };
-  }
-
   if (process.env.GROQ_API_KEY) {
     return {
       provider: "groq",
       url: GROQ_CHAT_URL,
       apiKey: process.env.GROQ_API_KEY,
       model: process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL,
+    };
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      provider: "openai",
+      url: OPENAI_CHAT_URL,
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
     };
   }
 
@@ -526,14 +526,33 @@ export function mergeAiExtractionPatch({ rawText = "", extractedData = {}, aiPat
   return { data, acceptedFields, rejectedFields };
 }
 
+function extractJsonPayload(rawString = "") {
+  if (!rawString) return {};
+  const cleaned = String(rawString).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch {
+      // fallback
+    }
+  }
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    return {};
+  }
+}
+
 async function requestAiExtractionReview({ rawText, extractedData, sourceFile, issues, aiProvider }) {
   const body = {
     model: aiProvider.model,
-    response_format: { type: "json_object" },
     messages: buildExtractionReviewMessages({ rawText, extractedData, sourceFile, issues }),
   };
 
-  if (aiProvider.provider === "groq") {
+  if (aiProvider.provider === "openai") {
+    body.response_format = { type: "json_object" };
+  } else if (aiProvider.provider === "groq") {
     body.temperature = 0;
   }
 
@@ -555,7 +574,7 @@ async function requestAiExtractionReview({ rawText, extractedData, sourceFile, i
 
   const payload = await response.json();
   const content = payload?.choices?.[0]?.message?.content || "{}";
-  return JSON.parse(content);
+  return extractJsonPayload(content);
 }
 
 async function requestPassiveAiExtractionReview({
@@ -572,7 +591,6 @@ async function requestPassiveAiExtractionReview({
 }) {
   const body = {
     model: aiProvider.model,
-    response_format: { type: "json_object" },
     messages: buildPassiveReviewMessages({
       sourceText,
       detectedCompany,
@@ -586,7 +604,9 @@ async function requestPassiveAiExtractionReview({
     }),
   };
 
-  if (aiProvider.provider === "groq") {
+  if (aiProvider.provider === "openai") {
+    body.response_format = { type: "json_object" };
+  } else if (aiProvider.provider === "groq") {
     body.temperature = 0;
   }
 
@@ -608,7 +628,7 @@ async function requestPassiveAiExtractionReview({
 
   const payload = await response.json();
   const content = payload?.choices?.[0]?.message?.content || "{}";
-  return JSON.parse(content);
+  return extractJsonPayload(content);
 }
 
 function buildPassiveReviewMessages({
@@ -629,7 +649,7 @@ function buildPassiveReviewMessages({
         "You are a passive reviewer for Indian insurance policy extraction.",
         "Rule-based extraction and company parsers are the source of truth.",
         "Do not overwrite fields, do not invent values, and do not estimate policy data.",
-        "Return only JSON with suggestedCorrections, filledMissingFields, rejectedCorrections, and evidence.",
+        "Return a valid JSON object with suggestedCorrections, filledMissingFields, rejectedCorrections, and evidence.",
         "Every suggestedCorrections or filledMissingFields entry must include value, evidenceText, and reason.",
         "evidenceText must be an exact short snippet from sourceText that supports the value and field mapping.",
         "If evidence is missing or uncertain, put the item in rejectedCorrections instead.",
@@ -639,7 +659,7 @@ function buildPassiveReviewMessages({
       role: "user",
       content: JSON.stringify({
         sourceFile,
-        sourceText: String(sourceText || "").slice(0, 18000),
+        sourceText: String(sourceText || "").slice(0, 7000),
         detectedCompany,
         detectedPolicyType,
         ruleExtraction: pickReviewFields(ruleExtraction),
