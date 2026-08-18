@@ -51,6 +51,11 @@ async function extractPdfText(buffer) {
 }
 
 async function runOcrFallback(buffer) {
+  const remoteResult = await requestRemoteRenderOcr(buffer);
+  if (remoteResult && remoteResult.rawText) {
+    return remoteResult;
+  }
+
   try {
     const pageImages = await renderPdfPagesToPng(buffer);
     if (!pageImages.length) {
@@ -212,4 +217,27 @@ function cleanText(text) {
     .replace(/[ \t]+/g, " ")
     .replace(/\n{2,}/g, "\n\n")
     .trim();
+}
+
+async function requestRemoteRenderOcr(buffer) {
+  if (process.env.IS_RENDER_OCR_SERVICE === "true") {
+    return null;
+  }
+  try {
+    const { callGateway } = await import("../../whatsapp/whatsapp-client.js");
+    const pdfBase64 = buffer.toString("base64");
+    const res = await callGateway("POST", "ocr", { pdfBase64 });
+    if (res && res.success && res.rawText && isTextQualityAcceptable(res.rawText)) {
+      console.log(`[OCR Client] Received ${res.rawText.length} characters from remote Render OCR microservice.`);
+      return {
+        rawText: cleanText(res.rawText),
+        extractionMethod: res.extractionMethod || "ocr",
+        pages: null,
+        warnings: [],
+      };
+    }
+  } catch (err) {
+    console.warn(`[OCR Client] Remote Render OCR call skipped: ${err.message}`);
+  }
+  return null;
 }

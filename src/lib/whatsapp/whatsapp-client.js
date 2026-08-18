@@ -34,7 +34,7 @@ function formatRecipient(recipient) {
   return cleaned;
 }
 
-async function callGateway(method, endpoint, payload = null) {
+export async function callGateway(method, endpoint, payload = null) {
   const url = `${BASE_URL.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`;
   const headers = {
     "Content-Type": "application/json",

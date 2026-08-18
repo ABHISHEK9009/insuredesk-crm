@@ -53,6 +53,37 @@ app.get(["/health", "/healthz"], (_req, res) => {
 // ---- All other routes require API key ----
 app.use(apiKeyAuth);
 
+// ---- POST /ocr (Remote PDF OCR Engine) ----
+app.post("/ocr", async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const { pdfBase64 } = req.body || {};
+    if (!pdfBase64) {
+      return res.status(400).json({ success: false, error: "Missing pdfBase64 payload" });
+    }
+    process.env.IS_RENDER_OCR_SERVICE = "true";
+    const pdfBuffer = Buffer.from(pdfBase64, "base64");
+    const { extractTextFromPdf } = await import("../src/lib/policies/pdf/text.js");
+    const textResult = await extractTextFromPdf(pdfBuffer);
+    const durationMs = Date.now() - startTime;
+    console.log(`[OCR Engine] Synthesized text for PDF: ${textResult.rawText.length} chars in ${durationMs}ms`);
+    
+    res.json({
+      success: true,
+      rawText: textResult.rawText || "",
+      extractionMethod: textResult.extractionMethod || "ocr",
+      ocrAttempted: Boolean(textResult.ocrAttempted),
+      durationMs,
+    });
+  } catch (error) {
+    console.error("[OCR Engine Error]:", error instanceof Error ? error.message : error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "OCR text extraction failed",
+    });
+  }
+});
+
 // ---- GET /status ----
 app.get("/status", (_req, res) => {
   const status = getStatus();
