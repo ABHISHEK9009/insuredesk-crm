@@ -7,6 +7,7 @@ const libertyMotor = require("./liberty/motor.cjs");
 const goDigitMotor = require("./go-digit/motor.cjs");
 const newIndiaMotor = require("./new-india/motor.cjs");
 const bajajAllianzMotor = require("./bajaj-allianz/motor.cjs");
+const royalSundaramMotor = require("./royal-sundaram/motor.cjs");
 const unitedIndiaWarehouse = require("./united-india/warehouse.cjs");
 const unitedIndiaBurglary = require("./united-india/burglary.cjs");
 
@@ -20,6 +21,7 @@ const trainers = [
   goDigitMotor,
   newIndiaMotor,
   bajajAllianzMotor,
+  royalSundaramMotor,
   unitedIndiaWarehouse,
   unitedIndiaBurglary,
 ];
