@@ -9,7 +9,7 @@
 const BASE_URL =
   process.env.WHATSAPP_GATEWAY_URL ||
   process.env.OPENWA_BASE_URL ||
-  "http://localhost:8090";
+  "https://insuredesk-whatsapp-gateway.onrender.com";
 
 const API_KEY =
   process.env.WHATSAPP_GATEWAY_API_KEY ||
