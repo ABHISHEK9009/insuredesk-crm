@@ -46,7 +46,7 @@ const app = express();
 app.use(express.json({ limit: "50mb" })); // Large payloads for media (base64)
 
 // ---- Health check (no auth required) ----
-app.get("/health", (_req, res) => {
+app.get(["/health", "/healthz"], (_req, res) => {
   res.json({ success: true, uptime: process.uptime(), timestamp: new Date() });
 });
 
