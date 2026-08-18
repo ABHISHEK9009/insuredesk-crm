@@ -176,6 +176,7 @@ export function sanitizeRecordPayload(payload = {}) {
     specialConditions: asJson(payload.specialConditions) || [],
     extractionConfidence: asNumber(payload.extractionConfidence),
     needsManualReview: Boolean(payload.needsManualReview),
+    tpPremium: asText(payload.tpPremium || payload.tpDriverOwner, 80),
     tpDriverOwner: asText(payload.tpDriverOwner, 80),
     odPremium: asText(payload.odPremium, 80),
     dueCollection: asText(payload.dueCollection, 80),

@@ -221,6 +221,9 @@ export async function PUT(request, { params }) {
           selectedPolicyType: payload.selectedPolicyType ?? existing.selectedPolicyType,
           data: mergedData,
           updatedById: actorId,
+          contactPersonMobile: policyCustomerMobile || reviewedData.contactNumber || null,
+          contactPersonName: policyCustomerName || null,
+          contactPersonEmail: reviewedData.email || reviewedData.customerEmail || null,
           clientIdRequestId: clientIdPending ? verifiedClientIdRequest.id : null,
           clientIdPending,
           clientIdStatus: clientIdPending

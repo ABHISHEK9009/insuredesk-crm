@@ -41,18 +41,20 @@ export function normalizeRecord(record) {
     legacy.customerName ||
     payload["Insured Name"] ||
     "";
-  const contactPersonName = resolvePolicyCustomerName(
-    record.contactPersonName,
-    payload,
-    legacy,
-    insuredName,
-  );
-  const renewalRecipientName = resolvePolicyCustomerName(
-    record.renewalRecipientName,
-    contactPersonName,
-    insuredName,
-  );
+  const reviewedContactPerson = record.reviewedData?.contactPerson || record.reviewedData?.contactPersonName;
+  const contactPersonName =
+    resolvePolicyCustomerName(reviewedContactPerson) ||
+    resolvePolicyCustomerName(record.contactPersonName) ||
+    resolvePolicyCustomerName(payload.contactPerson, payload.contactPersonName, legacy.contactPerson, legacy.contactPersonName) ||
+    resolvePolicyCustomerName(payload.customerName, legacy.customerName, insuredName);
+  const renewalRecipientName =
+    resolvePolicyCustomerName(record.reviewedData?.renewalRecipientName) ||
+    resolvePolicyCustomerName(record.renewalRecipientName) ||
+    contactPersonName ||
+    insuredName;
+  const reviewedContactNumber = record.reviewedData?.contactNumber || record.reviewedData?.customerMobile;
   const contactNumber =
+    reviewedContactNumber ||
     record.contactPersonMobile ||
     payload.contactNumber ||
     legacy.contactNumber ||
@@ -267,6 +269,7 @@ export function normalizeRecord(record) {
         : [],
     extractionConfidence: payload.extractionConfidence ?? legacy.extractionConfidence ?? null,
     needsManualReview: Boolean(payload.needsManualReview || legacy.needsManualReview),
+    tpPremium: payload.tpPremium || legacy.tpPremium || payload["TP Premium"] || "",
     tpDriverOwner: payload.tpDriverOwner || legacy.tpDriverOwner || payload["TP + Driver + Owner"] || "",
     odPremium: payload.odPremium || legacy.odPremium || payload["OD Premium"] || "",
     dueCollection: payload.dueCollection || legacy.dueCollection || payload["Due Collection"] || "",
