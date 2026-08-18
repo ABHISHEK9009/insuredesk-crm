@@ -66,7 +66,22 @@ const formatDateTime = (dateVal) => {
 };
 
 function DetailField({ label, value, wide }) {
-  if (value === undefined || value === null || String(value).trim() === "") return null;
+  let displayValue = value;
+  if (typeof displayValue === "object" && displayValue !== null) {
+    if (Array.isArray(displayValue)) {
+      displayValue = displayValue
+        .map((item) =>
+          typeof item === "object" && item !== null
+            ? item.name || item.insuredName || item.label || JSON.stringify(item)
+            : String(item),
+        )
+        .join(", ");
+    } else {
+      displayValue = displayValue.name || displayValue.insuredName || displayValue.label || JSON.stringify(displayValue);
+    }
+  }
+
+  if (displayValue === undefined || displayValue === null || String(displayValue).trim() === "") return null;
   return (
     <div
       style={{
@@ -92,7 +107,7 @@ function DetailField({ label, value, wide }) {
         {label}
       </span>
       <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a", wordBreak: "break-word" }}>
-        {String(value)}
+        {String(displayValue)}
       </span>
     </div>
   );

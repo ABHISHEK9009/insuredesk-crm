@@ -430,15 +430,24 @@ function HealthInsuredMembersFields({ members, onChange }) {
           <fieldset key={`${member.name || "member"}-${index}`} className="preview-fieldset">
             <legend className="preview-legend">Member {index + 1}</legend>
             <div className="preview-form">
-              {HEALTH_MEMBER_FIELDS.map(([label, key]) => (
-                <PreviewField
-                  key={key}
-                  fieldKey={key}
-                  label={label}
-                  value={member?.[key] || ""}
-                  onChange={(value) => updateMember(index, key, value)}
-                />
-              ))}
+              {HEALTH_MEMBER_FIELDS.map(([label, key]) => {
+                const rawMemberVal = member?.[key];
+                const memberVal =
+                  typeof rawMemberVal === "object" && rawMemberVal !== null
+                    ? Array.isArray(rawMemberVal)
+                      ? rawMemberVal.map((item) => (typeof item === "object" ? JSON.stringify(item) : String(item))).join(", ")
+                      : JSON.stringify(rawMemberVal)
+                    : rawMemberVal || "";
+                return (
+                  <PreviewField
+                    key={key}
+                    fieldKey={key}
+                    label={label}
+                    value={memberVal}
+                    onChange={(val) => updateMember(index, key, val)}
+                  />
+                );
+              })}
             </div>
           </fieldset>
         ))}

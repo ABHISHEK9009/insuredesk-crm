@@ -85,6 +85,20 @@ function renderCell(record, column, isExpanded, onToggleLongText) {
     return fallbackValue ? <span title={fallbackValue}>{fallbackValue}</span> : "";
   }
 
+  if (typeof rawValue === "object" && rawValue !== null) {
+    if (Array.isArray(rawValue)) {
+      rawValue = rawValue
+        .map((item) =>
+          typeof item === "object" && item !== null
+            ? item.name || item.insuredName || item.label || JSON.stringify(item)
+            : String(item),
+        )
+        .join(", ");
+    } else {
+      rawValue = rawValue.name || rawValue.insuredName || rawValue.label || JSON.stringify(rawValue);
+    }
+  }
+
   const value =
     column.format === "dateTime"
       ? formatDateTime(rawValue)

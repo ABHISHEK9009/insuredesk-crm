@@ -109,7 +109,7 @@ export default function PublicFooter() {
         </div>
 
         <div className="public-footer-bottom">
-          <p>© {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {SITE_NAME}. All rights reserved. Bima Headquarter is a brand owned and operated by InsureDesk IMF Pvt. Ltd. Insurance is the subject matter of solicitation. Policy issuance, terms, rates, and claim settlements are subject to insurer underwriting decisions.</p>
           <div>
             <Link href="/privacy-policy">Privacy</Link>
             <Link href="/terms-and-conditions">Terms</Link>

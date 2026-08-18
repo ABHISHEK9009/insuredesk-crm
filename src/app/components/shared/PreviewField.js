@@ -2,6 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { findUniqueClientIdentityMatch } from "@/lib/client-accounts/utils";
 import { normalizeContactNumber } from "@/lib/records/validation";
 
+function formatDisplayValue(val) {
+  if (val === undefined || val === null) return "-";
+  if (typeof val === "object") {
+    if (Array.isArray(val)) {
+      if (val.length === 0) return "-";
+      return val.map((item) => formatDisplayValue(item)).join(", ");
+    }
+    return val.name || val.insuredName || val.label || JSON.stringify(val);
+  }
+  return String(val);
+}
+
 export default function PreviewField({
   fieldKey,
   label,
@@ -110,11 +122,11 @@ export default function PreviewField({
         <div className="ai-suggestion-card">
           <div>
             <strong>Suggested value</strong>
-            <span>{suggestion.suggestedValue}</span>
+            <span>{formatDisplayValue(suggestion.suggestedValue)}</span>
           </div>
           <div>
             <strong>Current value</strong>
-            <span>{value || "-"}</span>
+            <span>{formatDisplayValue(value)}</span>
           </div>
           {suggestion.evidenceText ? <blockquote>{suggestion.evidenceText}</blockquote> : null}
           <button
