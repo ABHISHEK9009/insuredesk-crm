@@ -1,5 +1,5 @@
-/* global navigator */
 "use client";
+/* global navigator */
 
 import { useEffect, useRef, useState } from "react";
 import ModalPortal from "@/app/components/shared/ModalPortal";
