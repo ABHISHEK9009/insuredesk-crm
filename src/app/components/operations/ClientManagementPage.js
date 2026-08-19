@@ -526,14 +526,14 @@ export default function ClientManagementPage() {
             aria-label="Refresh All Records"
             className="client-mgmt-refresh-btn"
           >
-            <RefreshCw size={19} className="text-slate-800" strokeWidth={2.2} />
+            <RefreshCw size={15} strokeWidth={1.9} />
           </button>
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-3.5 py-2 rounded-xl shadow-sm hover:shadow font-bold text-xs transition-all h-[38px]"
+            className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-950 border border-slate-200 hover:border-slate-300 px-3.5 h-[36px] rounded-xl shadow-sm font-bold text-xs transition-all"
           >
-            <Plus size={18} className="text-slate-900" strokeWidth={2.5} />
+            <Plus size={15} strokeWidth={2.2} className="text-slate-700" />
             <span>Create Client Login</span>
           </button>
         </div>
