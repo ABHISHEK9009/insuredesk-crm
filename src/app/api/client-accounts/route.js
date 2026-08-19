@@ -58,35 +58,53 @@ export async function GET(request) {
       prisma.clientAccount.count({ where }),
     ]);
 
-    const accountIds = accounts.map((a) => a.id);
+    const accountIds = accounts.map((a) => a.id.toLowerCase());
     const accountPhones = accounts.map((a) => a.phone).filter(Boolean);
     const policyCountMap = new Map();
     const contactPersonMap = new Map();
 
-    if (accountIds.length > 0) {
+    if (accountIds.length > 0 || accountPhones.length > 0) {
       try {
         const orgId = session.organizationId;
         const matchedRows = await prisma.$queryRaw`
           SELECT 
-            LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) as "clientId",
+            LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) as "clientId",
+            REGEXP_REPLACE(COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', NULLIF(reviewed_data->>'customerMobile', ''), data->>'customerMobile', ''), '[^0-9]', '', 'g') as "phone",
             COUNT(*)::int as count,
             MAX(COALESCE(NULLIF(reviewed_data->>'contactPerson', ''), NULLIF(data->>'contactPerson', ''), NULLIF(reviewed_data->>'contactPersonName', ''), NULLIF(data->>'contactPersonName', ''), '')) as "contactPerson"
           FROM pdf_records
           WHERE deleted_at IS NULL
-            AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
-            AND LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) IN (${Prisma.join(accountIds.map((id) => id.toLowerCase()))})
-          GROUP BY LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId'))
+            AND (
+              ${orgId ? Prisma.sql`(organization_id = ${orgId}::uuid OR organization_id IS NULL)` : Prisma.sql`TRUE`}
+            )
+            AND (
+              ${accountIds.length > 0 ? Prisma.sql`LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) IN (${Prisma.join(accountIds)})` : Prisma.sql`FALSE`}
+              OR ${accountPhones.length > 0 ? Prisma.sql`REGEXP_REPLACE(COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', NULLIF(reviewed_data->>'customerMobile', ''), data->>'customerMobile', ''), '[^0-9]', '', 'g') IN (${Prisma.join(accountPhones)})` : Prisma.sql`FALSE`}
+            )
+          GROUP BY 1, 2
         `;
+
         for (const row of matchedRows) {
-          if (row.clientId) {
-            policyCountMap.set(row.clientId.toLowerCase(), Number(row.count) || 0);
-            if (row.contactPerson && String(row.contactPerson).trim()) {
-              contactPersonMap.set(row.clientId.toLowerCase(), String(row.contactPerson).trim());
+          const rowClientId = (row.clientId || "").toLowerCase();
+          const rowPhone = row.phone || "";
+          const rowContact = (row.contactPerson || "").trim();
+
+          for (const acc of accounts) {
+            const accId = acc.id.toLowerCase();
+            const accPhone = (acc.phone || "").replace(/\D/g, "");
+            const isMatch = (rowClientId && rowClientId === accId) || (rowPhone && accPhone && rowPhone.endsWith(accPhone));
+            if (isMatch) {
+              if (rowClientId === accId) {
+                policyCountMap.set(accId, (policyCountMap.get(accId) || 0) + Number(row.count || 0));
+              }
+              if (rowContact && !contactPersonMap.has(accId)) {
+                contactPersonMap.set(accId, rowContact);
+              }
             }
           }
         }
       } catch (err) {
-        console.warn("Failed to fetch policy counts for client accounts:", err);
+        console.warn("Failed to fetch policy counts and contact persons for client accounts:", err);
       }
     }
 
@@ -94,7 +112,6 @@ export async function GET(request) {
       try {
         const customerProfiles = await prisma.customerProfile.findMany({
           where: {
-            ...getTenantFilter(session, "read"),
             phone: { in: accountPhones },
             deletedAt: null,
           },

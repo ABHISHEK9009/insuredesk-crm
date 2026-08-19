@@ -2497,11 +2497,11 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: all 0.15s ease;
 }
 
@@ -2513,8 +2513,9 @@
 }
 
 .client-mgmt-more-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #000000;
 }
 
 .client-mgmt-action-popover {
