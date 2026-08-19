@@ -834,13 +834,14 @@ export default function ClientManagementPage() {
                         aria-label="More Actions"
                       >
                         <svg
-                          className="h-5 w-5"
+                          className="w-5 h-5 text-slate-800"
                           viewBox="0 0 24 24"
                           fill="currentColor"
+                          aria-hidden="true"
                         >
-                          <circle cx="12" cy="5" r="2.2" />
-                          <circle cx="12" cy="12" r="2.2" />
-                          <circle cx="12" cy="19" r="2.2" />
+                          <circle cx="12" cy="5" r="2.8" />
+                          <circle cx="12" cy="12" r="2.8" />
+                          <circle cx="12" cy="19" r="2.8" />
                         </svg>
                       </button>
 
