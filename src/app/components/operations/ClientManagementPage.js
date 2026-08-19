@@ -136,11 +136,11 @@ export default function ClientManagementPage() {
         setClientIdRequests(null);
         return;
       }
-      if (!res.ok) throw new Error("Failed to load Client ID requests");
+      if (!res.ok) return;
       const data = await res.json();
       setClientIdRequests(data.requests || []);
-    } catch (err) {
-      setError(err.message || "Failed to load Client ID requests");
+    } catch {
+      // non-blocking background queue fetch
     } finally {
       setRequestQueueLoading(false);
     }
@@ -150,7 +150,7 @@ export default function ClientManagementPage() {
     setMyRequestsLoading(true);
     try {
       const res = await fetch("/api/client-id-requests?mine=1&all=1");
-      if (!res.ok) throw new Error("Failed to load your Client ID requests");
+      if (!res.ok) return;
       const data = await res.json();
       const requests = data.requests || [];
       setMyClientIdRequests(requests);
@@ -165,8 +165,8 @@ export default function ClientManagementPage() {
         setCorrectionEmail(linkedRequest.email || "");
         setActiveTab("my-requests");
       }
-    } catch (err) {
-      setError(err.message || "Failed to load your Client ID requests");
+    } catch {
+      // non-blocking background queue fetch
     } finally {
       setMyRequestsLoading(false);
     }

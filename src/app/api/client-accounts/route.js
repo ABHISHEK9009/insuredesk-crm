@@ -63,13 +63,26 @@ export async function GET(request) {
     const policyCountMap = new Map();
     const contactPersonMap = new Map();
 
-    if (accountIds.length > 0 || accountPhones.length > 0) {
+    const searchPhones = new Set();
+    accountPhones.forEach((p) => {
+      const digits = p.replace(/\D/g, "");
+      if (digits) {
+        searchPhones.add(digits);
+        searchPhones.add(` ${digits}`);
+        searchPhones.add(`+91${digits}`);
+        searchPhones.add(`91${digits}`);
+        searchPhones.add(p);
+      }
+    });
+    const phoneList = Array.from(searchPhones);
+
+    if (accountIds.length > 0 || phoneList.length > 0) {
       try {
         const orgId = session.organizationId;
         const matchedRows = await prisma.$queryRaw`
           SELECT 
             LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) as "clientId",
-            REGEXP_REPLACE(COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', NULLIF(reviewed_data->>'customerMobile', ''), data->>'customerMobile', ''), '[^0-9]', '', 'g') as "phone",
+            COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', NULLIF(reviewed_data->>'customerMobile', ''), data->>'customerMobile', '') as "phone",
             COUNT(*)::int as count,
             MAX(COALESCE(NULLIF(reviewed_data->>'contactPerson', ''), NULLIF(data->>'contactPerson', ''), NULLIF(reviewed_data->>'contactPersonName', ''), NULLIF(data->>'contactPersonName', ''), '')) as "contactPerson"
           FROM pdf_records
@@ -79,14 +92,14 @@ export async function GET(request) {
             )
             AND (
               ${accountIds.length > 0 ? Prisma.sql`LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) IN (${Prisma.join(accountIds)})` : Prisma.sql`FALSE`}
-              OR ${accountPhones.length > 0 ? Prisma.sql`REGEXP_REPLACE(COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', NULLIF(reviewed_data->>'customerMobile', ''), data->>'customerMobile', ''), '[^0-9]', '', 'g') IN (${Prisma.join(accountPhones)})` : Prisma.sql`FALSE`}
+              ${phoneList.length > 0 ? Prisma.sql`OR COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', NULLIF(reviewed_data->>'customerMobile', ''), data->>'customerMobile', '') IN (${Prisma.join(phoneList)})` : Prisma.empty}
             )
           GROUP BY 1, 2
         `;
 
         for (const row of matchedRows) {
           const rowClientId = (row.clientId || "").toLowerCase();
-          const rowPhone = row.phone || "";
+          const rowPhone = (row.phone || "").replace(/\D/g, "");
           const rowContact = (row.contactPerson || "").trim();
 
           for (const acc of accounts) {

@@ -51,13 +51,55 @@ export async function GET(request) {
     take: allMine ? 50 : mine ? 1 : 50,
   });
 
-  const items = await Promise.all(
-    requests.map(async (item) => ({
-      ...serializeRequest(item),
-      suggestions: !mine && OPEN_STATUSES.includes(item.status) ? await findSuggestions(item) : [],
-      policies: await findAttachedPolicies(item),
-    })),
-  );
+  const requestIds = requests.map((r) => r.id);
+  const attachedPolicies =
+    requestIds.length > 0
+      ? await prisma.policyRecord.findMany({
+          where: { clientIdRequestId: { in: requestIds }, deletedAt: null },
+          select: {
+            id: true,
+            clientIdRequestId: true,
+            sourceFile: true,
+            data: true,
+            reviewedData: true,
+            clientIdPending: true,
+            clientIdStatus: true,
+          },
+          orderBy: { savedAt: "desc" },
+        })
+      : [];
+
+  const policiesByRequestId = new Map();
+  for (const policy of attachedPolicies) {
+    if (!policy.clientIdRequestId) continue;
+    const list = policiesByRequestId.get(policy.clientIdRequestId) || [];
+    const data = policy.reviewedData || policy.data || {};
+    list.push({
+      id: policy.id,
+      policyNumber: data.policyNumber || "",
+      sourceFile: policy.sourceFile || data.sourceFile || "Policy PDF",
+      clientIdPending: policy.clientIdPending,
+      clientIdStatus: policy.clientIdStatus,
+    });
+    policiesByRequestId.set(policy.clientIdRequestId, list);
+  }
+
+  const openRequests = !mine ? requests.filter((r) => OPEN_STATUSES.includes(r.status)) : [];
+  const suggestionsByRequestId = new Map();
+  if (openRequests.length > 0) {
+    await Promise.all(
+      openRequests.slice(0, 15).map(async (item) => {
+        const suggestions = await findSuggestions(item);
+        suggestionsByRequestId.set(item.id, suggestions);
+      }),
+    );
+  }
+
+  const items = requests.map((item) => ({
+    ...serializeRequest(item),
+    suggestions: suggestionsByRequestId.get(item.id) || [],
+    policies: policiesByRequestId.get(item.id) || [],
+  }));
 
   return NextResponse.json({ requests: items });
 }
@@ -595,30 +637,7 @@ async function findSuggestions(item) {
   });
 }
 
-async function findAttachedPolicies(item) {
-  const policies = await prisma.policyRecord.findMany({
-    where: { clientIdRequestId: item.id, deletedAt: null },
-    select: {
-      id: true,
-      sourceFile: true,
-      data: true,
-      reviewedData: true,
-      clientIdPending: true,
-      clientIdStatus: true,
-    },
-    orderBy: { savedAt: "desc" },
-  });
-  return policies.map((policy) => {
-    const data = policy.reviewedData || policy.data || {};
-    return {
-      id: policy.id,
-      policyNumber: data.policyNumber || "",
-      sourceFile: policy.sourceFile || data.sourceFile || "Policy PDF",
-      clientIdPending: policy.clientIdPending,
-      clientIdStatus: policy.clientIdStatus,
-    };
-  });
-}
+
 
 function serializeRequest(item) {
   const metadata = item.metadata || {};
