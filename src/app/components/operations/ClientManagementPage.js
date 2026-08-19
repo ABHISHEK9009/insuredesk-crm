@@ -679,30 +679,29 @@ export default function ClientManagementPage() {
         <section className="client-mgmt-table-card">
           {/* Table Toolbar */}
           <div className="client-mgmt-toolbar">
-            <div className="client-mgmt-search-box">
-              <Search />
-              <input
-                type="text"
-                placeholder="Search by name, phone, email, or Client ID..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px] font-bold"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
+            <div className="flex items-center gap-2">
+              <div className="client-mgmt-search-box">
+                <Search />
+                <input
+                  type="text"
+                  placeholder="Search by name, phone, email, or Client ID..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px] font-bold"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
 
-            <div className="flex items-center gap-3">
-              {/* Filter Toggle */}
               <button
                 type="button"
                 onClick={() => setShowFilters((v) => !v)}
