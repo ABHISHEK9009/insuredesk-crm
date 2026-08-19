@@ -1,5 +1,7 @@
 export function getRecordSearchText(record) {
   return [
+    record.clientId,
+    record.clientIdRequestId,
     record.insuredName,
     record.policyNumber,
     record.contactNumber,

@@ -2474,12 +2474,26 @@
   font-size: 11px;
   font-weight: 750;
   width: fit-content;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.client-mgmt-policy-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 .client-mgmt-policy-pill svg {
   width: 12px;
   height: 12px;
   color: #64748b;
+  transition: color 0.15s ease;
+}
+
+.client-mgmt-policy-pill:hover svg {
+  color: #0f172a;
 }
 
 .client-mgmt-actions {

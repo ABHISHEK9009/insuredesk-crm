@@ -2,6 +2,7 @@
 /* global navigator */
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import ModalPortal from "@/app/components/shared/ModalPortal";
 import { normalizeIndianPhone } from "@/lib/customer-profiles/utils";
 import {
@@ -798,12 +799,16 @@ export default function ClientManagementPage() {
 
                     {/* 4. Attached Policies / Accounts */}
                     <div className="client-mgmt-col-policies min-w-0">
-                      <span className="client-mgmt-policy-pill" title="Number of policies/accounts linked to this Client ID">
+                      <Link
+                        href={`/policy-records?q=${encodeURIComponent(profile.id)}`}
+                        className="client-mgmt-policy-pill"
+                        title={`View policies attached to Client ID: ${profile.id}`}
+                      >
                         <FileText className="h-3 w-3 text-slate-500 shrink-0" />
                         <span>
                           {profile.policiesCount || 0} {Number(profile.policiesCount || 0) === 1 ? "Policy" : "Policies"} Attached
                         </span>
-                      </span>
+                      </Link>
                     </div>
 
                     {/* 5. Client ID */}
