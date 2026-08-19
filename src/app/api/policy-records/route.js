@@ -84,9 +84,12 @@ export async function GET(request) {
     if (q.trim()) {
       const searchTerms = q.trim().toLowerCase();
       const searchKeys = [
+        "clientId",
+        "clientIdRequestId",
         "insuredName",
         "policyNumber",
         "contactNumber",
+        "customerMobile",
         "contactPerson",
         "whatsappGroupName",
         "groupName",
@@ -100,6 +103,8 @@ export async function GET(request) {
         "district",
         "tehsil",
         "insuranceCompany",
+        "sourceFile",
+        "pdfFileName",
       ];
       const searchOrs = [];
       for (const key of searchKeys) {

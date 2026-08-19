@@ -2474,26 +2474,12 @@
   font-size: 11px;
   font-weight: 750;
   width: fit-content;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.client-mgmt-policy-pill:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #0f172a;
 }
 
 .client-mgmt-policy-pill svg {
   width: 12px;
   height: 12px;
   color: #64748b;
-  transition: color 0.15s ease;
-}
-
-.client-mgmt-policy-pill:hover svg {
-  color: #0f172a;
 }
 
 .client-mgmt-actions {
@@ -2508,40 +2494,27 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   border: none;
   background: transparent;
+  color: #1e293b;
   cursor: pointer;
   box-shadow: none;
   transition: all 0.15s ease;
-  padding: 0;
 }
 
-.client-mgmt-dots-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2.6px;
-}
-
-.client-mgmt-dot {
-  width: 3.2px;
-  height: 3.2px;
-  border-radius: 9999px;
-  background-color: #64748b;
+.client-mgmt-more-btn svg {
+  width: 22px !important;
+  height: 22px !important;
+  fill: currentColor !important;
   display: block;
-  transition: background-color 0.15s ease;
 }
 
 .client-mgmt-more-btn:hover {
   background: #f1f5f9;
-}
-
-.client-mgmt-more-btn:hover .client-mgmt-dot {
-  background-color: #0f172a;
+  color: #0f172a;
 }
 
 .client-mgmt-action-popover {

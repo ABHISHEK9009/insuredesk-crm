@@ -204,9 +204,12 @@ async function loadScopedPolicyRecordsUnsafe(options = {}) {
   if (q.trim()) {
     const searchTerms = q.trim().toLowerCase();
     const searchKeys = [
+      "clientId",
+      "clientIdRequestId",
       "insuredName",
       "policyNumber",
       "contactNumber",
+      "customerMobile",
       "contactPerson",
       "whatsappGroupName",
       "groupName",
@@ -220,6 +223,8 @@ async function loadScopedPolicyRecordsUnsafe(options = {}) {
       "district",
       "tehsil",
       "insuranceCompany",
+      "sourceFile",
+      "pdfFileName",
     ];
     const searchOrs = [];
     for (const key of searchKeys) {
