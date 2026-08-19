@@ -449,12 +449,17 @@ export default function ClientManagementPage() {
   // Super Admin Queue calculations
   const superAdminRequests = clientIdRequests ? clientIdRequests.filter((r) => r.status !== "COMPLETED") : [];
   const superAdminWithSuggestionsCount = superAdminRequests.filter((r) => r.suggestions && r.suggestions.length > 0).length;
-  const superAdminWaitingCorrectionCount = superAdminRequests.filter((r) => r.status === "WAITING_DOCUMENTS").length;
-  const superAdminStrictPendingCount = superAdminRequests.filter((r) => r.status === "PENDING").length;
+  const superAdminWaitingCorrectionCount = superAdminRequests.filter(
+    (r) => r.status === "WAITING_DOCUMENTS" || r.workflowStatus === "NEEDS_CORRECTION",
+  ).length;
+  const superAdminStrictPendingCount = superAdminRequests.filter(
+    (r) => r.status !== "WAITING_DOCUMENTS" && r.workflowStatus !== "NEEDS_CORRECTION",
+  ).length;
 
   const filteredSuperAdminRequests = superAdminRequests.filter((item) => {
-    if (superAdminFilter === "WAITING_DOCUMENTS" && item.status !== "WAITING_DOCUMENTS") return false;
-    if (superAdminFilter === "PENDING" && item.status !== "PENDING") return false;
+    const isNeedsCorrection = item.status === "WAITING_DOCUMENTS" || item.workflowStatus === "NEEDS_CORRECTION";
+    if (superAdminFilter === "WAITING_DOCUMENTS" && !isNeedsCorrection) return false;
+    if (superAdminFilter === "PENDING" && isNeedsCorrection) return false;
     if (superAdminFilter === "HAS_SUGGESTIONS" && (!item.suggestions || item.suggestions.length === 0)) return false;
 
     if (superAdminSearch.trim()) {
@@ -1584,184 +1589,191 @@ export default function ClientManagementPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
-              {paginatedSuperAdminRequests.map((item) => (
-                <article
-                  key={item.id}
-                  className={`client-mgmt-admin-card ${item.status === "WAITING_DOCUMENTS" ? "waiting-correction" : ""}`}
-                >
-                  {/* 1. Client Details & Policies */}
-                  <div className="space-y-2 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <strong className="text-[14px] font-extrabold text-slate-900">{item.name}</strong>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
-                          item.status === "WAITING_DOCUMENTS"
-                            ? "bg-rose-100 text-rose-700 border border-rose-200"
-                            : "bg-amber-100 text-amber-800 border border-amber-200"
-                        }`}
-                      >
-                        {item.status === "WAITING_DOCUMENTS"
-                          ? "Correction Requested"
-                          : "Pending Super Admin"}
-                      </span>
-                    </div>
+            <div className="bg-white">
+              {/* Table Column Headers */}
+              <div className="client-mgmt-admin-table-head">
+                <span>Client & Submitter</span>
+                <span>Attached Policies</span>
+                <span>Duplicate Matches</span>
+                <span>Status</span>
+                <span className="text-right">Review Actions</span>
+              </div>
 
-                    <div className="text-xs text-slate-600 flex flex-wrap items-center gap-x-4 gap-y-1">
-                      <span className="inline-flex items-center gap-1 font-mono font-bold text-slate-900">
-                        <Phone className="h-3 w-3 text-slate-400" />
-                        {item.phone}
-                      </span>
-                      {item.email && (
-                        <span className="inline-flex items-center gap-1 text-slate-600">
-                          <Mail className="h-3 w-3 text-slate-400" />
-                          {item.email}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                      <span>
-                        Requested by <strong className="text-slate-700">{item.requestedByName || item.requestedByEmail || "Agent"}</strong>
-                      </span>
-                      <span>•</span>
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono text-slate-400">ID: {item.id.slice(0, 18)}...</span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(item.id)}
-                          className="client-mgmt-id-copy"
-                          title="Copy Full Request ID"
-                          aria-label="Copy Full Request ID"
-                        >
-                          {copiedId === item.id ? (
-                            <Check className="h-3 w-3 text-slate-900" />
-                          ) : (
-                            <Copy className="h-3 w-3 text-slate-400 hover:text-slate-900" />
+              {/* Table Rows */}
+              <div className="divide-y divide-slate-100">
+                {paginatedSuperAdminRequests.map((item) => {
+                  const isNeedsCorrection = item.status === "WAITING_DOCUMENTS" || item.workflowStatus === "NEEDS_CORRECTION";
+                  return (
+                    <article
+                      key={item.id}
+                      className={`client-mgmt-admin-row ${isNeedsCorrection ? "waiting-correction" : ""}`}
+                    >
+                      {/* 1. Client & Submitter */}
+                      <div className="min-w-0 space-y-1">
+                        <strong className="block truncate text-[13px] font-extrabold text-slate-900" title={item.name}>
+                          {item.name}
+                        </strong>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-600">
+                          <span className="font-mono font-bold text-slate-900 inline-flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-slate-400" />
+                            {item.phone}
+                          </span>
+                          {item.email && (
+                            <span className="text-slate-500 inline-flex items-center gap-1 truncate max-w-[140px]" title={item.email}>
+                              <Mail className="h-3 w-3 text-slate-400" />
+                              {item.email}
+                            </span>
                           )}
-                        </button>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                          <span>By: <strong className="text-slate-600">{item.requestedByName || item.requestedByEmail || "Agent"}</strong></span>
+                          <span>•</span>
+                          <span className="font-mono text-[10px]">ID: {item.id.slice(0, 8)}...</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(item.id)}
+                            className="client-mgmt-id-copy"
+                            title="Copy Request ID"
+                          >
+                            {copiedId === item.id ? (
+                              <Check className="h-3 w-3 text-slate-900" />
+                            ) : (
+                              <Copy className="h-3 w-3 text-slate-400 hover:text-slate-900" />
+                            )}
+                          </button>
+                        </div>
+                        {item.correctionNote && (
+                          <div className="mt-1 rounded-lg border border-rose-200 bg-rose-50/90 p-1.5 text-[11px] font-semibold text-rose-800 flex items-start gap-1">
+                            <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0 mt-0.5" />
+                            <span>{item.correctionNote}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Attached Policies Strip */}
-                    <div className="mt-2 rounded-xl bg-slate-50 border border-slate-200/80 p-2.5 space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                        <FileText className="h-3.5 w-3.5 text-slate-500" />
-                        <span>
-                          {item.policies?.length || 0} Attached {item.policies?.length === 1 ? "Policy" : "Policies"}
+                      {/* 2. Attached Policies */}
+                      <div className="min-w-0 space-y-1">
+                        <span
+                          className="client-mgmt-policy-pill"
+                          title={
+                            item.policies?.length
+                              ? item.policies.map((p) => p.policyNumber || p.sourceFile).join(", ")
+                              : "Number of attached policies"
+                          }
+                        >
+                          <FileText className="h-3 w-3 text-slate-500 shrink-0" />
+                          <span>
+                            {item.policies?.length || 0} {Number(item.policies?.length || 0) === 1 ? "Policy" : "Policies"}
+                          </span>
+                        </span>
+                        {item.policies && item.policies.length > 0 && (
+                          <div className="font-mono text-[10px] text-slate-500 truncate max-w-[150px]" title={item.policies[0].policyNumber || item.policies[0].sourceFile}>
+                            {item.policies[0].policyNumber || item.policies[0].sourceFile}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 3. Duplicate Matches */}
+                      <div className="min-w-0">
+                        {isNeedsCorrection ? (
+                          <span className="text-[11px] text-slate-500 italic">Waiting for agent</span>
+                        ) : item.suggestions && item.suggestions.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.suggestions.slice(0, 1).map((client) => (
+                              <div
+                                key={client.id}
+                                className="rounded-lg border border-slate-200 bg-slate-50/80 p-1.5 text-xs flex items-center justify-between gap-1.5"
+                              >
+                                <div className="min-w-0">
+                                  <strong className="block truncate text-[11px] text-slate-800" title={client.name}>
+                                    {client.name}
+                                  </strong>
+                                  <span className="font-mono text-[10px] text-slate-500">{client.phone}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => openExistingClientModal(item, client.id)}
+                                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-800 shadow-sm shrink-0"
+                                >
+                                  <Link2 className="h-2.5 w-2.5" /> Link
+                                </button>
+                              </div>
+                            ))}
+                            {item.suggestions.length > 1 && (
+                              <span className="text-[10px] text-slate-400 font-medium">+{item.suggestions.length - 1} more match</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded-md">
+                            ✓ No Duplicates
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 4. Status Badge */}
+                      <div className="min-w-0">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
+                            isNeedsCorrection
+                              ? "bg-rose-100 text-rose-700 border border-rose-200"
+                              : "bg-amber-100 text-amber-800 border border-amber-200"
+                          }`}
+                        >
+                          {isNeedsCorrection ? "Correction Requested" : "Pending Review"}
                         </span>
                       </div>
-                      {item.policies && item.policies.length > 0 ? (
-                        <div className="space-y-0.5 pl-5">
-                          {item.policies.map((policy) => (
-                            <div key={policy.id} className="font-mono text-[11px] text-slate-600 truncate" title={policy.sourceFile}>
-                              • {policy.policyNumber || policy.sourceFile}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-slate-400 pl-5 italic">No linked policy records yet.</p>
-                      )}
-                    </div>
 
-                    {item.correctionNote && (
-                      <div className="rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-xs font-semibold text-rose-800 flex items-start gap-1.5">
-                        <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-bold">Latest Note: </span>
-                          <span>{item.correctionNote}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 2. AI Duplicate Match Suggestions */}
-                  <div className="space-y-2 min-w-0">
-                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                      Possible Duplicate Matches
-                    </span>
-                    {item.status === "WAITING_DOCUMENTS" ? (
-                      <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
-                        Waiting for the requesting agent to correct and resubmit this request.
-                      </div>
-                    ) : item.suggestions && item.suggestions.length > 0 ? (
-                      <div className="space-y-2">
-                        {item.suggestions.map((client) => (
-                          <div
-                            key={client.id}
-                            className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <strong className="text-xs font-bold text-slate-900 truncate" title={client.name}>
-                                {client.name}
-                              </strong>
+                      {/* 5. Review Actions */}
+                      <div className="flex flex-col gap-1 sm:items-end justify-center">
+                        {!isNeedsCorrection && (
+                          <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
+                            <button
+                              type="button"
+                              onClick={() => openCreateClientModal(item)}
+                              disabled={resolvingRequestId === item.id}
+                              className="inline-flex items-center justify-center gap-1 rounded-lg border-2 border-slate-900 bg-white hover:bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-900 shadow-sm transition-all disabled:opacity-60 whitespace-nowrap"
+                            >
+                              {resolvingRequestId === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <UserPlus className="h-3 w-3 text-slate-900" />
+                              )}
+                              Issue ID
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openExistingClientModal(item)}
+                              className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm transition-all whitespace-nowrap"
+                            >
+                              <Link2 className="h-3 w-3 text-slate-600" /> Link
+                            </button>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 sm:justify-end text-[11px]">
+                          {!isNeedsCorrection && (
+                            <>
                               <button
                                 type="button"
-                                onClick={() => openExistingClientModal(item, client.id)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-800 shadow-sm transition-all"
+                                onClick={() => openDecisionModal(item, "NEEDS_CORRECTION")}
+                                className="font-semibold text-rose-700 hover:text-rose-900 hover:underline"
                               >
-                                <Link2 className="h-3 w-3 text-slate-600" /> Link This
+                                Request Correction
                               </button>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                              <span>{client.phone}</span>
-                              <span className="text-[10px] text-slate-400">ID: {client.id.slice(0, 8)}...</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl bg-slate-50/70 border border-slate-200/70 p-3 text-center">
-                        <span className="text-xs font-medium text-slate-500">
-                          ✓ No existing client duplicate found
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 3. Decision Actions */}
-                  <div className="flex flex-col gap-1.5 w-full sm:w-auto shrink-0 justify-end">
-                    {item.status !== "WAITING_DOCUMENTS" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => openCreateClientModal(item)}
-                          disabled={resolvingRequestId === item.id}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 shadow-sm transition-all disabled:opacity-60"
-                        >
-                          {resolvingRequestId === item.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <UserPlus className="h-3.5 w-3.5 text-slate-800" />
+                              <span className="text-slate-300">•</span>
+                              <button
+                                type="button"
+                                onClick={() => openDecisionModal(item, "REJECT")}
+                                className="font-semibold text-slate-500 hover:text-slate-900 hover:underline"
+                              >
+                                Reject
+                              </button>
+                            </>
                           )}
-                          Issue New Client ID
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openExistingClientModal(item)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 shadow-sm transition-all"
-                        >
-                          <Link2 className="h-3.5 w-3.5 text-slate-600" /> Link Existing ID
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openDecisionModal(item, "NEEDS_CORRECTION")}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-300 px-3.5 py-1.5 text-xs font-semibold text-rose-700 transition-all"
-                        >
-                          Request Correction
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openDecisionModal(item, "REJECT")}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition-all"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </article>
-              ))}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
           )}
 
