@@ -834,7 +834,7 @@ export default function ClientManagementPage() {
                         title="More Actions"
                         aria-label="More Actions"
                       >
-                        <MoreVertical className="h-4 w-4 text-slate-600" />
+                        <MoreVertical className="h-5 w-5 text-slate-700" />
                       </button>
 
                       {openActionMenuId === profile.id && (
