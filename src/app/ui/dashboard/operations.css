@@ -2805,3 +2805,44 @@
     gap: 10px;
   }
 }
+
+/* ── Super Admin Review Queue ── */
+.client-mgmt-admin-card {
+  padding: 18px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+  display: grid;
+  grid-template-columns: minmax(300px, 1.4fr) minmax(260px, 1.2fr) auto;
+  align-items: start;
+  gap: 20px;
+}
+
+.client-mgmt-admin-card:hover {
+  background-color: #fafbfc;
+}
+
+.client-mgmt-admin-card.waiting-correction {
+  background-color: #fff1f2;
+}
+
+.client-mgmt-admin-card.waiting-correction:hover {
+  background-color: #ffe4e6;
+}
+
+.client-mgmt-match-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 1024px) {
+  .client-mgmt-admin-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
