@@ -208,7 +208,7 @@ export async function downloadWhatsAppMedia(messageId) {
   try {
     const res = await callGateway("POST", "download-media", { messageId });
     return res.mediaBase64 || res.data || res.base64 || "";
-  } catch (_error) {
+  } catch {
     return "";
   }
 }
@@ -221,7 +221,7 @@ export async function searchGroupMessages(groupName = "Renwal Quote New", search
       query: searchPattern,
     });
     return Array.isArray(res) ? res : (Array.isArray(res?.messages) ? res.messages : []);
-  } catch (_error) {
+  } catch {
     return [];
   }
 }

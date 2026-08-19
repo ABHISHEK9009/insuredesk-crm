@@ -40,7 +40,7 @@ export async function GET(request) {
             }
             entries = await readRenewalQuoteEntries();
           }
-        } catch (_err) {
+        } catch {
           // Fallback gracefully
         }
       }
@@ -71,7 +71,7 @@ export async function GET(request) {
           entries = await readRenewalQuoteEntries();
           filtered = filterRenewalQuoteEntries(entries, vehicleNumber);
         }
-      } catch (_err) {
+      } catch {
         // Fallback gracefully
       }
     }

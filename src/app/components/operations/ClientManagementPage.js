@@ -22,7 +22,6 @@ import {
   Inbox,
   Link2,
   UserPlus,
-  MessageSquareWarning,
   Send,
   KeyRound,
   ChevronLeft,
@@ -542,64 +541,58 @@ export default function ClientManagementPage() {
       {/* 2. Executive KPI Summary Cards */}
       <div className="client-mgmt-kpi-grid">
         {/* Total Active Clients */}
-        <div className="client-mgmt-kpi-card">
+        <div className="client-mgmt-kpi-card tone-indigo">
           <div className="client-mgmt-kpi-info">
             <span className="client-mgmt-kpi-label">Active Clients</span>
             <span className="client-mgmt-kpi-val">{totalCount}</span>
-            <span className="client-mgmt-kpi-sub text-slate-500">Verified Profiles</span>
+            <span className="client-mgmt-kpi-sub">Verified Profiles</span>
           </div>
-          <div className="client-mgmt-kpi-icon tone-emerald">
-            <Users className="h-4.5 w-4.5" />
+          <div className="client-mgmt-kpi-icon">
+            <Users size={18} strokeWidth={2} />
           </div>
         </div>
 
         {/* My Pending Requests */}
-        <div className="client-mgmt-kpi-card">
+        <div className="client-mgmt-kpi-card tone-sky">
           <div className="client-mgmt-kpi-info">
             <span className="client-mgmt-kpi-label">My Requests</span>
             <span className="client-mgmt-kpi-val">{myClientIdRequests.length}</span>
             <span className="client-mgmt-kpi-sub">{myPendingCount} In Admin Review</span>
           </div>
-          <div className="client-mgmt-kpi-icon tone-sky">
-            <Send className="h-4.5 w-4.5" />
+          <div className="client-mgmt-kpi-icon">
+            <Send size={18} strokeWidth={2} />
           </div>
         </div>
 
         {/* Needs Correction */}
-        <div
-          className={`client-mgmt-kpi-card ${
-            myNeedsCorrectionCount > 0
-              ? "bg-gradient-to-br from-rose-50 to-white border-rose-200"
-              : ""
-          }`}
-        >
+        <div className="client-mgmt-kpi-card tone-rose">
           <div className="client-mgmt-kpi-info">
             <span className="client-mgmt-kpi-label">Action Needed</span>
             <span className={`client-mgmt-kpi-val ${myNeedsCorrectionCount > 0 ? "text-rose-700" : ""}`}>
               {myNeedsCorrectionCount}
             </span>
-            <span className={`client-mgmt-kpi-sub ${myNeedsCorrectionCount > 0 ? "text-rose-600 font-bold" : ""}`}>
+            <span className={`client-mgmt-kpi-sub ${myNeedsCorrectionCount > 0 ? "text-rose-700 font-bold" : ""}`}>
               {myNeedsCorrectionCount > 0 ? "Requires Correction" : "Zero Blockers"}
             </span>
           </div>
-          <div className={`client-mgmt-kpi-icon ${myNeedsCorrectionCount > 0 ? "tone-rose" : "tone-sky"}`}>
-            <ShieldAlert className="h-4.5 w-4.5" />
+          <div className="client-mgmt-kpi-icon">
+            <ShieldAlert size={18} strokeWidth={2} />
           </div>
         </div>
 
         {/* Super Admin Approval Queue */}
-        <div className="client-mgmt-kpi-card">
+        <div className="client-mgmt-kpi-card tone-amber">
           <div className="client-mgmt-kpi-info">
             <span className="client-mgmt-kpi-label">Admin Queue</span>
             <span className="client-mgmt-kpi-val">
               {clientIdRequests ? superAdminPendingCount : "Staff"}
             </span>
-            <span className="client-mgmt-kpi-sub text-amber-600">
+            <span className="client-mgmt-kpi-sub text-amber-700 font-medium">
               {clientIdRequests ? `${superAdminPendingCount} Approvals Pending` : "Standard Role"}
             </span>
           </div>
-          <div className="client-mgmt-kpi-icon tone-amber">
-            <Shield className="h-4.5 w-4.5" />
+          <div className="client-mgmt-kpi-icon">
+            <Shield size={18} strokeWidth={2} />
           </div>
         </div>
       </div>
@@ -706,7 +699,7 @@ export default function ClientManagementPage() {
           >
             <Users className="h-3.5 w-3.5" />
             <span>Client Directory</span>
-            <span className="client-mgmt-tab-badge">{totalCount}</span>
+            <span className="client-mgmt-tab-badge !bg-blue-100/80 !text-blue-800">{totalCount}</span>
           </button>
 
           <button
@@ -719,7 +712,7 @@ export default function ClientManagementPage() {
             {myClientIdRequests.length > 0 && (
               <span
                 className={`client-mgmt-tab-badge ${
-                  myNeedsCorrectionCount > 0 ? "!bg-rose-500 !text-white" : ""
+                  myNeedsCorrectionCount > 0 ? "!bg-rose-100 !text-rose-800 !border !border-rose-200" : "!bg-indigo-100/80 !text-indigo-800"
                 }`}
               >
                 {myClientIdRequests.length}
@@ -736,7 +729,7 @@ export default function ClientManagementPage() {
               <Inbox className="h-3.5 w-3.5" />
               <span>Super Admin Queue</span>
               {superAdminPendingCount > 0 && (
-                <span className="client-mgmt-tab-badge !bg-amber-100 !text-amber-800">
+                <span className="client-mgmt-tab-badge !bg-amber-100 !text-amber-800 !border !border-amber-200">
                   {superAdminPendingCount}
                 </span>
               )}

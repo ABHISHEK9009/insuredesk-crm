@@ -1,9 +1,9 @@
 const { normalizeInsuranceCompanyName: normalizeCompanyFromMaster } = require("../../../../master/insurance-companies.cjs");
-const { sliceText, cleanHdfcValue } = require("../../utils/text.cjs");
+const { cleanHdfcValue } = require("../../utils/text.cjs");
 const { matchGroup } = require("../../utils/regex.cjs");
 const { normalizeAmount } = require("../../utils/amounts.cjs");
 
-function extractLibertyMotor(text, sourceFile = "") {
+function extractLibertyMotor(text, _sourceFile = "") {
   if (!isLibertyMotor(text)) return { documentDetected: false };
 
   const policyNumber = matchGroup(text, /Policy\s+No\.\s*\n?\s*(\d{8,30})/i) || 

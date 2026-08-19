@@ -95,7 +95,7 @@ export async function readRenewalQuoteEntries() {
       return parsed;
     }
     return memoryQuoteCache;
-  } catch (_error) {
+  } catch {
     return memoryQuoteCache;
   }
 }

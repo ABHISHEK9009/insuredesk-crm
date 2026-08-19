@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
-  FileText,
   AlertTriangle,
   Clock,
   CheckCircle,
   Upload,
   Search,
-  Filter,
   DollarSign,
-  ChevronRight,
-  ShieldCheck,
   Eye,
-  PlusCircle,
   RefreshCw,
   Layers,
 } from "lucide-react";

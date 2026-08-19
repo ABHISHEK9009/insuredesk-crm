@@ -83,12 +83,6 @@ const FIELD_OPTIONS = {
   ],
 };
 
-function addDays(date, days) {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
-
 function formatClientVehicleNumbers(client) {
   const values = Array.from(
     new Set(

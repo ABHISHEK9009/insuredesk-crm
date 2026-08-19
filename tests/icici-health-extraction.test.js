@@ -2,7 +2,6 @@
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import {
-  FIELD_SETUP,
   FIELD_GROUPS,
   POLICY_SCHEMA_LIBRARY,
   getReviewValidation,
@@ -122,7 +121,6 @@ describe("ICICI Lombard Elevate Health training", () => {
     const dashboardType = POLICY_SCHEMA_LIBRARY.find((group) => group.id === "health")?.policies.find(
       (policy) => policy.id === "health-icici-elevate",
     );
-    const registeredDashboardFields = new Set(FIELD_SETUP.map(([, key]) => key));
 
     expect(defaultType?.fields.map((field) => field.key)).toEqual(
       expect.arrayContaining([

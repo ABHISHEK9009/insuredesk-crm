@@ -17,6 +17,8 @@ function extractUnitedIndiaWarehouse(text = "") {
     (isUdyam || isBurglary) &&
     /Location\s*\/\s*Risk Details|Risks Covered|Premise:|BURGLARY FIRST LOSS POLICY/i.test(source);
 
+  if (!documentDetected) return { documentDetected: false };
+
   const matchedProductName =
     match(source, /(UNITED\s+VALUE\s+UDYAM\s+SURAKSHA\s+POLICY)/i) ||
     match(source, /(UNITED\s+BHARAT\s+LAGHU\s+UDYAM\s+SURAKSHA\s+POLICY)/i) ||
@@ -96,7 +98,9 @@ function extractUnitedIndiaWarehouse(text = "") {
     premiumIncludingGst: totalPremium,
     totalPremium,
     igst,
-    gstAmount: igst,
+    cgst,
+    sgst,
+    gstAmount: igst || (cgst && sgst ? cgst + sgst : 0),
     invoiceNumber: invoice?.[1] || "",
     invoiceDate: invoice?.[2] || "",
     receiptNumber: receipt?.[1] || "",

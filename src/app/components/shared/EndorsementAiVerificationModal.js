@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, CheckCircle, LoaderCircle, Upload, AlertCircle, FileCheck, ArrowRight } from "lucide-react";
+import { X, CheckCircle, LoaderCircle, Upload, FileCheck } from "lucide-react";
 
 export default function EndorsementAiVerificationModal({ endorsement, onClose, onSuccess }) {
   const [mounted, setMounted] = useState(false);
@@ -57,7 +57,7 @@ export default function EndorsementAiVerificationModal({ endorsement, onClose, o
       });
 
       setStep("COMPARISON");
-    } catch (err) {
+    } catch {
       setErrorMessage("Failed to extract endorsement PDF.");
     } finally {
       setIsProcessing(false);

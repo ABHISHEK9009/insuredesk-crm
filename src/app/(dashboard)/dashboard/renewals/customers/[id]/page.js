@@ -27,7 +27,6 @@ import {
   Upload,
   ZoomIn,
   X,
-  Check,
   FileText,
 } from "lucide-react";
 import BrandLogo from "@/app/components/brand/BrandLogo";
@@ -3188,6 +3187,7 @@ export default function CustomerProfilePage(props) {
                                   )}
                                   {manualQuoteFileBase64 && manualQuoteFileBase64.startsWith("data:image") && (
                                     <div style={{ marginTop: "8px" }}>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
                                       <img
                                         src={manualQuoteFileBase64}
                                         alt="Quote Preview"
@@ -3279,6 +3279,7 @@ export default function CustomerProfilePage(props) {
                                         <div style={{ marginTop: "8px", padding: "8px 10px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                             <div style={{ position: "relative", cursor: "pointer", overflow: "hidden", borderRadius: "4px" }} onClick={() => setPreviewQuoteImage(imageSrc)}>
+                                              {/* eslint-disable-next-line @next/next/no-img-element */}
                                               <img
                                                 src={imageSrc}
                                                 alt="Quote Calculation"
@@ -3472,12 +3473,15 @@ export default function CustomerProfilePage(props) {
                         >
                           <div>
                             {imageSrc ? (
-                              <img
-                                src={imageSrc}
-                                alt="Group Quote"
-                                style={{ width: "100%", height: "130px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0", cursor: "pointer", marginBottom: "8px" }}
-                                onClick={() => setPreviewQuoteImage(imageSrc)}
-                              />
+                              <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={imageSrc}
+                                  alt="Group Quote"
+                                  style={{ width: "100%", height: "130px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0", cursor: "pointer", marginBottom: "8px" }}
+                                  onClick={() => setPreviewQuoteImage(imageSrc)}
+                                />
+                              </>
                             ) : (
                               <div style={{ height: "60px", background: "#e2e8f0", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: "11px", marginBottom: "8px" }}>
                                 Text Quote
@@ -3572,6 +3576,7 @@ export default function CustomerProfilePage(props) {
                   </button>
                 </div>
               </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewQuoteImage}
                 alt="Quote Image Preview"

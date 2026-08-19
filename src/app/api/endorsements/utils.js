@@ -154,7 +154,7 @@ export function sanitizeEndorsementPayload(payload = {}) {
     generatedLetterFileName: stringValue(payload.generatedLetterFileName),
     insuranceCompanyLetterPdfUrl: stringValue(payload.insuranceCompanyLetterPdfUrl),
     insuranceCompanyLetterFileName: stringValue(payload.insuranceCompanyLetterFileName),
-    status: payload.status || "Draft",
+    status,
     creationMethod: stringValue(payload.creationMethod),
     premiumChangeType: stringValue(payload.premiumChangeType),
     premiumChangeAmount: numberOrNull(payload.premiumChangeAmount || payload.premiumDelta),

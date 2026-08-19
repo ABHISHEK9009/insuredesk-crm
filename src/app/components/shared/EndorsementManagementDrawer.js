@@ -1,23 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import {
-  X,
-  PlusCircle,
-  Clock,
-  CheckCircle,
-  FileText,
-  DollarSign,
-  ShieldCheck,
-  Calendar,
-  AlertTriangle,
-  Upload,
-  ChevronRight,
-  RotateCcw,
-  Building,
-} from "lucide-react";
+import { X, Calendar, Upload } from "lucide-react";
 import { getPolicyFinancialsAsOf, getEndorsementAging } from "@/lib/policies/endorsement-engine";
 import AddEndorsementModal from "@/app/components/shared/AddEndorsementModal";
 import EndorsementAiVerificationModal from "@/app/components/shared/EndorsementAiVerificationModal";

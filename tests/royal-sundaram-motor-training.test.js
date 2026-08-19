@@ -83,6 +83,7 @@ Contact: 9981667989
       { insuranceCompany: "Royal Sundaram General Insurance Company Limited", documentCategory: "Fire Insurance" },
       { text: "Royal Sundaram Fire and Special Perils Policy" }
     );
+    expect(nonMotorScope.category).not.toBe("motor");
     const selected = selectScopedTraining(
       { insuranceCompany: "Royal Sundaram General Insurance Company Limited", documentCategory: "Fire Insurance" },
       { text: "Royal Sundaram Fire Policy" }

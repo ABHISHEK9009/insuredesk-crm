@@ -117,7 +117,6 @@ export default function WhatsAppSetupPage() {
   const [isLoadingQueue, setIsLoadingQueue] = useState(false);
   const [isRetryingQueue, setIsRetryingQueue] = useState(false);
   const [isRunningAutomations, setIsRunningAutomations] = useState(false);
-  const [automationResult, setAutomationResult] = useState(null);
 
   // Global Alerts
   const [toast, setToast] = useState(null);
@@ -405,7 +404,6 @@ export default function WhatsAppSetupPage() {
 
   const handleRunAutomations = async () => {
     setIsRunningAutomations(true);
-    setAutomationResult(null);
     try {
       const res = await fetch("/api/operations/whatsapp/run-automations", {
         method: "POST",
@@ -415,7 +413,6 @@ export default function WhatsAppSetupPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to run WhatsApp automation");
 
-      setAutomationResult(data);
       const scans = data.scans || {};
       const sent = data.batch?.processedCount || 0;
       showToast(

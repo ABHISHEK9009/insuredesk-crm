@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, CheckCircle, LoaderCircle, DollarSign, Calendar, FileText, AlertCircle } from "lucide-react";
+import { X, CheckCircle, LoaderCircle, AlertCircle } from "lucide-react";
 
 export const ENDORSEMENT_TYPES = [
   { value: "ADDITION_PREMIUM", label: "Addition in Premium", isAddition: true, affects: "premium" },
