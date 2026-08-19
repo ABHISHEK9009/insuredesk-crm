@@ -432,16 +432,16 @@ export default function ClientManagementPage() {
               fetchMyClientIdRequests();
             }}
             title="Refresh All Records"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-all"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 hover:text-slate-900 hover:border-slate-400 hover:bg-slate-50 shadow-sm transition-all"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl shadow-sm hover:shadow font-bold text-xs transition-all"
+            className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-3.5 py-2 rounded-xl shadow-sm hover:shadow font-bold text-xs transition-all"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 text-slate-700" />
             <span>Create Client Login</span>
           </button>
         </div>
@@ -745,9 +745,9 @@ export default function ClientManagementPage() {
               <button
                 type="button"
                 onClick={handleOpenCreateModal}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-900 text-xs font-bold shadow-sm transition-all"
               >
-                <Plus className="h-3.5 w-3.5" /> Create Client Login
+                <Plus className="h-3.5 w-3.5 text-slate-700" /> Create Client Login
               </button>
             </div>
           ) : (
@@ -997,9 +997,9 @@ export default function ClientManagementPage() {
                       <button
                         type="button"
                         onClick={() => openCorrectionPanel(item)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-sky-200 transition-all"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-4 py-2.5 text-xs font-bold shadow-sm transition-all"
                       >
-                        <Edit2 className="h-4 w-4" /> Correct & Resubmit
+                        <Edit2 className="h-4 w-4 text-slate-700" /> Correct & Resubmit
                       </button>
                     )}
                   </div>
@@ -1011,10 +1011,10 @@ export default function ClientManagementPage() {
 
       {/* 6. TAB 3: SUPER ADMIN REVIEW QUEUE */}
       {activeTab === "super-admin" && clientIdRequests !== null && (
-        <section className="bg-white border border-amber-200/80 rounded-2xl shadow-[0_4px_24px_-3px_rgba(15,23,42,0.06)] overflow-hidden">
-          <div className="p-5 border-b border-amber-100 bg-gradient-to-r from-amber-50 via-white to-amber-50/50 flex items-center justify-between gap-3">
+        <section className="bg-white border border-slate-200 rounded-2xl shadow-[0_4px_24px_-3px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center border border-slate-200">
                 <Inbox className="h-5 w-5" />
               </div>
               <div>
@@ -1024,14 +1024,14 @@ export default function ClientManagementPage() {
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-amber-100 border border-amber-200 text-amber-800 px-3 py-1 text-xs font-extrabold">
+            <span className="rounded-full bg-slate-100 border border-slate-200 text-slate-800 px-3 py-1 text-xs font-extrabold">
               {superAdminPendingCount} Pending Review
             </span>
           </div>
 
           {requestQueueLoading ? (
             <div className="p-12 flex items-center justify-center gap-2 text-sm text-slate-500">
-              <Loader2 className="h-5 w-5 animate-spin text-amber-600" /> Loading review queue...
+              <Loader2 className="h-5 w-5 animate-spin text-slate-700" /> Loading review queue...
             </div>
           ) : superAdminPendingCount === 0 ? (
             <div className="p-12 text-center text-slate-500 space-y-2">
@@ -1044,9 +1044,9 @@ export default function ClientManagementPage() {
               {clientIdRequests
                 .filter((item) => item.status !== "COMPLETED")
                 .map((item) => (
-                  <div key={item.id} className="p-5 grid gap-4 lg:grid-cols-[1fr_1.2fr_auto] lg:items-center hover:bg-slate-50/50 transition-colors">
-                    {/* Requester Identity */}
-                    <div className="space-y-1.5">
+                  <div key={item.id} className="p-5 grid gap-4 lg:grid-cols-[1.4fr_1.2fr_auto] items-start hover:bg-slate-50/50 transition-colors">
+                    {/* Identification */}
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <div className="font-bold text-slate-900 text-sm">{item.name}</div>
                         {item.status === "WAITING_DOCUMENTS" && (
@@ -1106,7 +1106,7 @@ export default function ClientManagementPage() {
                               key={client.id}
                               type="button"
                               onClick={() => openExistingClientModal(item, client.id)}
-                              className="text-left rounded-xl border border-slate-200 bg-slate-50 hover:border-emerald-400 hover:bg-emerald-50/50 p-2.5 transition-colors shadow-sm"
+                              className="text-left rounded-xl border border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50 p-2.5 transition-colors shadow-sm"
                             >
                               <span className="block text-xs font-bold text-slate-800">{client.name}</span>
                               <span className="block text-[11px] text-slate-500">{client.phone}</span>
@@ -1125,34 +1125,34 @@ export default function ClientManagementPage() {
                           <button
                             type="button"
                             onClick={() => openExistingClientModal(item)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 shadow-sm transition-all"
                           >
-                            <Link2 className="h-3.5 w-3.5" /> Link Existing ID
+                            <Link2 className="h-3.5 w-3.5 text-slate-600" /> Link Existing ID
                           </button>
                           <button
                             type="button"
                             onClick={() => openCreateClientModal(item)}
                             disabled={resolvingRequestId === item.id}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-60"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 shadow-sm transition-all disabled:opacity-60"
                           >
                             {resolvingRequestId === item.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                              <UserPlus className="h-3.5 w-3.5" />
+                              <UserPlus className="h-3.5 w-3.5 text-slate-600" />
                             )}
                             Issue New Client ID
                           </button>
                           <button
                             type="button"
                             onClick={() => openDecisionModal(item, "NEEDS_CORRECTION")}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 px-3 py-2 text-xs font-bold text-amber-800 shadow-sm transition-all"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 shadow-sm transition-all"
                           >
                             Request Correction
                           </button>
                           <button
                             type="button"
                             onClick={() => openDecisionModal(item, "REJECT")}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 px-3 py-2 text-xs font-bold text-rose-700 shadow-sm transition-all"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 shadow-sm transition-all"
                           >
                             Reject
                           </button>
@@ -1301,7 +1301,7 @@ export default function ClientManagementPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
                     disabled={formSubmitting}
                   >
                     {formSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1437,7 +1437,7 @@ export default function ClientManagementPage() {
                     onClick={() =>
                       resolveClientIdRequest(resolutionRequest, resolutionAction, resolutionClientId)
                     }
-                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-50 shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-4 py-2.5 text-xs font-bold disabled:opacity-50 shadow-sm"
                   >
                     {resolvingRequestId === resolutionRequest.id && (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1496,7 +1496,7 @@ export default function ClientManagementPage() {
                     onChange={(event) => setDecisionNote(event.target.value)}
                     rows={4}
                     placeholder="Explain clearly what the agent needs to correct..."
-                    className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+                    className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm focus:border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100"
                   />
                 </div>
 
@@ -1524,7 +1524,7 @@ export default function ClientManagementPage() {
                         note: decisionNote,
                       })
                     }
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-50 shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-4 py-2.5 text-xs font-bold disabled:opacity-50 shadow-sm"
                   >
                     {resolvingRequestId === decisionRequest.id && (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1582,7 +1582,7 @@ export default function ClientManagementPage() {
                   <input
                     value={correctionName}
                     onChange={(event) => setCorrectionName(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100"
                   />
                 </div>
 
@@ -1591,7 +1591,7 @@ export default function ClientManagementPage() {
                   <input
                     value={correctionPhone}
                     onChange={(event) => setCorrectionPhone(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100"
                   />
                 </div>
 
@@ -1601,7 +1601,7 @@ export default function ClientManagementPage() {
                     type="email"
                     value={correctionEmail}
                     onChange={(event) => setCorrectionEmail(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100"
                   />
                 </div>
 
@@ -1633,12 +1633,12 @@ export default function ClientManagementPage() {
                         identity: { name: correctionName, phone: correctionPhone, email: correctionEmail },
                       })
                     }
-                    className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-sky-700 disabled:opacity-50 shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-4 py-2.5 text-xs font-bold disabled:opacity-50 shadow-sm"
                   >
                     {resolvingRequestId === correctionRequest.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Send className="h-4 w-4" />
+                      <Send className="h-4 w-4 text-slate-700" />
                     )}
                     <span>Resubmit Request</span>
                   </button>

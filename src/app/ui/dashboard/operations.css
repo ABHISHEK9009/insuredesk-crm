@@ -2461,9 +2461,9 @@
 }
 
 .client-mgmt-action-btn.tone-amber:hover {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #b45309;
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
 @media (max-width: 1024px) {
