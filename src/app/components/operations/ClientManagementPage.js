@@ -775,21 +775,26 @@ export default function ClientManagementPage() {
                     </div>
                   </div>
 
-                  {/* Middle: Client ID Pill with Copy */}
-                  <div className="client-mgmt-id-pill">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">ID</span>
-                    <code title={profile.id}>{profile.id}</code>
+                  {/* Middle: Client ID with Clean Copy Icon */}
+                  <div className="client-mgmt-id-wrapper">
+                    <span className="client-mgmt-id-label">ID</span>
+                    <span className="client-mgmt-id-text" title={profile.id}>
+                      {profile.id}
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleCopy(profile.id)}
-                      className="client-mgmt-copy-btn"
+                      className="client-mgmt-id-copy"
                       title="Copy Client ID"
                       aria-label="Copy Client ID"
                     >
                       {copiedId === profile.id ? (
-                        <Check className="h-4 w-4 text-slate-900" />
+                        <>
+                          <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                          <span className="text-[10px] font-bold text-slate-900">Copied!</span>
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4 text-slate-700" />
+                        <Copy className="h-3.5 w-3.5 text-slate-500 hover:text-slate-900 shrink-0" />
                       )}
                     </button>
                   </div>
