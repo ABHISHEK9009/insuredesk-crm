@@ -792,11 +792,12 @@ export default function ClientManagementPage() {
                       onClick={() => handleCopy(profile.id)}
                       className="client-mgmt-copy-btn"
                       title="Copy Client ID"
+                      aria-label="Copy Client ID"
                     >
                       {copiedId === profile.id ? (
-                        <Check className="h-3 w-3 text-slate-900" />
+                        <Check className="h-4 w-4 text-slate-900" />
                       ) : (
-                        <Copy className="h-2.5 w-2.5" />
+                        <Copy className="h-4 w-4 text-slate-700" />
                       )}
                     </button>
                   </div>
