@@ -402,29 +402,27 @@ export default function ClientManagementPage() {
   const superAdminPendingCount = clientIdRequests ? clientIdRequests.filter((r) => r.status !== "COMPLETED").length : 0;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="client-mgmt-page">
       {/* Top Breadcrumb */}
       <OperationsBackLink />
 
       {/* 1. Executive Command Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 bg-gradient-to-r from-white via-slate-50 to-emerald-50/40 rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)]">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Access Directory
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
-            <Users className="h-7 w-7 text-emerald-600 shrink-0" />
+      <div className="client-mgmt-head">
+        <div className="client-mgmt-title-group">
+          <span className="client-mgmt-badge">
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-800 animate-pulse" />
+            Live Access Directory
+          </span>
+          <h1>
+            <Users className="h-5 w-5 text-slate-800 shrink-0" />
             Client Management & Portal Access
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm max-w-2xl">
+          <p>
             Generate, verify, and govern secure customer portal accounts and unique Client IDs.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -433,118 +431,112 @@ export default function ClientManagementPage() {
               fetchMyClientIdRequests();
             }}
             title="Refresh All Records"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-all"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-all"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md font-semibold text-sm transition-all"
+            className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl shadow-sm hover:shadow font-bold text-xs transition-all"
           >
-            <Plus className="h-4.5 w-4.5" />
+            <Plus className="h-4 w-4" />
             <span>Create Client Login</span>
           </button>
         </div>
       </div>
 
       {/* 2. Executive KPI Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      <div className="client-mgmt-kpi-grid">
         {/* Total Active Clients */}
-        <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_18px_-2px_rgba(15,23,42,0.04)] hover:-translate-y-0.5 transition-all">
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Clients</p>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{totalCount}</h3>
-            <p className="text-[11px] text-emerald-600 font-medium">Verified Portal Profiles</p>
+        <div className="client-mgmt-kpi-card">
+          <div className="client-mgmt-kpi-info">
+            <span className="client-mgmt-kpi-label">Active Clients</span>
+            <span className="client-mgmt-kpi-val">{totalCount}</span>
+            <span className="client-mgmt-kpi-sub text-slate-500">Verified Profiles</span>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0 shadow-sm">
-            <Users className="h-5 w-5" />
+          <div className="client-mgmt-kpi-icon tone-emerald">
+            <Users className="h-4.5 w-4.5" />
           </div>
         </div>
 
         {/* My Pending Requests */}
-        <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_18px_-2px_rgba(15,23,42,0.04)] hover:-translate-y-0.5 transition-all">
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">My Requests</p>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{myClientIdRequests.length}</h3>
-            <p className="text-[11px] text-slate-500 font-medium">{myPendingCount} In Super Admin Review</p>
+        <div className="client-mgmt-kpi-card">
+          <div className="client-mgmt-kpi-info">
+            <span className="client-mgmt-kpi-label">My Requests</span>
+            <span className="client-mgmt-kpi-val">{myClientIdRequests.length}</span>
+            <span className="client-mgmt-kpi-sub">{myPendingCount} In Admin Review</span>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-600 shrink-0 shadow-sm">
-            <Send className="h-5 w-5" />
+          <div className="client-mgmt-kpi-icon tone-sky">
+            <Send className="h-4.5 w-4.5" />
           </div>
         </div>
 
         {/* Needs Correction */}
         <div
-          className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all ${
+          className={`client-mgmt-kpi-card ${
             myNeedsCorrectionCount > 0
-              ? "bg-gradient-to-br from-rose-50 to-white border-rose-200 text-rose-950 shadow-[0_4px_18px_-2px_rgba(225,29,72,0.08)]"
-              : "bg-white border-slate-200/80 shadow-[0_4px_18px_-2px_rgba(15,23,42,0.04)]"
+              ? "bg-gradient-to-br from-rose-50 to-white border-rose-200"
+              : ""
           }`}
         >
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Action Needed</p>
-            <h3
-              className={`text-2xl font-black leading-tight ${myNeedsCorrectionCount > 0 ? "text-rose-700" : "text-slate-900"}`}
-            >
+          <div className="client-mgmt-kpi-info">
+            <span className="client-mgmt-kpi-label">Action Needed</span>
+            <span className={`client-mgmt-kpi-val ${myNeedsCorrectionCount > 0 ? "text-rose-700" : ""}`}>
               {myNeedsCorrectionCount}
-            </h3>
-            <p className={`text-[11px] font-medium ${myNeedsCorrectionCount > 0 ? "text-rose-600 font-bold" : "text-slate-400"}`}>
+            </span>
+            <span className={`client-mgmt-kpi-sub ${myNeedsCorrectionCount > 0 ? "text-rose-600 font-bold" : ""}`}>
               {myNeedsCorrectionCount > 0 ? "Requires Correction" : "Zero Blockers"}
-            </p>
+            </span>
           </div>
-          <div
-            className={`flex h-11 w-11 items-center justify-center rounded-xl shrink-0 shadow-sm ${
-              myNeedsCorrectionCount > 0 ? "bg-rose-100 text-rose-700" : "bg-slate-50 text-slate-400"
-            }`}
-          >
-            <ShieldAlert className="h-5 w-5" />
+          <div className={`client-mgmt-kpi-icon ${myNeedsCorrectionCount > 0 ? "tone-rose" : "tone-sky"}`}>
+            <ShieldAlert className="h-4.5 w-4.5" />
           </div>
         </div>
 
         {/* Super Admin Approval Queue */}
-        <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_18px_-2px_rgba(15,23,42,0.04)] hover:-translate-y-0.5 transition-all">
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Admin Queue</p>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {clientIdRequests ? superAdminPendingCount : "Staff Access"}
-            </h3>
-            <p className="text-[11px] text-amber-600 font-medium">
+        <div className="client-mgmt-kpi-card">
+          <div className="client-mgmt-kpi-info">
+            <span className="client-mgmt-kpi-label">Admin Queue</span>
+            <span className="client-mgmt-kpi-val">
+              {clientIdRequests ? superAdminPendingCount : "Staff"}
+            </span>
+            <span className="client-mgmt-kpi-sub text-amber-600">
               {clientIdRequests ? `${superAdminPendingCount} Approvals Pending` : "Standard Role"}
-            </p>
+            </span>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shrink-0 shadow-sm">
-            <Shield className="h-5 w-5" />
+          <div className="client-mgmt-kpi-icon tone-amber">
+            <Shield className="h-4.5 w-4.5" />
           </div>
         </div>
       </div>
 
       {/* Success Notification */}
       {successMessage && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-            <span className="font-semibold text-sm">{successMessage}</span>
+        <div className="bg-white border border-slate-300 text-slate-900 px-3.5 py-2.5 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-slate-900 shrink-0" />
+            <span className="font-semibold text-xs">{successMessage}</span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessMessage("")}
-            className="text-emerald-700 hover:text-emerald-900"
+            className="text-slate-600 hover:text-slate-900"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
       {/* Error Notification */}
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
-            <span className="font-semibold text-sm">{error}</span>
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 px-3.5 py-2.5 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+            <span className="font-semibold text-xs">{error}</span>
           </div>
           <button type="button" onClick={() => setError("")} className="text-rose-700 hover:text-rose-900">
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
@@ -553,26 +545,26 @@ export default function ClientManagementPage() {
       {temporaryCredential && (
         <div
           role="alert"
-          className="rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50 via-white to-amber-50/50 p-5 text-amber-950 shadow-[0_8px_24px_-4px_rgba(245,158,11,0.15)] animate-in fade-in"
+          className="rounded-2xl border border-amber-300/80 bg-white p-4 text-amber-950 shadow-[0_4px_16px_-4px_rgba(245,158,11,0.15)] animate-in fade-in"
         >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
-                  <KeyRound className="h-3.5 w-3.5" />
+                <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
+                  <KeyRound className="h-3 w-3" />
                 </span>
-                <p className="text-sm font-extrabold text-amber-900">
+                <p className="text-xs font-extrabold text-amber-900">
                   Temporary Portal Credentials Generated for {temporaryCredential.name}
                 </p>
               </div>
-              <p className="text-xs text-amber-800">
-                Share these credentials securely via private WhatsApp or SMS. For security, temporary MPINs are not saved in plaintext.
+              <p className="text-[11px] text-amber-800">
+                Share these credentials securely via private WhatsApp or SMS.
               </p>
-              <div className="pt-2 flex flex-wrap items-center gap-2.5 font-mono text-xs">
-                <span className="rounded-xl border border-amber-200 bg-white px-3.5 py-2 font-bold text-slate-800 shadow-sm">
-                  Client ID: <strong className="text-emerald-700">{temporaryCredential.clientId}</strong>
+              <div className="pt-1 flex flex-wrap items-center gap-2 font-mono text-xs">
+                <span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-bold text-slate-800 shadow-sm">
+                  Client ID: <strong className="text-slate-900">{temporaryCredential.clientId}</strong>
                 </span>
-                <span className="rounded-xl border border-amber-200 bg-white px-3.5 py-2 text-base font-black tracking-[0.25em] text-amber-900 shadow-sm">
+                <span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-black tracking-[0.2em] text-amber-900 shadow-sm">
                   MPIN: {temporaryCredential.mpin}
                 </span>
                 <button
@@ -583,16 +575,16 @@ export default function ClientManagementPage() {
                       `credential-${temporaryCredential.clientId}`,
                     )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-100/70 hover:bg-amber-200/80 px-3.5 py-2 font-sans font-bold text-amber-900 text-xs shadow-sm transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-2.5 py-1 font-sans font-bold text-slate-900 text-xs shadow-sm transition-all"
                 >
                   {copiedId === `credential-${temporaryCredential.clientId}` ? (
                     <>
-                      <Check className="h-3.5 w-3.5 text-emerald-700" />
+                      <Check className="h-3.5 w-3.5 text-slate-900" />
                       <span>Copied!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="h-3.5 w-3.5" />
+                      <Copy className="h-3 w-3" />
                       <span>Copy Credentials</span>
                     </>
                   )}
@@ -603,7 +595,7 @@ export default function ClientManagementPage() {
               type="button"
               onClick={() => setTemporaryCredential(null)}
               aria-label="Dismiss credential"
-              className="self-start md:self-center rounded-xl p-2 text-amber-800 hover:bg-amber-100/80 transition-colors"
+              className="self-start md:self-center rounded-lg p-1.5 text-amber-800 hover:bg-amber-100/80 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -612,47 +604,29 @@ export default function ClientManagementPage() {
       )}
 
       {/* 3. Smart Navigation Tab Bar */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-2 overflow-x-auto py-1">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5">
+        <div className="client-mgmt-tabs-wrap">
           <button
             type="button"
             onClick={() => setActiveTab("directory")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeTab === "directory"
-                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-slate-200/80"
-            }`}
+            className={`client-mgmt-tab-btn ${activeTab === "directory" ? "active" : ""}`}
           >
-            <Users className="h-4 w-4" />
+            <Users className="h-3.5 w-3.5" />
             <span>Client Directory</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                activeTab === "directory" ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600"
-              }`}
-            >
-              {totalCount}
-            </span>
+            <span className="client-mgmt-tab-badge">{totalCount}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("my-requests")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeTab === "my-requests"
-                ? "bg-sky-600 text-white shadow-sm shadow-sky-200"
-                : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-slate-200/80"
-            }`}
+            className={`client-mgmt-tab-btn ${activeTab === "my-requests" ? "active" : ""}`}
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-3.5 w-3.5" />
             <span>My Requests</span>
             {myClientIdRequests.length > 0 && (
               <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  myNeedsCorrectionCount > 0
-                    ? "bg-rose-500 text-white"
-                    : activeTab === "my-requests"
-                    ? "bg-sky-700 text-white"
-                    : "bg-sky-100 text-sky-700"
+                className={`client-mgmt-tab-badge ${
+                  myNeedsCorrectionCount > 0 ? "!bg-rose-500 !text-white" : ""
                 }`}
               >
                 {myClientIdRequests.length}
@@ -664,20 +638,12 @@ export default function ClientManagementPage() {
             <button
               type="button"
               onClick={() => setActiveTab("super-admin")}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
-                activeTab === "super-admin"
-                  ? "bg-amber-600 text-white shadow-sm shadow-amber-200"
-                  : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-slate-200/80"
-              }`}
+              className={`client-mgmt-tab-btn ${activeTab === "super-admin" ? "active" : ""}`}
             >
-              <Inbox className="h-4 w-4" />
+              <Inbox className="h-3.5 w-3.5" />
               <span>Super Admin Queue</span>
               {superAdminPendingCount > 0 && (
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    activeTab === "super-admin" ? "bg-amber-700 text-white" : "bg-amber-100 text-amber-800"
-                  }`}
-                >
+                <span className="client-mgmt-tab-badge !bg-amber-100 !text-amber-800">
                   {superAdminPendingCount}
                 </span>
               )}
@@ -687,13 +653,9 @@ export default function ClientManagementPage() {
           <button
             type="button"
             onClick={() => setActiveTab("guidelines")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeTab === "guidelines"
-                ? "bg-slate-800 text-white shadow-sm"
-                : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-slate-200/80"
-            }`}
+            className={`client-mgmt-tab-btn ${activeTab === "guidelines" ? "active" : ""}`}
           >
-            <Lock className="h-4 w-4" />
+            <Lock className="h-3.5 w-3.5" />
             <span>Security Guidelines</span>
           </button>
         </div>
@@ -701,15 +663,14 @@ export default function ClientManagementPage() {
 
       {/* 4. TAB 1: CLIENT DIRECTORY */}
       {activeTab === "directory" && (
-        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_24px_-3px_rgba(15,23,42,0.06)]">
+        <section className="client-mgmt-table-card">
           {/* Table Toolbar */}
-          <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-emerald-50/40 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative w-full max-w-xl">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="client-mgmt-toolbar">
+            <div className="client-mgmt-search-box">
+              <Search />
               <input
                 type="text"
-                placeholder="Search clients by name, phone, email, or Client ID..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-800 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                placeholder="Search by name, phone, email, or Client ID..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -720,35 +681,35 @@ export default function ClientManagementPage() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px] font-bold"
                 >
                   Clear
                 </button>
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-4 lg:justify-end">
+            <div className="flex items-center justify-between gap-3 lg:justify-end">
               <div className="text-right">
-                <p className="text-xs sm:text-sm font-bold text-slate-800">
+                <p className="text-xs font-bold text-slate-800">
                   {totalCount} registered client{totalCount === 1 ? "" : "s"}
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[10px] text-slate-500">
                   Showing {pageStart}–{pageEnd}
                 </p>
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
                   <button
                     type="button"
                     aria-label="Previous client page"
                     onClick={() => setPage((value) => Math.max(value - 1, 1))}
                     disabled={page === 1}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5" />
                   </button>
-                  <span className="min-w-14 px-2 text-center text-xs font-bold text-slate-700">
+                  <span className="min-w-12 px-1 text-center text-xs font-bold text-slate-700">
                     {page} / {totalPages}
                   </span>
                   <button
@@ -756,9 +717,9 @@ export default function ClientManagementPage() {
                     aria-label="Next client page"
                     onClick={() => setPage((value) => Math.min(value + 1, totalPages))}
                     disabled={page === totalPages}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
@@ -767,55 +728,50 @@ export default function ClientManagementPage() {
 
           {/* Cards List */}
           {loading ? (
-            <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-              <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
-              <p className="text-sm font-medium">Loading client portal profiles...</p>
+            <div className="p-10 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+              <Loader2 className="h-7 w-7 text-slate-700 animate-spin" />
+              <p className="text-xs font-medium">Loading client portal profiles...</p>
             </div>
           ) : profiles.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 space-y-3">
-              <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                <Users className="h-7 w-7" />
+            <div className="p-10 text-center text-slate-500 space-y-2">
+              <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <Users className="h-6 w-6" />
               </div>
-              <p className="text-base font-bold text-slate-800">No client profiles found</p>
+              <p className="text-sm font-bold text-slate-800">No client profiles found</p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
                 Search with another keyword or generate a new client portal login profile.
               </p>
               <button
                 type="button"
                 onClick={handleOpenCreateModal}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 shadow-sm"
               >
-                <Plus className="h-4 w-4" /> Create First Client Login
+                <Plus className="h-3.5 w-3.5" /> Create Client Login
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 bg-slate-50/40">
+            <div className="divide-y divide-slate-100 bg-white">
               {profiles.map((profile) => (
-                <article
-                  key={profile.id}
-                  className="group flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-5 bg-white hover:bg-slate-50/80 transition-all"
-                >
+                <article key={profile.id} className="client-mgmt-row">
                   {/* Left: Avatar & Identity */}
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-sm font-black text-white shadow-md shadow-emerald-100">
+                  <div className="client-mgmt-client-info">
+                    <div className="client-mgmt-avatar">
                       {profile.name ? profile.name[0].toUpperCase() : "?"}
                     </div>
-                    <div className="min-w-0 space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <h3 className="truncate text-sm font-bold text-slate-900">{profile.name}</h3>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Active
-                        </span>
+                    <div className="client-mgmt-name-wrap">
+                      <div className="client-mgmt-name-row">
+                        <h3 className="client-mgmt-name">{profile.name}</h3>
+                        <span className="client-mgmt-status-pill">Active</span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                        <span className="inline-flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-emerald-600" />
+                      <div className="client-mgmt-meta">
+                        <span>
+                          <Phone className="h-2.5 w-2.5 text-slate-500" />
                           {profile.phone || "No phone"}
                         </span>
                         {profile.email && (
-                          <span className="inline-flex min-w-0 items-center gap-1">
-                            <Mail className="h-3 w-3 text-sky-500" />
-                            <span className="truncate">{profile.email}</span>
+                          <span className="truncate max-w-[180px]">
+                            <Mail className="h-2.5 w-2.5 text-sky-500" />
+                            {profile.email}
                           </span>
                         )}
                       </div>
@@ -823,45 +779,41 @@ export default function ClientManagementPage() {
                   </div>
 
                   {/* Middle: Client ID Pill with Copy */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:mx-auto">
-                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">ID:</span>
-                      <span className="font-mono text-xs font-semibold text-slate-700 truncate max-w-[200px]" title={profile.id}>
-                        {profile.id}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(profile.id)}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-300 shadow-sm transition-all"
-                        title="Copy Client ID"
-                      >
-                        {copiedId === profile.id ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </button>
-                    </div>
+                  <div className="client-mgmt-id-pill">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">ID</span>
+                    <code title={profile.id}>{profile.id}</code>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(profile.id)}
+                      className="client-mgmt-copy-btn"
+                      title="Copy Client ID"
+                    >
+                      {copiedId === profile.id ? (
+                        <Check className="h-3 w-3 text-slate-900" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5" />
+                      )}
+                    </button>
                   </div>
 
                   {/* Right: Actions */}
-                  <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
+                  <div className="client-mgmt-actions">
                     {canResetMpin && (
                       <button
                         type="button"
                         onClick={() => resetClientMpin(profile)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-2 text-xs font-bold shadow-sm transition-all"
+                        className="client-mgmt-action-btn tone-amber"
                       >
-                        <KeyRound className="h-3.5 w-3.5" />
+                        <KeyRound className="h-3 w-3" />
                         <span>Reset MPIN</span>
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={() => handleOpenEditModal(profile)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700 px-3.5 py-2 text-xs font-bold shadow-sm transition-all"
+                      className="client-mgmt-action-btn"
                     >
-                      <Edit2 className="h-3.5 w-3.5 text-slate-500" />
+                      <Edit2 className="h-3 w-3 text-slate-500" />
                       <span>Edit</span>
                     </button>
                   </div>
@@ -874,20 +826,20 @@ export default function ClientManagementPage() {
           {totalPages > 1 && (
             <nav
               aria-label="Client pagination"
-              className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-white px-5 py-4 sm:flex-row"
+              className="flex flex-col items-center justify-between gap-2 border-t border-slate-100 bg-white px-4 py-3 sm:flex-row"
             >
               <p className="text-xs font-medium text-slate-500">
                 Showing <strong className="text-slate-800">{pageStart}–{pageEnd}</strong> of{" "}
                 <strong className="text-slate-800">{totalCount}</strong> clients
               </p>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setPage((value) => Math.max(value - 1, 1))}
                   disabled={page === 1}
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 px-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
                 >
-                  <ChevronLeft className="h-4 w-4" /> Prev
+                  <ChevronLeft className="h-3.5 w-3.5" /> Prev
                 </button>
                 {paginationPages.map((pageNumber) => (
                   <button
@@ -895,7 +847,7 @@ export default function ClientManagementPage() {
                     type="button"
                     onClick={() => setPage(pageNumber)}
                     aria-current={pageNumber === page ? "page" : undefined}
-                    className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-bold transition ${
+                    className={`flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-xs font-bold transition ${
                       pageNumber === page
                         ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
                         : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -908,9 +860,9 @@ export default function ClientManagementPage() {
                   type="button"
                   onClick={() => setPage((value) => Math.min(value + 1, totalPages))}
                   disabled={page === totalPages}
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 px-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
                 >
-                  Next <ChevronRight className="h-4 w-4" />
+                  Next <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             </nav>
@@ -940,31 +892,28 @@ export default function ClientManagementPage() {
               <button
                 type="button"
                 onClick={() => setMyRequestsFilter("ALL")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  myRequestsFilter === "ALL" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-                }`}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${myRequestsFilter === "ALL" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
               >
                 All ({myClientIdRequests.length})
               </button>
               <button
                 type="button"
                 onClick={() => setMyRequestsFilter("WAITING_DOCUMENTS")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  myRequestsFilter === "WAITING_DOCUMENTS"
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${myRequestsFilter === "WAITING_DOCUMENTS"
                     ? "bg-rose-600 text-white shadow-sm"
                     : "text-rose-700 hover:bg-rose-50"
-                }`}
+                  }`}
               >
                 Correction Needed ({myNeedsCorrectionCount})
               </button>
               <button
                 type="button"
                 onClick={() => setMyRequestsFilter("PENDING")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  myRequestsFilter === "PENDING"
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${myRequestsFilter === "PENDING"
                     ? "bg-amber-600 text-white shadow-sm"
                     : "text-amber-800 hover:bg-amber-50"
-                }`}
+                  }`}
               >
                 Pending ({myPendingCount})
               </button>
@@ -977,7 +926,7 @@ export default function ClientManagementPage() {
             </div>
           ) : myClientIdRequests.length === 0 ? (
             <div className="p-12 text-center text-slate-500 space-y-2">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
+              <CheckCircle2 className="h-10 w-10 text-slate-700 mx-auto" />
               <p className="text-base font-bold text-slate-800">All Client ID Requests Cleared</p>
               <p className="text-xs text-slate-400">You currently have no pending or blocked Client ID requests.</p>
             </div>
@@ -991,27 +940,25 @@ export default function ClientManagementPage() {
                 .map((item) => (
                   <div
                     key={item.id}
-                    className={`grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center transition-colors ${
-                      item.status === "WAITING_DOCUMENTS" ? "bg-rose-50/30" : "bg-white hover:bg-slate-50/60"
-                    }`}
+                    className={`grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center transition-colors ${item.status === "WAITING_DOCUMENTS" ? "bg-rose-50/30" : "bg-white hover:bg-slate-50/60"
+                      }`}
                   >
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2.5">
                         <strong className="text-sm font-bold text-slate-900">{item.name}</strong>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
-                            item.status === "WAITING_DOCUMENTS"
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${item.status === "WAITING_DOCUMENTS"
                               ? "bg-rose-100 text-rose-700 border border-rose-200"
                               : item.status === "COMPLETED"
-                              ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-100 text-amber-800 border border-amber-200"
-                          }`}
+                                ? "bg-slate-100 text-slate-700 border border-slate-200"
+                                : "bg-amber-100 text-amber-800 border border-amber-200"
+                            }`}
                         >
                           {item.status === "WAITING_DOCUMENTS"
                             ? "Action Required: Correction"
                             : item.status === "COMPLETED"
-                            ? "Completed"
-                            : "Pending Super Admin Review"}
+                              ? "Completed"
+                              : "Pending Super Admin Review"}
                         </span>
                       </div>
 
@@ -1082,7 +1029,7 @@ export default function ClientManagementPage() {
             </div>
           ) : superAdminPendingCount === 0 ? (
             <div className="p-12 text-center text-slate-500 space-y-2">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
+              <CheckCircle2 className="h-10 w-10 text-slate-700 mx-auto" />
               <p className="text-base font-bold text-slate-800">Super Admin Queue is Empty</p>
               <p className="text-xs text-slate-400">All client creation requests have been verified and processed.</p>
             </div>
@@ -1294,7 +1241,7 @@ export default function ClientManagementPage() {
                     type="text"
                     required
                     placeholder="e.g. Rajesh Kumar"
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-100"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={formSubmitting}
@@ -1308,7 +1255,7 @@ export default function ClientManagementPage() {
                   <input
                     type="email"
                     placeholder="e.g. client@example.com"
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-100"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={formSubmitting}
@@ -1323,7 +1270,7 @@ export default function ClientManagementPage() {
                     type="tel"
                     required
                     placeholder="e.g. 9876543210"
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-100"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={formSubmitting}
@@ -1348,7 +1295,7 @@ export default function ClientManagementPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
                     disabled={formSubmitting}
                   >
                     {formSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1408,7 +1355,7 @@ export default function ClientManagementPage() {
                           value={resolutionSearch}
                           onChange={(event) => setResolutionSearch(event.target.value)}
                           placeholder="Search name, phone or email..."
-                          className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                          className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm focus:border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100"
                         />
                       </div>
                       {resolutionSearching && <p className="mt-2 text-xs text-slate-500">Searching...</p>}
@@ -1419,13 +1366,13 @@ export default function ClientManagementPage() {
                               key={client.id}
                               type="button"
                               onClick={() => setResolutionClientId(client.id)}
-                              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-emerald-50 transition-colors"
+                              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-100 transition-colors"
                             >
                               <span>
                                 <strong className="block text-xs text-slate-800">{client.name}</strong>
                                 <span className="text-[11px] text-slate-500">{client.phone}</span>
                               </span>
-                              <span className="text-[10px] font-bold text-emerald-700">Select</span>
+                              <span className="text-[10px] font-bold text-slate-900">Select</span>
                             </button>
                           ))}
                         </div>
@@ -1439,7 +1386,7 @@ export default function ClientManagementPage() {
                       value={resolutionClientId}
                       onChange={(event) => setResolutionClientId(event.target.value.trim())}
                       placeholder="Paste the complete Client ID"
-                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-mono text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-mono text-sm focus:border-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100"
                     />
                   </div>
                 ) : (
@@ -1484,7 +1431,7 @@ export default function ClientManagementPage() {
                     onClick={() =>
                       resolveClientIdRequest(resolutionRequest, resolutionAction, resolutionClientId)
                     }
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-50 shadow-sm"
                   >
                     {resolvingRequestId === resolutionRequest.id && (
                       <Loader2 className="h-4 w-4 animate-spin" />
