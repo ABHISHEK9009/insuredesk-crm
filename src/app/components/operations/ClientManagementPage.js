@@ -751,35 +751,54 @@ export default function ClientManagementPage() {
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 bg-white">
-              {profiles.map((profile) => (
-                <article key={profile.id} className="client-mgmt-row">
-                  {/* Left: Client Identity & Contact */}
-                  <div className="client-mgmt-client-info">
-                    <div className="client-mgmt-name-wrap">
-                      <div className="client-mgmt-name-row">
-                        <h3 className="client-mgmt-name">{profile.name}</h3>
-                        <span className="client-mgmt-status-pill">Active</span>
-                      </div>
-                      <div className="client-mgmt-meta">
-                        <span className="font-bold text-slate-800">
-                          <Phone className="h-3 w-3 text-slate-500" />
-                          {profile.phone || "No phone"}
-                        </span>
-                        {profile.email && (
-                          <span className="truncate max-w-[200px]">
-                            <Mail className="h-3 w-3 text-sky-500" />
-                            {profile.email}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            <div className="bg-white">
+              {/* Table Column Headers */}
+              <div className="client-mgmt-table-head">
+                <span>Client Name</span>
+                <span>Phone Number</span>
+                <span>Attached Policies</span>
+                <span>Client ID</span>
+                <span className="text-right">Actions</span>
+              </div>
 
-                  {/* Middle: Client ID with Clean Copy Icon & Linked Accounts/Policies */}
-                  <div className="client-mgmt-id-wrapper">
-                    <div className="flex items-center gap-2">
-                      <span className="client-mgmt-id-label">ID</span>
+              {/* Table Rows */}
+              <div className="divide-y divide-slate-100">
+                {profiles.map((profile) => (
+                  <article key={profile.id} className="client-mgmt-row">
+                    {/* 1. Client Name */}
+                    <div className="client-mgmt-col-name min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="client-mgmt-name" title={profile.name}>
+                          {profile.name}
+                        </span>
+                        <span className="client-mgmt-status-pill shrink-0">Active</span>
+                      </div>
+                      {profile.email && (
+                        <span className="text-[11px] text-slate-400 truncate block mt-0.5" title={profile.email}>
+                          {profile.email}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 2. Phone Number */}
+                    <div className="client-mgmt-col-phone min-w-0">
+                      <span className="font-mono text-[13px] font-bold text-slate-900 tracking-tight">
+                        {profile.phone || "—"}
+                      </span>
+                    </div>
+
+                    {/* 3. Attached Policies / Accounts */}
+                    <div className="client-mgmt-col-policies min-w-0">
+                      <span className="client-mgmt-policy-pill" title="Number of policies/accounts linked to this Client ID">
+                        <FileText className="h-3 w-3 text-slate-500 shrink-0" />
+                        <span>
+                          {profile.policiesCount || 0} {Number(profile.policiesCount || 0) === 1 ? "Policy" : "Policies"} Attached
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* 4. Client ID */}
+                    <div className="client-mgmt-col-id min-w-0 flex items-center gap-1.5">
                       <span className="client-mgmt-id-text" title={profile.id}>
                         {profile.id}
                       </span>
@@ -800,37 +819,33 @@ export default function ClientManagementPage() {
                         )}
                       </button>
                     </div>
-                    <span className="client-mgmt-policy-pill" title="Number of policies/accounts linked to this Client ID">
-                      <FileText className="h-3 w-3 text-slate-500" />
-                      <span>
-                        {profile.policiesCount || 0} {Number(profile.policiesCount || 0) === 1 ? "Policy" : "Policies"} Attached
-                      </span>
-                    </span>
-                  </div>
 
-                  {/* Right: Actions */}
-                  <div className="client-mgmt-actions">
-                    {canResetMpin && (
+                    {/* 5. Actions */}
+                    <div className="client-mgmt-actions">
+                      {canResetMpin && (
+                        <button
+                          type="button"
+                          onClick={() => resetClientMpin(profile)}
+                          className="client-mgmt-action-btn"
+                          title="Reset Client MPIN"
+                        >
+                          <KeyRound className="h-3 w-3 text-slate-600" />
+                          <span>Reset MPIN</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => resetClientMpin(profile)}
-                        className="client-mgmt-action-btn tone-amber"
+                        onClick={() => handleOpenEditModal(profile)}
+                        className="client-mgmt-action-btn"
+                        title="Edit Profile Credentials"
                       >
-                        <KeyRound className="h-3 w-3" />
-                        <span>Reset MPIN</span>
+                        <Edit2 className="h-3 w-3 text-slate-600" />
+                        <span>Edit</span>
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEditModal(profile)}
-                      className="client-mgmt-action-btn"
-                    >
-                      <Edit2 className="h-3 w-3 text-slate-500" />
-                      <span>Edit</span>
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           )}
 
