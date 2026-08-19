@@ -30,7 +30,6 @@ import {
   Lock,
   RefreshCw,
   FileText,
-  MoreVertical,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 
@@ -834,7 +833,15 @@ export default function ClientManagementPage() {
                         title="More Actions"
                         aria-label="More Actions"
                       >
-                        <MoreVertical className="h-5 w-5 text-slate-700" />
+                        <svg
+                          className="h-5 w-5"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <circle cx="12" cy="5" r="2.2" />
+                          <circle cx="12" cy="12" r="2.2" />
+                          <circle cx="12" cy="19" r="2.2" />
+                        </svg>
                       </button>
 
                       {openActionMenuId === profile.id && (

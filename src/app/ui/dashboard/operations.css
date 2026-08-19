@@ -2473,17 +2473,16 @@
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: #475569;
+  color: #334155;
   cursor: pointer;
   box-shadow: none;
   transition: all 0.15s ease;
 }
 
 .client-mgmt-more-btn svg {
-  width: 19px !important;
-  height: 19px !important;
-  stroke: currentColor;
-  stroke-width: 2.2;
+  width: 20px !important;
+  height: 20px !important;
+  fill: currentColor !important;
   display: block;
 }
 
