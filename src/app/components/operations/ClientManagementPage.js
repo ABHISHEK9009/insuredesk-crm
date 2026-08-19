@@ -524,16 +524,16 @@ export default function ClientManagementPage() {
             }}
             title="Refresh All Records"
             aria-label="Refresh All Records"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-800 hover:text-slate-950 hover:border-slate-400 hover:bg-slate-50 shadow-sm transition-all"
+            className="client-mgmt-refresh-btn"
           >
-            <RefreshCw className="h-4.5 w-4.5 text-slate-800" strokeWidth={2.2} />
+            <RefreshCw size={19} className="text-slate-800" strokeWidth={2.2} />
           </button>
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-3.5 py-2 rounded-xl shadow-sm hover:shadow font-bold text-xs transition-all"
+            className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-3.5 py-2 rounded-xl shadow-sm hover:shadow font-bold text-xs transition-all h-[38px]"
           >
-            <Plus className="h-4.5 w-4.5 text-slate-900" strokeWidth={2.5} />
+            <Plus size={18} className="text-slate-900" strokeWidth={2.5} />
             <span>Create Client Login</span>
           </button>
         </div>
