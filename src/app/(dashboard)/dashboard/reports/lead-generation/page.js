@@ -51,32 +51,26 @@ export default async function LeadGenerationReportPage({ searchParams }) {
 
   return (
     <main className="analytics-report-page lead-report-page">
-      <section className="lead-report-hero">
-        <div className="lead-report-hero-copy">
+      <header className="lead-report-compact-header">
+        <div className="lead-report-header-info">
           <p className="eyebrow">Super Admin Reporting</p>
           <h1>Lead generation command center</h1>
-          <p>
-            Track lead volume, agent contribution, conversion movement, and pending follow-ups from
-            the live lead database.
-          </p>
-          <div className="lead-report-actions">
-            <Link className="primary-action" href="/operations/lead-generation" prefetch={false}>
-              Open Lead Generation
-            </Link>
-            <Link className="secondary-action" href="/dashboard" prefetch={false}>
-              Back to Dashboard
-            </Link>
-          </div>
+          <p>Track lead volume, agent contribution, conversion movement, and pending follow-ups from the live lead database.</p>
         </div>
-        <div className="lead-report-hero-panel">
-          <span>Overall conversion</span>
-          <strong>{summary.conversionRate || 0}%</strong>
-          <p>{formatNumber(summary.converted)} converted from {formatNumber(summary.totalLeads)} total leads</p>
-          <div className="lead-report-hero-meter">
-            <i style={{ width: `${Math.min(100, summary.conversionRate || 0)}%` }} />
+        <div className="lead-report-header-actions">
+          <div className="lead-report-conversion-pill">
+            <span>Overall Conversion:</span>
+            <strong>{summary.conversionRate || 0}%</strong>
+            <small>({formatNumber(summary.converted)} / {formatNumber(summary.totalLeads)})</small>
           </div>
+          <Link className="primary-action" href="/operations/lead-generation" prefetch={false}>
+            Open Leads Hub
+          </Link>
+          <Link className="secondary-action" href="/dashboard" prefetch={false}>
+            Back to Dashboard
+          </Link>
         </div>
-      </section>
+      </header>
 
       <section className="lead-report-kpi-grid">
         <div className="lead-report-kpi-card primary">
@@ -200,11 +194,10 @@ export default async function LeadGenerationReportPage({ searchParams }) {
             <tbody>
               {report.agents.length ? report.agents.map((agent) => (
                 <tr key={agent.agentId || "unassigned"}>
-                  <td>
+                  <td className="lead-agent-name-cell">
                     <Link href={`/operations/lead-generation?createdById=${encodeURIComponent(agent.agentId || "unassigned")}`} prefetch={false}>
                       <strong>{agent.agentName}</strong>
                     </Link>
-                    <br />
                     <small>{agent.agentEmail || "No linked user"}</small>
                   </td>
                   <td><strong>{agent.totalLeads}</strong></td>

@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 
 export async function loadLeadAgentReport({ session, page = 1, limit = 25, q = "" }) {
-  if (session?.role !== "SUPER_ADMIN") {
-    throw new Error("Super Admin access is required.");
+  if (!session) {
+    throw new Error("Authentication required.");
   }
 
   const safePage = Math.max(1, Number.parseInt(page, 10) || 1);

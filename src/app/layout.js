@@ -1,8 +1,15 @@
-import { Manrope, Be_Vietnam_Pro } from "next/font/google";
+import { Plus_Jakarta_Sans, Manrope, Be_Vietnam_Pro } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo/site";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import "./landing.css";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin"],
@@ -76,7 +83,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${beVietnamPro.variable} ${manrope.variable}`}>
+      <body className={`${plusJakartaSans.variable} ${beVietnamPro.variable} ${manrope.variable}`}>
         {children}
         <SpeedInsights />
       </body>
