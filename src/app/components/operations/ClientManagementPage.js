@@ -756,6 +756,7 @@ export default function ClientManagementPage() {
               {/* Table Column Headers */}
               <div className="client-mgmt-table-head">
                 <span>Client Name</span>
+                <span>Contact Person</span>
                 <span>Phone Number</span>
                 <span>Attached Policies</span>
                 <span>Client ID</span>
@@ -781,14 +782,21 @@ export default function ClientManagementPage() {
                       )}
                     </div>
 
-                    {/* 2. Phone Number */}
+                    {/* 2. Contact Person */}
+                    <div className="client-mgmt-col-contact min-w-0">
+                      <span className="text-xs font-semibold text-slate-700 truncate block" title={profile.contactPerson || "—"}>
+                        {profile.contactPerson || "—"}
+                      </span>
+                    </div>
+
+                    {/* 3. Phone Number */}
                     <div className="client-mgmt-col-phone min-w-0">
                       <span className="font-mono text-[13px] font-bold text-slate-900 tracking-tight">
                         {profile.phone || "—"}
                       </span>
                     </div>
 
-                    {/* 3. Attached Policies / Accounts */}
+                    {/* 4. Attached Policies / Accounts */}
                     <div className="client-mgmt-col-policies min-w-0">
                       <span className="client-mgmt-policy-pill" title="Number of policies/accounts linked to this Client ID">
                         <FileText className="h-3 w-3 text-slate-500 shrink-0" />
@@ -798,7 +806,7 @@ export default function ClientManagementPage() {
                       </span>
                     </div>
 
-                    {/* 4. Client ID */}
+                    {/* 5. Client ID */}
                     <div className="client-mgmt-col-id min-w-0 flex items-center gap-1.5">
                       <span className="client-mgmt-id-text" title={profile.id}>
                         {profile.id}

@@ -59,7 +59,9 @@ export async function GET(request) {
     ]);
 
     const accountIds = accounts.map((a) => a.id);
+    const accountPhones = accounts.map((a) => a.phone).filter(Boolean);
     const policyCountMap = new Map();
+    const contactPersonMap = new Map();
 
     if (accountIds.length > 0) {
       try {
@@ -67,7 +69,8 @@ export async function GET(request) {
         const matchedRows = await prisma.$queryRaw`
           SELECT 
             LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) as "clientId",
-            COUNT(*)::int as count
+            COUNT(*)::int as count,
+            MAX(COALESCE(NULLIF(reviewed_data->>'contactPerson', ''), NULLIF(data->>'contactPerson', ''), NULLIF(reviewed_data->>'contactPersonName', ''), NULLIF(data->>'contactPersonName', ''), '')) as "contactPerson"
           FROM pdf_records
           WHERE deleted_at IS NULL
             AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
@@ -77,6 +80,9 @@ export async function GET(request) {
         for (const row of matchedRows) {
           if (row.clientId) {
             policyCountMap.set(row.clientId.toLowerCase(), Number(row.count) || 0);
+            if (row.contactPerson && String(row.contactPerson).trim()) {
+              contactPersonMap.set(row.clientId.toLowerCase(), String(row.contactPerson).trim());
+            }
           }
         }
       } catch (err) {
@@ -84,8 +90,33 @@ export async function GET(request) {
       }
     }
 
+    if (accountPhones.length > 0) {
+      try {
+        const customerProfiles = await prisma.customerProfile.findMany({
+          where: {
+            ...getTenantFilter(session, "read"),
+            phone: { in: accountPhones },
+            deletedAt: null,
+          },
+          select: { phone: true, contactPersonName: true },
+        });
+        for (const cp of customerProfiles) {
+          if (cp.contactPersonName && cp.contactPersonName.trim()) {
+            for (const acc of accounts) {
+              if (acc.phone === cp.phone && !contactPersonMap.has(acc.id.toLowerCase())) {
+                contactPersonMap.set(acc.id.toLowerCase(), cp.contactPersonName.trim());
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch customer profile contact person:", err);
+      }
+    }
+
     const serializedProfiles = accounts.map((acc) => ({
       ...serializeClientAccount(acc),
+      contactPerson: contactPersonMap.get(acc.id.toLowerCase()) || "",
       policiesCount: policyCountMap.get(acc.id.toLowerCase()) || 0,
       accountsCount: policyCountMap.get(acc.id.toLowerCase()) || 0,
     }));
