@@ -2278,7 +2278,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: min(380px, 100%);
+  width: min(480px, 100%);
 }
 
 .client-mgmt-search-box input {
@@ -2304,6 +2304,10 @@
   width: 15px;
   height: 15px;
   color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
+  display: block;
+  flex-shrink: 0;
 }
 
 /* Client Directory Table */
