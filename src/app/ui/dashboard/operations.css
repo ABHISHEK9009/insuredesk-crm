@@ -2494,14 +2494,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #0f172a;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: none;
   transition: all 0.15s ease;
   padding: 0;
 }
@@ -2511,21 +2510,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3.5px;
+  gap: 2.6px;
 }
 
 .client-mgmt-dot {
-  width: 4.5px;
-  height: 4.5px;
+  width: 3.2px;
+  height: 3.2px;
   border-radius: 9999px;
-  background-color: #334155;
+  background-color: #64748b;
   display: block;
   transition: background-color 0.15s ease;
 }
 
 .client-mgmt-more-btn:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: #f1f5f9;
 }
 
 .client-mgmt-more-btn:hover .client-mgmt-dot {
