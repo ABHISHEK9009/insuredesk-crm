@@ -701,7 +701,7 @@ export default function ClientManagementPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 lg:justify-end">
+            <div className="flex items-center gap-3">
               {/* Filter Toggle */}
               <button
                 type="button"
@@ -714,7 +714,9 @@ export default function ClientManagementPage() {
                   <span className="client-mgmt-filter-badge">{activeFilterCount}</span>
                 )}
               </button>
+            </div>
 
+            <div className="flex items-center justify-between gap-3 lg:justify-end">
               <div className="text-right">
                 <p className="text-xs font-bold text-slate-800">
                   {totalCount} registered client{totalCount === 1 ? "" : "s"}
