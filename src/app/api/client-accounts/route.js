@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { verifyJWT } from "@/lib/auth";
 import { getTenantFilter } from "@/lib/auth/rbac";
@@ -57,9 +58,41 @@ export async function GET(request) {
       prisma.clientAccount.count({ where }),
     ]);
 
+    const accountIds = accounts.map((a) => a.id);
+    const policyCountMap = new Map();
+
+    if (accountIds.length > 0) {
+      try {
+        const orgId = session.organizationId;
+        const matchedRows = await prisma.$queryRaw`
+          SELECT 
+            LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) as "clientId",
+            COUNT(*)::int as count
+          FROM pdf_records
+          WHERE deleted_at IS NULL
+            AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
+            AND LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) IN (${Prisma.join(accountIds.map((id) => id.toLowerCase()))})
+          GROUP BY LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId'))
+        `;
+        for (const row of matchedRows) {
+          if (row.clientId) {
+            policyCountMap.set(row.clientId.toLowerCase(), Number(row.count) || 0);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch policy counts for client accounts:", err);
+      }
+    }
+
+    const serializedProfiles = accounts.map((acc) => ({
+      ...serializeClientAccount(acc),
+      policiesCount: policyCountMap.get(acc.id.toLowerCase()) || 0,
+      accountsCount: policyCountMap.get(acc.id.toLowerCase()) || 0,
+    }));
+
     return NextResponse.json({
-      profiles: accounts.map(serializeClientAccount),
-      accounts: accounts.map(serializeClientAccount),
+      profiles: serializedProfiles,
+      accounts: serializedProfiles,
       total,
       page,
       limit,

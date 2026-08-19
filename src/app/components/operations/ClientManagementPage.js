@@ -29,6 +29,7 @@ import {
   ShieldAlert,
   Lock,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 
@@ -753,7 +754,7 @@ export default function ClientManagementPage() {
             <div className="divide-y divide-slate-100 bg-white">
               {profiles.map((profile) => (
                 <article key={profile.id} className="client-mgmt-row">
-                  {/* Left: Client Identity */}
+                  {/* Left: Client Identity & Contact */}
                   <div className="client-mgmt-client-info">
                     <div className="client-mgmt-name-wrap">
                       <div className="client-mgmt-name-row">
@@ -761,13 +762,13 @@ export default function ClientManagementPage() {
                         <span className="client-mgmt-status-pill">Active</span>
                       </div>
                       <div className="client-mgmt-meta">
-                        <span>
-                          <Phone className="h-2.5 w-2.5 text-slate-500" />
+                        <span className="font-bold text-slate-800">
+                          <Phone className="h-3 w-3 text-slate-500" />
                           {profile.phone || "No phone"}
                         </span>
                         {profile.email && (
-                          <span className="truncate max-w-[180px]">
-                            <Mail className="h-2.5 w-2.5 text-sky-500" />
+                          <span className="truncate max-w-[200px]">
+                            <Mail className="h-3 w-3 text-sky-500" />
                             {profile.email}
                           </span>
                         )}
@@ -775,28 +776,36 @@ export default function ClientManagementPage() {
                     </div>
                   </div>
 
-                  {/* Middle: Client ID with Clean Copy Icon */}
+                  {/* Middle: Client ID with Clean Copy Icon & Linked Accounts/Policies */}
                   <div className="client-mgmt-id-wrapper">
-                    <span className="client-mgmt-id-label">ID</span>
-                    <span className="client-mgmt-id-text" title={profile.id}>
-                      {profile.id}
+                    <div className="flex items-center gap-2">
+                      <span className="client-mgmt-id-label">ID</span>
+                      <span className="client-mgmt-id-text" title={profile.id}>
+                        {profile.id}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(profile.id)}
+                        className="client-mgmt-id-copy"
+                        title="Copy Client ID"
+                        aria-label="Copy Client ID"
+                      >
+                        {copiedId === profile.id ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                            <span className="text-[10px] font-bold text-slate-900">Copied!</span>
+                          </>
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-slate-500 hover:text-slate-900 shrink-0" />
+                        )}
+                      </button>
+                    </div>
+                    <span className="client-mgmt-policy-pill" title="Number of policies/accounts linked to this Client ID">
+                      <FileText className="h-3 w-3 text-slate-500" />
+                      <span>
+                        {profile.policiesCount || 0} {Number(profile.policiesCount || 0) === 1 ? "Policy" : "Policies"} Attached
+                      </span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(profile.id)}
-                      className="client-mgmt-id-copy"
-                      title="Copy Client ID"
-                      aria-label="Copy Client ID"
-                    >
-                      {copiedId === profile.id ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
-                          <span className="text-[10px] font-bold text-slate-900">Copied!</span>
-                        </>
-                      ) : (
-                        <Copy className="h-3.5 w-3.5 text-slate-500 hover:text-slate-900 shrink-0" />
-                      )}
-                    </button>
                   </div>
 
                   {/* Right: Actions */}

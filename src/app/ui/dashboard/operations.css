@@ -2361,9 +2361,9 @@
 }
 
 .client-mgmt-id-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -2390,7 +2390,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border: none;
   background: transparent;
   color: #64748b;
@@ -2407,6 +2407,26 @@
 
 .client-mgmt-id-copy svg {
   display: block;
+}
+
+.client-mgmt-policy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.client-mgmt-policy-pill svg {
+  width: 12px;
+  height: 12px;
+  color: #64748b;
 }
 
 .client-mgmt-actions {
