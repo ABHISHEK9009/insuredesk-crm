@@ -2303,23 +2303,8 @@
 .client-mgmt-client-info {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-}
-
-.client-mgmt-avatar {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  border: 1.5px solid #cbd5e1;
-  color: #0f172a;
-  font-size: 16px;
-  font-weight: 850;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.06);
 }
 
 .client-mgmt-name-wrap {

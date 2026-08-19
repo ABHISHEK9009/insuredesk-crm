@@ -29,7 +29,6 @@ import {
   ShieldAlert,
   Lock,
   RefreshCw,
-  User,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 
@@ -754,15 +753,8 @@ export default function ClientManagementPage() {
             <div className="divide-y divide-slate-100 bg-white">
               {profiles.map((profile) => (
                 <article key={profile.id} className="client-mgmt-row">
-                  {/* Left: Avatar & Identity */}
+                  {/* Left: Client Identity */}
                   <div className="client-mgmt-client-info">
-                    <div className="client-mgmt-avatar">
-                      {profile.name?.trim() ? (
-                        <span>{profile.name.trim().charAt(0).toUpperCase()}</span>
-                      ) : (
-                        <User className="h-5 w-5 text-slate-700" />
-                      )}
-                    </div>
                     <div className="client-mgmt-name-wrap">
                       <div className="client-mgmt-name-row">
                         <h3 className="client-mgmt-name">{profile.name}</h3>
