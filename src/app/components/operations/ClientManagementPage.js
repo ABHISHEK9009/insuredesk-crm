@@ -46,7 +46,9 @@ export default function ClientManagementPage() {
 
   // Active View Tab
   const [activeTab, setActiveTab] = useState("directory"); // "directory" | "my-requests" | "super-admin" | "guidelines"
-  const [myRequestsFilter, setMyRequestsFilter] = useState("ALL"); // "ALL" | "WAITING_DOCUMENTS" | "PENDING"
+  const [myRequestsFilter, setMyRequestsFilter] = useState("ALL"); // "ALL" | "WAITING_DOCUMENTS" | "PENDING" | "COMPLETED"
+  const [myRequestsSearch, setMyRequestsSearch] = useState("");
+  const [myRequestsPage, setMyRequestsPage] = useState(1);
 
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -412,7 +414,34 @@ export default function ClientManagementPage() {
   // Counts for KPIs & Tabs
   const myPendingCount = myClientIdRequests.filter((r) => r.status === "PENDING").length;
   const myNeedsCorrectionCount = myClientIdRequests.filter((r) => r.status === "WAITING_DOCUMENTS").length;
+  const myCompletedCount = myClientIdRequests.filter((r) => r.status === "COMPLETED").length;
   const superAdminPendingCount = clientIdRequests ? clientIdRequests.filter((r) => r.status !== "COMPLETED").length : 0;
+
+  const filteredMyRequests = myClientIdRequests.filter((item) => {
+    if (myRequestsFilter === "WAITING_DOCUMENTS" && item.status !== "WAITING_DOCUMENTS") return false;
+    if (myRequestsFilter === "PENDING" && (item.status === "WAITING_DOCUMENTS" || item.status === "COMPLETED")) return false;
+    if (myRequestsFilter === "COMPLETED" && item.status !== "COMPLETED") return false;
+
+    if (myRequestsSearch.trim()) {
+      const q = myRequestsSearch.trim().toLowerCase();
+      const target = [item.name, item.phone, item.email, item.id, item.correctionNote]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!target.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const myRequestsLimit = 10;
+  const myRequestsTotalPages = Math.ceil(filteredMyRequests.length / myRequestsLimit) || 1;
+  const myRequestsPageStart = filteredMyRequests.length === 0 ? 0 : (myRequestsPage - 1) * myRequestsLimit + 1;
+  const myRequestsPageEnd = Math.min(myRequestsPage * myRequestsLimit, filteredMyRequests.length);
+  const myRequestsPaginationPages = getPaginationPages(myRequestsPage, myRequestsTotalPages);
+  const paginatedMyRequests = filteredMyRequests.slice(
+    (myRequestsPage - 1) * myRequestsLimit,
+    myRequestsPage * myRequestsLimit,
+  );
 
   return (
     <div className="client-mgmt-page">
@@ -1050,133 +1079,317 @@ export default function ClientManagementPage() {
 
       {/* 5. TAB 2: MY CLIENT ID REQUESTS */}
       {activeTab === "my-requests" && (
-        <section className="overflow-hidden rounded-2xl border border-sky-200/80 bg-white shadow-[0_4px_24px_-3px_rgba(15,23,42,0.06)]">
-          {/* Subheader Toolbar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 bg-gradient-to-r from-sky-50 via-white to-sky-50/50 p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-                <MessageSquareWarning className="h-5 w-5" />
+        <section className="client-mgmt-table-card">
+          {/* Table Toolbar */}
+          <div className="client-mgmt-toolbar">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="client-mgmt-search-box">
+                <Search />
+                <input
+                  type="text"
+                  placeholder="Search requests by name, phone, email, or Request ID..."
+                  value={myRequestsSearch}
+                  onChange={(e) => {
+                    setMyRequestsSearch(e.target.value);
+                    setMyRequestsPage(1);
+                  }}
+                />
+                {myRequestsSearch && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMyRequestsSearch("");
+                      setMyRequestsPage(1);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px] font-bold"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
-              <div>
-                <h2 className="font-extrabold text-slate-900 text-base">My Submitted Client ID Requests</h2>
-                <p className="text-xs text-slate-500">
-                  Track verification status and update items returned by Super Admin for correction.
-                </p>
+
+              {/* Status Filter Pills */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => { setMyRequestsFilter("ALL"); setMyRequestsPage(1); }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    myRequestsFilter === "ALL"
+                      ? "border-2 border-slate-900 bg-white text-slate-900 font-extrabold shadow-sm"
+                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  All ({myClientIdRequests.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMyRequestsFilter("PENDING"); setMyRequestsPage(1); }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    myRequestsFilter === "PENDING"
+                      ? "border-2 border-slate-900 bg-white text-slate-900 font-extrabold shadow-sm"
+                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  Pending ({myPendingCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMyRequestsFilter("WAITING_DOCUMENTS"); setMyRequestsPage(1); }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    myRequestsFilter === "WAITING_DOCUMENTS"
+                      ? "border-2 border-rose-600 bg-white text-rose-700 font-extrabold shadow-sm"
+                      : "border border-slate-200 bg-white text-rose-600 hover:bg-rose-50"
+                  }`}
+                >
+                  Correction Needed ({myNeedsCorrectionCount})
+                </button>
+                {myCompletedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setMyRequestsFilter("COMPLETED"); setMyRequestsPage(1); }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      myRequestsFilter === "COMPLETED"
+                        ? "border-2 border-slate-900 bg-white text-slate-900 font-extrabold shadow-sm"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    Completed ({myCompletedCount})
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/80 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setMyRequestsFilter("ALL")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${myRequestsFilter === "ALL" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-                  }`}
-              >
-                All ({myClientIdRequests.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setMyRequestsFilter("WAITING_DOCUMENTS")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${myRequestsFilter === "WAITING_DOCUMENTS"
-                    ? "bg-rose-600 text-white shadow-sm"
-                    : "text-rose-700 hover:bg-rose-50"
-                  }`}
-              >
-                Correction Needed ({myNeedsCorrectionCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setMyRequestsFilter("PENDING")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${myRequestsFilter === "PENDING"
-                    ? "bg-amber-600 text-white shadow-sm"
-                    : "text-amber-800 hover:bg-amber-50"
-                  }`}
-              >
-                Pending ({myPendingCount})
-              </button>
+            <div className="flex items-center justify-between gap-3 lg:justify-end">
+              <div className="text-right">
+                <p className="text-xs font-bold text-slate-800">
+                  {filteredMyRequests.length} request{filteredMyRequests.length === 1 ? "" : "s"}
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  Showing {myRequestsPageStart}–{myRequestsPageEnd}
+                </p>
+              </div>
+
+              {myRequestsTotalPages > 1 && (
+                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
+                  <button
+                    type="button"
+                    aria-label="Previous request page"
+                    onClick={() => setMyRequestsPage((value) => Math.max(value - 1, 1))}
+                    disabled={myRequestsPage === 1}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="min-w-12 px-1 text-center text-xs font-bold text-slate-700">
+                    {myRequestsPage} / {myRequestsTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next request page"
+                    onClick={() => setMyRequestsPage((value) => Math.min(value + 1, myRequestsTotalPages))}
+                    disabled={myRequestsPage === myRequestsTotalPages}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Table Content */}
           {myRequestsLoading ? (
-            <div className="flex items-center justify-center gap-2 p-12 text-sm text-slate-500">
-              <Loader2 className="h-5 w-5 animate-spin text-sky-600" /> Loading your requests...
+            <div className="p-10 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+              <Loader2 className="h-7 w-7 text-slate-700 animate-spin" />
+              <p className="text-xs font-medium">Loading your submitted requests...</p>
             </div>
-          ) : myClientIdRequests.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 space-y-2">
-              <CheckCircle2 className="h-10 w-10 text-slate-700 mx-auto" />
-              <p className="text-base font-bold text-slate-800">All Client ID Requests Cleared</p>
-              <p className="text-xs text-slate-400">You currently have no pending or blocked Client ID requests.</p>
+          ) : filteredMyRequests.length === 0 ? (
+            <div className="p-10 text-center text-slate-500 space-y-2">
+              <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <CheckCircle2 className="h-6 w-6 text-slate-600" />
+              </div>
+              <p className="text-sm font-bold text-slate-800">
+                {myRequestsSearch || myRequestsFilter !== "ALL"
+                  ? "No matching requests found"
+                  : "All Client ID Requests Cleared"}
+              </p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                {myRequestsSearch || myRequestsFilter !== "ALL"
+                  ? "Try adjusting your search terms or filter selection."
+                  : "You currently have no pending or blocked Client ID requests."}
+              </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
-              {myClientIdRequests
-                .filter((item) => {
-                  if (myRequestsFilter === "ALL") return true;
-                  return item.status === myRequestsFilter;
-                })
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    className={`grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center transition-colors ${item.status === "WAITING_DOCUMENTS" ? "bg-rose-50/30" : "bg-white hover:bg-slate-50/60"
-                      }`}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <strong className="text-sm font-bold text-slate-900">{item.name}</strong>
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${item.status === "WAITING_DOCUMENTS"
-                              ? "bg-rose-100 text-rose-700 border border-rose-200"
-                              : item.status === "COMPLETED"
-                                ? "bg-slate-100 text-slate-700 border border-slate-200"
-                                : "bg-amber-100 text-amber-800 border border-amber-200"
-                            }`}
-                        >
-                          {item.status === "WAITING_DOCUMENTS"
-                            ? "Action Required: Correction"
-                            : item.status === "COMPLETED"
-                              ? "Completed"
-                              : "Pending Super Admin Review"}
-                        </span>
-                      </div>
+            <div className="bg-white">
+              {/* Table Column Headers */}
+              <div className="client-mgmt-req-table-head">
+                <span>Client Name</span>
+                <span>Phone Number</span>
+                <span>Attached Policies</span>
+                <span>Request ID</span>
+                <span>Status</span>
+                <span className="text-right">Action</span>
+              </div>
 
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-                        <span className="inline-flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-slate-400" />
-                          {item.phone}
+              {/* Table Rows */}
+              <div className="divide-y divide-slate-100">
+                {paginatedMyRequests.map((item) => (
+                  <article
+                    key={item.id}
+                    className={`client-mgmt-req-row ${item.status === "WAITING_DOCUMENTS" ? "needs-correction" : ""}`}
+                  >
+                    {/* 1. Client Name */}
+                    <div className="min-w-0">
+                      <strong className="block truncate text-[13px] font-bold text-slate-900" title={item.name}>
+                        {item.name}
+                      </strong>
+                      {item.email && (
+                        <span className="block truncate text-[11px] text-slate-400" title={item.email}>
+                          {item.email}
                         </span>
-                        {item.email && (
-                          <span className="inline-flex items-center gap-1">
-                            <Mail className="h-3 w-3 text-slate-400" />
-                            {item.email}
-                          </span>
+                      )}
+                    </div>
+
+                    {/* 2. Phone Number */}
+                    <div className="min-w-0">
+                      <span className="font-mono text-[13px] font-bold text-slate-900 tracking-tight">
+                        {item.phone || "—"}
+                      </span>
+                    </div>
+
+                    {/* 3. Attached Policies */}
+                    <div className="min-w-0">
+                      <span
+                        className="client-mgmt-policy-pill"
+                        title={
+                          item.policies?.length
+                            ? item.policies.map((p) => p.policyNumber || p.sourceFile).join(", ")
+                            : "Number of attached policies"
+                        }
+                      >
+                        <FileText className="h-3 w-3 text-slate-500 shrink-0" />
+                        <span>
+                          {item.policies?.length || 0} {Number(item.policies?.length || 0) === 1 ? "Policy" : "Policies"} Attached
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* 4. Request ID */}
+                    <div className="min-w-0 flex items-center gap-1.5">
+                      <span className="client-mgmt-id-text" title={item.id}>
+                        {item.id}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(item.id)}
+                        className="client-mgmt-id-copy"
+                        title="Copy Request ID"
+                        aria-label="Copy Request ID"
+                      >
+                        {copiedId === item.id ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                            <span className="text-[10px] font-bold text-slate-900">Copied!</span>
+                          </>
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-slate-500 hover:text-slate-900 shrink-0" />
                         )}
-                        <span className="font-mono text-[11px] text-slate-400">Request ID: {item.id}</span>
-                      </div>
+                      </button>
+                    </div>
+
+                    {/* 5. Status Badge */}
+                    <div className="min-w-0">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
+                          item.status === "WAITING_DOCUMENTS"
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : item.status === "COMPLETED"
+                              ? "bg-slate-100 text-slate-700 border border-slate-200"
+                              : "bg-amber-100 text-amber-800 border border-amber-200"
+                        }`}
+                      >
+                        {item.status === "WAITING_DOCUMENTS"
+                          ? "Action Required: Correction"
+                          : item.status === "COMPLETED"
+                            ? "Completed"
+                            : "Pending Super Admin"}
+                      </span>
 
                       {item.correctionNote && (
-                        <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs font-semibold text-rose-800 flex items-start gap-2">
-                          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="mt-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-[11px] font-semibold text-rose-800 flex items-start gap-1.5">
+                          <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0 mt-0.5" />
                           <div>
-                            <span className="block font-bold">Super Admin Instruction:</span>
+                            <span className="font-bold">Super Admin Instruction: </span>
                             <span>{item.correctionNote}</span>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {item.status === "WAITING_DOCUMENTS" && (
-                      <button
-                        type="button"
-                        onClick={() => openCorrectionPanel(item)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-4 py-2.5 text-xs font-bold shadow-sm transition-all"
-                      >
-                        <Edit2 className="h-4 w-4 text-slate-700" /> Correct & Resubmit
-                      </button>
-                    )}
-                  </div>
+                    {/* 6. Action */}
+                    <div className="flex items-center justify-end">
+                      {item.status === "WAITING_DOCUMENTS" ? (
+                        <button
+                          type="button"
+                          onClick={() => openCorrectionPanel(item)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-400 px-3 py-1.5 text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+                        >
+                          <Edit2 className="h-3.5 w-3.5 text-slate-700" /> Correct & Resubmit
+                        </button>
+                      ) : (
+                        <span className="text-[11px] font-medium text-slate-400">—</span>
+                      )}
+                    </div>
+                  </article>
                 ))}
+              </div>
             </div>
+          )}
+
+          {/* Pagination Footer */}
+          {myRequestsTotalPages > 1 && (
+            <nav
+              aria-label="My Requests pagination"
+              className="flex flex-col items-center justify-between gap-2 border-t border-slate-100 bg-white px-4 py-3 sm:flex-row"
+            >
+              <p className="text-xs font-medium text-slate-500">
+                Showing <strong className="text-slate-800">{myRequestsPageStart}–{myRequestsPageEnd}</strong> of{" "}
+                <strong className="text-slate-800">{filteredMyRequests.length}</strong> requests
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMyRequestsPage((value) => Math.max(value - 1, 1))}
+                  disabled={myRequestsPage === 1}
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                </button>
+                {myRequestsPaginationPages.map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() => setMyRequestsPage(pageNumber)}
+                    aria-current={pageNumber === myRequestsPage ? "page" : undefined}
+                    className={`flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-xs font-bold transition ${
+                      pageNumber === myRequestsPage
+                        ? "border-2 border-slate-900 bg-white text-slate-900 font-extrabold shadow-sm"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300"
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setMyRequestsPage((value) => Math.min(value + 1, myRequestsTotalPages))}
+                  disabled={myRequestsPage === myRequestsTotalPages}
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </nav>
           )}
         </section>
       )}
