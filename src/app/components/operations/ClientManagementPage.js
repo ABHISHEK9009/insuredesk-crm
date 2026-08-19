@@ -904,7 +904,7 @@ export default function ClientManagementPage() {
                   type="button"
                   onClick={() => setPage((value) => Math.max(value - 1, 1))}
                   disabled={page === 1}
-                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 px-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" /> Prev
                 </button>
@@ -916,8 +916,8 @@ export default function ClientManagementPage() {
                     aria-current={pageNumber === page ? "page" : undefined}
                     className={`flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-xs font-bold transition ${
                       pageNumber === page
-                        ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        ? "border-2 border-slate-900 bg-white text-slate-900 font-extrabold shadow-sm"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300"
                     }`}
                   >
                     {pageNumber}
@@ -927,7 +927,7 @@ export default function ClientManagementPage() {
                   type="button"
                   onClick={() => setPage((value) => Math.min(value + 1, totalPages))}
                   disabled={page === totalPages}
-                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 px-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Next <ChevronRight className="h-3.5 w-3.5" />
                 </button>
