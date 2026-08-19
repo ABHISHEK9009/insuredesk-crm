@@ -31,6 +31,9 @@ import {
   Lock,
   RefreshCw,
   FileText,
+  SlidersHorizontal,
+  ArrowUpDown,
+  ChevronDown,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 
@@ -47,12 +50,17 @@ export default function ClientManagementPage() {
 
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterEmail, setFilterEmail] = useState("");
+  const [filterPolicies, setFilterPolicies] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [canResetMpin, setCanResetMpin] = useState(false);
   const [openActionMenuId, setOpenActionMenuId] = useState("");
   const limit = 10;
   const clientsRequestRef = useRef(null);
+  const activeFilterCount = [filterEmail, filterPolicies].filter(Boolean).length + (sortBy !== "newest" ? 1 : 0);
 
   // Copy State Tracking
   const [copiedId, setCopiedId] = useState("");
@@ -96,7 +104,7 @@ export default function ClientManagementPage() {
       window.clearTimeout(timer);
       clientsRequestRef.current?.abort();
     };
-  }, [page, searchQuery]);
+  }, [page, searchQuery, sortBy, filterEmail, filterPolicies]);
 
   useEffect(() => {
     fetchClientIdRequests();
@@ -111,7 +119,9 @@ export default function ClientManagementPage() {
     setError("");
     try {
       const queryParam = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : "";
-      const res = await fetch(`/api/client-accounts?page=${page}&limit=${limit}${queryParam}`, {
+      const sortParam = sortBy !== "newest" ? `&sort=${sortBy}` : "";
+      const emailParam = filterEmail ? `&hasEmail=${filterEmail}` : "";
+      const res = await fetch(`/api/client-accounts?page=${page}&limit=${limit}${queryParam}${sortParam}${emailParam}`, {
         signal: controller.signal,
       });
       if (!res.ok) throw new Error("Failed to fetch client accounts");
@@ -692,6 +702,19 @@ export default function ClientManagementPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3 lg:justify-end">
+              {/* Filter Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowFilters((v) => !v)}
+                className="client-mgmt-filter-toggle"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="client-mgmt-filter-badge">{activeFilterCount}</span>
+                )}
+              </button>
+
               <div className="text-right">
                 <p className="text-xs font-bold text-slate-800">
                   {totalCount} registered client{totalCount === 1 ? "" : "s"}
@@ -729,13 +752,95 @@ export default function ClientManagementPage() {
             </div>
           </div>
 
+          {/* Collapsible Filter Row */}
+          {showFilters && (
+            <div className="client-mgmt-filters-row">
+              <div className="client-mgmt-filter-group">
+                <label className="client-mgmt-filter-label">
+                  <ArrowUpDown className="h-3 w-3" />
+                  Sort By
+                </label>
+                <div className="client-mgmt-filter-select-wrap">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                    className="client-mgmt-filter-select"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name-asc">Name (A → Z)</option>
+                    <option value="name-desc">Name (Z → A)</option>
+                  </select>
+                  <ChevronDown className="client-mgmt-filter-chevron" />
+                </div>
+              </div>
+
+              <div className="client-mgmt-filter-group">
+                <label className="client-mgmt-filter-label">
+                  <Mail className="h-3 w-3" />
+                  Email
+                </label>
+                <div className="client-mgmt-filter-select-wrap">
+                  <select
+                    value={filterEmail}
+                    onChange={(e) => { setFilterEmail(e.target.value); setPage(1); }}
+                    className="client-mgmt-filter-select"
+                  >
+                    <option value="">All Clients</option>
+                    <option value="yes">Has Email</option>
+                    <option value="no">No Email</option>
+                  </select>
+                  <ChevronDown className="client-mgmt-filter-chevron" />
+                </div>
+              </div>
+
+              <div className="client-mgmt-filter-group">
+                <label className="client-mgmt-filter-label">
+                  <FileText className="h-3 w-3" />
+                  Policies
+                </label>
+                <div className="client-mgmt-filter-select-wrap">
+                  <select
+                    value={filterPolicies}
+                    onChange={(e) => { setFilterPolicies(e.target.value); setPage(1); }}
+                    className="client-mgmt-filter-select"
+                  >
+                    <option value="">All Clients</option>
+                    <option value="has">Has Policies (≥1)</option>
+                    <option value="none">No Policies (0)</option>
+                  </select>
+                  <ChevronDown className="client-mgmt-filter-chevron" />
+                </div>
+              </div>
+
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setSortBy("newest"); setFilterEmail(""); setFilterPolicies(""); setPage(1); }}
+                  className="client-mgmt-filter-clear"
+                >
+                  <X className="h-3 w-3" />
+                  Clear All
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Cards List */}
-          {loading ? (
+          {(() => {
+            const displayProfiles = filterPolicies
+              ? profiles.filter((p) =>
+                  filterPolicies === "has"
+                    ? Number(p.policiesCount || 0) >= 1
+                    : Number(p.policiesCount || 0) === 0
+                )
+              : profiles;
+            return loading ? (
             <div className="p-10 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
               <Loader2 className="h-7 w-7 text-slate-700 animate-spin" />
               <p className="text-xs font-medium">Loading client portal profiles...</p>
             </div>
-          ) : profiles.length === 0 ? (
+          ) : displayProfiles.length === 0 ? (
             <div className="p-10 text-center text-slate-500 space-y-2">
               <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                 <Users className="h-6 w-6" />
@@ -766,7 +871,7 @@ export default function ClientManagementPage() {
 
               {/* Table Rows */}
               <div className="divide-y divide-slate-100">
-                {profiles.map((profile) => (
+                {displayProfiles.map((profile) => (
                   <article key={profile.id} className="client-mgmt-row">
                     {/* 1. Client Name */}
                     <div className="client-mgmt-col-name min-w-0">
@@ -892,8 +997,8 @@ export default function ClientManagementPage() {
                 ))}
               </div>
             </div>
-          )}
-
+          );
+          })()}
           {/* Pagination Footer */}
           {totalPages > 1 && (
             <nav

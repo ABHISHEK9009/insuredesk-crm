@@ -27,6 +27,8 @@ export async function GET(request) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20));
     const skip = (page - 1) * limit;
     const q = searchParams.get("q") || "";
+    const sort = searchParams.get("sort") || "newest";
+    const hasEmail = searchParams.get("hasEmail") || "";
 
     const where = {
       ...getTenantFilter(session, "read"),
@@ -44,10 +46,24 @@ export async function GET(request) {
       ].filter((item) => !Object.values(item).includes(undefined));
     }
 
+    if (hasEmail === "yes") {
+      where.email = { not: null };
+    } else if (hasEmail === "no") {
+      where.email = null;
+    }
+
+    const orderByMap = {
+      newest: { updatedAt: "desc" },
+      oldest: { createdAt: "asc" },
+      "name-asc": { name: "asc" },
+      "name-desc": { name: "desc" },
+    };
+    const orderBy = orderByMap[sort] || orderByMap.newest;
+
     const [accounts, total] = await Promise.all([
       prisma.clientAccount.findMany({
         where,
-        orderBy: { updatedAt: "desc" },
+        orderBy,
         skip,
         take: limit,
         include: {
