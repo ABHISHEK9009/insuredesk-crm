@@ -1722,53 +1722,89 @@ export default function ClientManagementPage() {
                         </span>
                       </div>
 
-                      {/* 5. Review Actions */}
-                      <div className="flex flex-col gap-1 sm:items-end justify-center">
-                        {!isNeedsCorrection && (
-                          <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
+                      {/* 5. Review Actions (3-Dot Action Menu) */}
+                      <div className="client-mgmt-actions relative flex items-center justify-end">
+                        {!isNeedsCorrection ? (
+                          <>
                             <button
                               type="button"
-                              onClick={() => openCreateClientModal(item)}
-                              disabled={resolvingRequestId === item.id}
-                              className="inline-flex items-center justify-center gap-1 rounded-lg border-2 border-slate-900 bg-white hover:bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-900 shadow-sm transition-all disabled:opacity-60 whitespace-nowrap"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenActionMenuId(openActionMenuId === item.id ? "" : item.id);
+                              }}
+                              className="client-mgmt-more-btn"
+                              title="Review Actions"
+                              aria-label="Review Actions"
                             >
-                              {resolvingRequestId === item.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <UserPlus className="h-3 w-3 text-slate-900" />
-                              )}
-                              Issue ID
+                              <span className="client-mgmt-dots-icon" aria-hidden="true">
+                                <span className="client-mgmt-dot" />
+                                <span className="client-mgmt-dot" />
+                                <span className="client-mgmt-dot" />
+                              </span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => openExistingClientModal(item)}
-                              className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm transition-all whitespace-nowrap"
-                            >
-                              <Link2 className="h-3 w-3 text-slate-600" /> Link
-                            </button>
-                          </div>
+
+                            {openActionMenuId === item.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-20"
+                                  onClick={() => setOpenActionMenuId("")}
+                                />
+                                <div className="client-mgmt-action-popover z-30 min-w-[180px]">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenActionMenuId("");
+                                      openCreateClientModal(item);
+                                    }}
+                                    disabled={resolvingRequestId === item.id}
+                                    className="client-mgmt-popover-item"
+                                  >
+                                    <UserPlus className="h-3.5 w-3.5 text-slate-700 shrink-0" />
+                                    <span>Issue New Client ID</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenActionMenuId("");
+                                      openExistingClientModal(item);
+                                    }}
+                                    className="client-mgmt-popover-item"
+                                  >
+                                    <Link2 className="h-3.5 w-3.5 text-slate-700 shrink-0" />
+                                    <span>Link Existing ID</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenActionMenuId("");
+                                      openDecisionModal(item, "NEEDS_CORRECTION");
+                                    }}
+                                    className="client-mgmt-popover-item text-rose-700 hover:bg-rose-50"
+                                  >
+                                    <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                    <span>Request Correction</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenActionMenuId("");
+                                      openDecisionModal(item, "REJECT");
+                                    }}
+                                    className="client-mgmt-popover-item text-slate-600 hover:bg-slate-100"
+                                  >
+                                    <X className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                    <span>Reject Request</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[11px] font-medium text-slate-400">Waiting for agent</span>
                         )}
-                        <div className="flex items-center gap-2 sm:justify-end text-[11px]">
-                          {!isNeedsCorrection && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => openDecisionModal(item, "NEEDS_CORRECTION")}
-                                className="font-semibold text-rose-700 hover:text-rose-900 hover:underline"
-                              >
-                                Request Correction
-                              </button>
-                              <span className="text-slate-300">•</span>
-                              <button
-                                type="button"
-                                onClick={() => openDecisionModal(item, "REJECT")}
-                                className="font-semibold text-slate-500 hover:text-slate-900 hover:underline"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-                        </div>
                       </div>
                     </article>
                   );

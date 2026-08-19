@@ -2809,7 +2809,7 @@
 /* ── Super Admin Review Queue Table Layout ── */
 .client-mgmt-admin-table-head {
   display: grid;
-  grid-template-columns: minmax(200px, 1.8fr) minmax(150px, 1.3fr) minmax(180px, 1.5fr) minmax(130px, 1fr) minmax(220px, 1.8fr);
+  grid-template-columns: minmax(220px, 2.2fr) minmax(140px, 1.3fr) minmax(180px, 1.6fr) minmax(130px, 1.1fr) 50px;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
@@ -2824,10 +2824,10 @@
 
 .client-mgmt-admin-row {
   display: grid;
-  grid-template-columns: minmax(200px, 1.8fr) minmax(150px, 1.3fr) minmax(180px, 1.5fr) minmax(130px, 1fr) minmax(220px, 1.8fr);
+  grid-template-columns: minmax(220px, 2.2fr) minmax(140px, 1.3fr) minmax(180px, 1.6fr) minmax(130px, 1.1fr) 50px;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: #ffffff;
   transition: background-color 0.15s ease;
 }
