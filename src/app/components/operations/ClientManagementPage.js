@@ -841,16 +841,11 @@ export default function ClientManagementPage() {
                         title="More Actions"
                         aria-label="More Actions"
                       >
-                        <svg
-                          className="w-5 h-5 text-slate-800"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          aria-hidden="true"
-                        >
-                          <circle cx="12" cy="4.5" r="3.2" />
-                          <circle cx="12" cy="12" r="3.2" />
-                          <circle cx="12" cy="19.5" r="3.2" />
-                        </svg>
+                        <span className="client-mgmt-dots-icon" aria-hidden="true">
+                          <span className="client-mgmt-dot" />
+                          <span className="client-mgmt-dot" />
+                          <span className="client-mgmt-dot" />
+                        </span>
                       </button>
 
                       {openActionMenuId === profile.id && (
