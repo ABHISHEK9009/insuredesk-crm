@@ -30,6 +30,7 @@ import {
   Lock,
   RefreshCw,
   FileText,
+  MoreVertical,
 } from "lucide-react";
 import OperationsBackLink from "@/app/components/operations/OperationsBackLink";
 
@@ -49,6 +50,7 @@ export default function ClientManagementPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [canResetMpin, setCanResetMpin] = useState(false);
+  const [openActionMenuId, setOpenActionMenuId] = useState("");
   const limit = 10;
   const clientsRequestRef = useRef(null);
 
@@ -820,28 +822,55 @@ export default function ClientManagementPage() {
                       </button>
                     </div>
 
-                    {/* 5. Actions */}
-                    <div className="client-mgmt-actions">
-                      {canResetMpin && (
-                        <button
-                          type="button"
-                          onClick={() => resetClientMpin(profile)}
-                          className="client-mgmt-action-btn"
-                          title="Reset Client MPIN"
-                        >
-                          <KeyRound className="h-3 w-3 text-slate-600" />
-                          <span>Reset MPIN</span>
-                        </button>
-                      )}
+                    {/* 5. Actions Dropdown */}
+                    <div className="client-mgmt-actions relative">
                       <button
                         type="button"
-                        onClick={() => handleOpenEditModal(profile)}
-                        className="client-mgmt-action-btn"
-                        title="Edit Profile Credentials"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenActionMenuId(openActionMenuId === profile.id ? "" : profile.id);
+                        }}
+                        className="client-mgmt-more-btn"
+                        title="More Actions"
+                        aria-label="More Actions"
                       >
-                        <Edit2 className="h-3 w-3 text-slate-600" />
-                        <span>Edit</span>
+                        <MoreVertical className="h-4 w-4 text-slate-600" />
                       </button>
+
+                      {openActionMenuId === profile.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-20"
+                            onClick={() => setOpenActionMenuId("")}
+                          />
+                          <div className="client-mgmt-action-popover z-30">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenActionMenuId("");
+                                handleOpenEditModal(profile);
+                              }}
+                              className="client-mgmt-popover-item"
+                            >
+                              <Edit2 className="h-3.5 w-3.5 text-slate-600 shrink-0" />
+                              <span>Edit Profile</span>
+                            </button>
+                            {canResetMpin && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenActionMenuId("");
+                                  resetClientMpin(profile);
+                                }}
+                                className="client-mgmt-popover-item text-amber-700 hover:text-amber-900"
+                              >
+                                <KeyRound className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                                <span>Reset MPIN</span>
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </article>
                 ))}
