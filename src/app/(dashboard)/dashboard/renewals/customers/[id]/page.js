@@ -868,6 +868,7 @@ export default function CustomerProfilePage(props) {
     if (!manualQuoteText.trim() && !manualQuoteFileBase64) return;
     const policy = (policies || []).find((p) => p.id === whatsappPolicyId) || (policies || [])[0] || null;
     const vehicleNumber = String(policy?.vehicleNumber || policy?.registrationNumber || "").trim();
+    const isPdf = manualQuoteFileName?.toLowerCase().endsWith(".pdf") || manualQuoteFileBase64?.startsWith("data:application/pdf");
 
     setSavingManualQuote(true);
     try {
@@ -877,8 +878,10 @@ export default function CustomerProfilePage(props) {
         body: JSON.stringify({
           vehicleNumber: vehicleNumber || "MP04UC1162",
           groupName: "Manual Entry",
-          messageBody: manualQuoteText.trim() || `Quote Image for ${vehicleNumber}`,
+          messageBody: manualQuoteText.trim() || `Quote for ${vehicleNumber}`,
           mediaBase64: manualQuoteFileBase64,
+          attachmentFileName: manualQuoteFileName || (isPdf ? "quote.pdf" : "quote.jpg"),
+          attachmentType: isPdf ? "document" : "image",
         }),
       });
       const payload = await res.json();
@@ -3131,7 +3134,7 @@ export default function CustomerProfilePage(props) {
                               <div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                   <h4 style={{ margin: 0, fontSize: "13.5px", fontWeight: 600, color: "#0f172a" }}>
-                                    Renewal Quote Images (Auto-Detected)
+                                    Renewal Quotes & Calculation Sheets
                                   </h4>
                                   {renewalQuotesLoading ? (
                                     <span style={{ fontSize: "10px", background: "#e2e8f0", color: "#475569", padding: "2px 8px", borderRadius: "10px", fontWeight: 500 }}>
@@ -3140,7 +3143,7 @@ export default function CustomerProfilePage(props) {
                                   ) : null}
                                 </div>
                                 <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
-                                  Captured calculation sheets for this vehicle from <strong>Renwal Quote New</strong>.
+                                  Attach quote images or quotation PDFs for this vehicle.
                                 </p>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -3162,7 +3165,7 @@ export default function CustomerProfilePage(props) {
                                   {showAddQuoteForm ? (
                                     <><X size={14} /> Cancel Upload</>
                                   ) : (
-                                    <><Upload size={14} /> Upload Quote</>
+                                    <><Upload size={14} /> Upload Quote (Image / PDF)</>
                                   )}
                                 </button>
                               </div>
@@ -3171,12 +3174,12 @@ export default function CustomerProfilePage(props) {
                             {showAddQuoteForm && (
                               <div style={{ marginTop: "12px", padding: "14px", border: "1px solid #e2e8f0", borderRadius: "10px", background: "#ffffff" }}>
                                 <label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "8px", color: "#0f172a" }}>
-                                  Upload Quote Image / Calculation Sheet
+                                  Upload Quote (Image or PDF Document)
                                 </label>
                                 <div style={{ marginBottom: "12px" }}>
                                   <input
                                     type="file"
-                                    accept="image/*,.pdf"
+                                    accept="image/*,.pdf,application/pdf"
                                     style={{ fontSize: "12px", color: "#334155" }}
                                     onChange={handleQuoteFileUpload}
                                   />
@@ -3185,14 +3188,46 @@ export default function CustomerProfilePage(props) {
                                       Selected file: <code>{manualQuoteFileName}</code>
                                     </div>
                                   )}
-                                  {manualQuoteFileBase64 && manualQuoteFileBase64.startsWith("data:image") && (
+                                  {manualQuoteFileBase64 && (
                                     <div style={{ marginTop: "8px" }}>
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={manualQuoteFileBase64}
-                                        alt="Quote Preview"
-                                        style={{ maxHeight: "100px", borderRadius: "6px", border: "1px solid #cbd5e1", objectFit: "cover" }}
-                                      />
+                                      {manualQuoteFileBase64.startsWith("data:application/pdf") || manualQuoteFileName?.toLowerCase().endsWith(".pdf") ? (
+                                        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
+                                          <div style={{ width: "36px", height: "36px", borderRadius: "6px", background: "#fee2e2", border: "1px solid #fca5a5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <FileText size={20} style={{ color: "#dc2626" }} />
+                                          </div>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                              {manualQuoteFileName || "Quote Document.pdf"}
+                                            </div>
+                                            <div style={{ fontSize: "11px", color: "#64748b" }}>
+                                              PDF Document attached
+                                            </div>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                            onClick={() => setPreviewQuoteImage({ src: manualQuoteFileBase64, isPdf: true, filename: manualQuoteFileName || "Quote.pdf" })}
+                                          >
+                                            <Eye size={13} /> Preview
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div style={{ position: "relative", display: "inline-block" }}>
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img
+                                            src={manualQuoteFileBase64}
+                                            alt="Quote Preview"
+                                            style={{ maxHeight: "100px", borderRadius: "6px", border: "1px solid #cbd5e1", objectFit: "cover", display: "block" }}
+                                          />
+                                          <button
+                                            type="button"
+                                            style={{ position: "absolute", bottom: "4px", right: "4px", background: "rgba(15, 23, 42, 0.75)", color: "#ffffff", border: "none", borderRadius: "4px", padding: "2px 6px", fontSize: "10px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "3px" }}
+                                            onClick={() => setPreviewQuoteImage({ src: manualQuoteFileBase64, isPdf: false })}
+                                          >
+                                            <ZoomIn size={11} /> Zoom
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -3221,7 +3256,7 @@ export default function CustomerProfilePage(props) {
                                     disabled={savingManualQuote || (!manualQuoteText.trim() && !manualQuoteFileBase64)}
                                     onClick={handleSaveManualQuote}
                                   >
-                                    {savingManualQuote ? "Saving..." : "Attach Quote Image"}
+                                    {savingManualQuote ? "Saving..." : "Attach Quote"}
                                   </button>
                                 </div>
                               </div>
@@ -3229,7 +3264,7 @@ export default function CustomerProfilePage(props) {
 
                             {renewalQuotes.length === 0 && !showAddQuoteForm ? (
                               <div style={{ marginTop: "10px", padding: "10px", borderRadius: "8px", background: "#ffffff", border: "1px solid #e2e8f0", color: "#64748b", fontSize: "12px", textAlign: "center" }}>
-                                No matching quote captured for this vehicle yet. Click <strong>Upload Quote</strong> or <strong>Select from Group</strong> to attach calculation image.
+                                No matching quote attached for this vehicle yet. Click <strong>Upload Quote</strong> or <strong>Select from Group</strong> to attach image or PDF.
                               </div>
                             ) : null}
 
@@ -3238,6 +3273,13 @@ export default function CustomerProfilePage(props) {
                                 {renewalQuotes.map((quote) => {
                                   const imageSrc = quote.mediaBase64 || quote.attachmentUrl || (quote.attachmentData ? (quote.attachmentData.startsWith("data:") ? quote.attachmentData : `data:image/jpeg;base64,${quote.attachmentData}`) : null);
                                   const isSelected = selectedRenewalQuoteIds.includes(quote.id);
+                                  const isPdf = quote.attachmentType === "document" ||
+                                    String(quote.attachmentFileName || "").toLowerCase().endsWith(".pdf") ||
+                                    String(quote.fileName || "").toLowerCase().endsWith(".pdf") ||
+                                    String(quote.messageBody || "").toLowerCase().endsWith(".pdf") ||
+                                    (imageSrc && imageSrc.startsWith("data:application/pdf"));
+                                  const displayName = quote.attachmentFileName || quote.fileName || (isPdf ? "Quote Document.pdf" : "Quote Image");
+
                                   return (
                                     <div key={quote.id} style={{ border: isSelected ? "1px solid #0f172a" : "1px solid #e2e8f0", borderRadius: "8px", background: "#ffffff", padding: "10px" }}>
                                       <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
@@ -3255,8 +3297,8 @@ export default function CustomerProfilePage(props) {
                                             </>
                                           ) : (
                                             <span style={{ fontSize: "11.5px", fontWeight: 500, color: "#0f172a", background: "#f8fafc", border: "1px solid #cbd5e1", padding: "2.5px 8px", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                                              <FileText size={13} style={{ color: "#475569" }} />
-                                              {quote.groupName || "Manual Upload"}
+                                              <FileText size={13} style={{ color: isPdf ? "#dc2626" : "#475569" }} />
+                                              {quote.groupName || (isPdf ? "PDF Quote Upload" : "Image Quote Upload")}
                                             </span>
                                           )}
                                         </div>
@@ -3271,43 +3313,62 @@ export default function CustomerProfilePage(props) {
                                               onChange={() => toggleRenewalQuoteSelection(quote.id)}
                                               style={{ width: "15px", height: "15px", minWidth: "15px", minHeight: "15px", accentColor: "#0f172a", margin: 0, padding: 0, cursor: "pointer", appearance: "checkbox", WebkitAppearance: "checkbox" }}
                                             />
-                                            <span style={{ whiteSpace: "nowrap" }}>Send Image</span>
+                                            <span style={{ whiteSpace: "nowrap" }}>{isPdf ? "Send PDF" : "Send Image"}</span>
                                           </label>
                                         </div>
                                       </div>
                                       {imageSrc ? (
                                         <div style={{ marginTop: "8px", padding: "8px 10px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                            <div style={{ position: "relative", cursor: "pointer", overflow: "hidden", borderRadius: "4px" }} onClick={() => setPreviewQuoteImage(imageSrc)}>
-                                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                                              <img
-                                                src={imageSrc}
-                                                alt="Quote Calculation"
-                                                style={{ height: "55px", width: "85px", objectFit: "cover", border: "1px solid #cbd5e1", display: "block" }}
-                                              />
-                                              <div style={{ position: "absolute", bottom: "2px", right: "2px", background: "rgba(15, 23, 42, 0.75)", color: "#ffffff", borderRadius: "3px", padding: "1px 5px", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "2px" }}>
-                                                <ZoomIn size={10} /> Zoom
+                                          {isPdf ? (
+                                            <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                                              <div
+                                                style={{ width: "42px", height: "42px", borderRadius: "6px", background: "#fee2e2", border: "1px solid #fca5a5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+                                                onClick={() => setPreviewQuoteImage({ src: imageSrc, isPdf: true, filename: displayName })}
+                                              >
+                                                <FileText size={22} style={{ color: "#dc2626" }} />
+                                              </div>
+                                              <div style={{ minWidth: 0 }}>
+                                                <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                  {displayName}
+                                                </div>
+                                                <div style={{ fontSize: "11px", color: "#64748b" }}>
+                                                  PDF Quote Attached • Click preview to view
+                                                </div>
                                               </div>
                                             </div>
-                                            <div>
-                                              <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>
-                                                Quote Image Attached
+                                          ) : (
+                                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                              <div style={{ position: "relative", cursor: "pointer", overflow: "hidden", borderRadius: "4px" }} onClick={() => setPreviewQuoteImage({ src: imageSrc, isPdf: false })}>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                  src={imageSrc}
+                                                  alt="Quote Calculation"
+                                                  style={{ height: "55px", width: "85px", objectFit: "cover", border: "1px solid #cbd5e1", display: "block" }}
+                                                />
+                                                <div style={{ position: "absolute", bottom: "2px", right: "2px", background: "rgba(15, 23, 42, 0.75)", color: "#ffffff", borderRadius: "3px", padding: "1px 5px", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                                                  <ZoomIn size={10} /> Zoom
+                                                </div>
                                               </div>
-                                              <div style={{ fontSize: "11px", color: "#64748b" }}>
-                                                Click preview to view calculation sheet
+                                              <div>
+                                                <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>
+                                                  Quote Image Attached
+                                                </div>
+                                                <div style={{ fontSize: "11px", color: "#64748b" }}>
+                                                  Click preview to view calculation sheet
+                                                </div>
                                               </div>
                                             </div>
-                                          </div>
+                                          )}
                                           <button
                                             type="button"
-                                            style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 600, cursor: "pointer", background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                                            onClick={() => setPreviewQuoteImage(imageSrc)}
+                                            style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 600, cursor: "pointer", background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "4px", flexShrink: 0 }}
+                                            onClick={() => setPreviewQuoteImage({ src: imageSrc, isPdf, filename: displayName })}
                                           >
-                                            <Eye size={14} /> Preview Image
+                                            <Eye size={14} /> {isPdf ? "Preview PDF" : "Preview Image"}
                                           </button>
                                         </div>
                                       ) : null}
-                                      {quote.messageBody && quote.messageBody !== quote.vehicleNumber ? (
+                                      {quote.messageBody && quote.messageBody !== quote.vehicleNumber && quote.messageBody !== quote.attachmentFileName ? (
                                         <div style={{ marginTop: "6px", fontSize: "12px", color: "#475569", whiteSpace: "pre-wrap" }}>
                                           {quote.messageBody}
                                         </div>
@@ -3422,7 +3483,7 @@ export default function CustomerProfilePage(props) {
                     📱 Renwal Quote New — Group Quote Gallery
                   </h3>
                   <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
-                    Select an image quote captured from the WhatsApp group to attach to this customer.
+                    Select an image or PDF quote captured from the WhatsApp group to attach to this customer.
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -3432,7 +3493,7 @@ export default function CustomerProfilePage(props) {
                     style={{ padding: "4px 8px", fontSize: "11px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                     onClick={fetchGroupQuotesGallery}
                   >
-                    🔄 Sync WhatsApp Photos
+                    🔄 Sync WhatsApp Photos & Docs
                   </button>
                   <button
                     type="button"
@@ -3447,17 +3508,24 @@ export default function CustomerProfilePage(props) {
               <div style={{ overflowY: "auto", flex: 1, paddingRight: "4px" }}>
                 {loadingAllGroupQuotes ? (
                   <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
-                    Searching group quote images...
+                    Searching group quotes & documents...
                   </div>
                 ) : allGroupQuotes.length === 0 ? (
                   <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
-                    No quote images found from <b>Renwal Quote New</b> yet.<br />
-                    Use <b>+ Upload Quote</b> to attach a quote image directly!
+                    No quotes found from <b>Renwal Quote New</b> yet.<br />
+                    Use <b>+ Upload Quote</b> to attach a quote image or PDF directly!
                   </div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" }}>
                     {allGroupQuotes.map((quote) => {
                       const imageSrc = quote.mediaBase64 || quote.attachmentUrl || (quote.attachmentData ? (quote.attachmentData.startsWith("data:") ? quote.attachmentData : `data:image/jpeg;base64,${quote.attachmentData}`) : null);
+                      const isPdf = quote.attachmentType === "document" ||
+                        String(quote.attachmentFileName || "").toLowerCase().endsWith(".pdf") ||
+                        String(quote.fileName || "").toLowerCase().endsWith(".pdf") ||
+                        String(quote.messageBody || "").toLowerCase().endsWith(".pdf") ||
+                        (imageSrc && imageSrc.startsWith("data:application/pdf"));
+                      const displayName = quote.attachmentFileName || quote.fileName || (isPdf ? "Quote Document.pdf" : "Quote Image");
+
                       return (
                         <div
                           key={quote.id}
@@ -3473,15 +3541,28 @@ export default function CustomerProfilePage(props) {
                         >
                           <div>
                             {imageSrc ? (
-                              <>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                              isPdf ? (
+                                <div
+                                  style={{ width: "100%", height: "130px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "6px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", marginBottom: "8px", padding: "10px", textAlign: "center" }}
+                                  onClick={() => setPreviewQuoteImage({ src: imageSrc, isPdf: true, filename: displayName })}
+                                >
+                                  <FileText size={36} style={{ color: "#dc2626", marginBottom: "6px" }} />
+                                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#991b1b", overflow: "hidden", textOverflow: "ellipsis", width: "100%", whiteSpace: "nowrap" }}>
+                                    {displayName}
+                                  </span>
+                                  <span style={{ fontSize: "10px", color: "#b91c1c" }}>
+                                    Click to preview PDF
+                                  </span>
+                                </div>
+                              ) : (
+                                /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                   src={imageSrc}
                                   alt="Group Quote"
                                   style={{ width: "100%", height: "130px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0", cursor: "pointer", marginBottom: "8px" }}
-                                  onClick={() => setPreviewQuoteImage(imageSrc)}
+                                  onClick={() => setPreviewQuoteImage({ src: imageSrc, isPdf: false })}
                                 />
-                              </>
+                              )
                             ) : (
                               <div style={{ height: "60px", background: "#e2e8f0", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: "11px", marginBottom: "8px" }}>
                                 Text Quote
@@ -3512,80 +3593,99 @@ export default function CustomerProfilePage(props) {
           </div>
         </ModalPortal>
       )}
-      {previewQuoteImage && (
-        <ModalPortal>
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(6px)",
-              zIndex: 99999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "20px",
-            }}
-            onClick={() => setPreviewQuoteImage(null)}
-          >
+      {previewQuoteImage && (() => {
+        const isObj = typeof previewQuoteImage === "object" && previewQuoteImage !== null;
+        const src = isObj ? previewQuoteImage.src : previewQuoteImage;
+        const isPdf = isObj
+          ? Boolean(previewQuoteImage.isPdf)
+          : (String(src).startsWith("data:application/pdf") || String(src).toLowerCase().includes(".pdf"));
+        const filename = (isObj ? previewQuoteImage.filename : null) || (isPdf ? "Quote_Document.pdf" : "Quote_Calculation.png");
+
+        return (
+          <ModalPortal>
             <div
               style={{
-                position: "relative",
-                maxWidth: "90vw",
-                maxHeight: "90vh",
-                background: "#ffffff",
-                borderRadius: "16px",
-                padding: "20px",
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "rgba(15, 23, 42, 0.8)",
+                backdropFilter: "blur(6px)",
+                zIndex: 99999,
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
+                justifyContent: "center",
+                padding: "20px",
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={() => setPreviewQuoteImage(null)}
             >
-              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
-                <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#0f172a" }}>
-                  🖼️ Quote Calculation Image Preview
-                </h4>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <a
-                    href={previewQuoteImage}
-                    download="Quote_Calculation.png"
-                    style={{ textDecoration: "none", fontSize: "12px", color: "#0284c7", fontWeight: 600, background: "#f0f9ff", padding: "4px 8px", borderRadius: "6px" }}
-                  >
-                    ⬇️ Download
-                  </a>
-                  <button
-                    type="button"
-                    style={{
-                      background: "#f1f5f9",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "30px",
-                      height: "30px",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      color: "#64748b",
-                    }}
-                    onClick={() => setPreviewQuoteImage(null)}
-                  >
-                    ✕
-                  </button>
+              <div
+                style={{
+                  position: "relative",
+                  width: isPdf ? "85vw" : "auto",
+                  maxWidth: isPdf ? "1000px" : "90vw",
+                  maxHeight: "92vh",
+                  background: "#ffffff",
+                  borderRadius: "16px",
+                  padding: "20px",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
+                  <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
+                    {isPdf ? <FileText size={18} style={{ color: "#dc2626" }} /> : null}
+                    {isPdf ? "Quote PDF Document Preview" : "🖼️ Quote Calculation Image Preview"}
+                  </h4>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <a
+                      href={src}
+                      download={filename}
+                      style={{ textDecoration: "none", fontSize: "12px", color: "#0284c7", fontWeight: 600, background: "#f0f9ff", padding: "5px 10px", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    >
+                      ⬇️ Download {isPdf ? "PDF" : "Image"}
+                    </a>
+                    <button
+                      type="button"
+                      style={{
+                        background: "#f1f5f9",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "30px",
+                        height: "30px",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        color: "#64748b",
+                      }}
+                      onClick={() => setPreviewQuoteImage(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
+                {isPdf ? (
+                  <iframe
+                    src={src}
+                    title="Quote PDF Document"
+                    style={{ width: "100%", height: "75vh", minHeight: "500px", border: "1px solid #cbd5e1", borderRadius: "8px" }}
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={src}
+                    alt="Quote Image Preview"
+                    style={{ maxWidth: "100%", maxHeight: "75vh", display: "block", borderRadius: "8px", objectFit: "contain", border: "1px solid #cbd5e1" }}
+                  />
+                )}
               </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewQuoteImage}
-                alt="Quote Image Preview"
-                style={{ maxWidth: "100%", maxHeight: "75vh", display: "block", borderRadius: "8px", objectFit: "contain", border: "1px solid #cbd5e1" }}
-              />
             </div>
-          </div>
-        </ModalPortal>
-      )}
+          </ModalPortal>
+        );
+      })()}
     </div>
   );
 }
