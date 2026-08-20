@@ -328,6 +328,7 @@ export default function RenewalPoliciesPage() {
     due_30: "Renewals Due Within 30 Days",
   }[contextTab];
   const isMotorView = policyType === "Motor";
+  const isWarehouseView = policyType === "Fire";
 
   return (
     <section className="rn-policy-register">
@@ -392,19 +393,34 @@ export default function RenewalPoliciesPage() {
         ) : (
           <table className="rn-table rn-policy-register__table">
             <thead>
-              <tr>
-                <th style={{ width: isMotorView ? "21%" : "16%" }}>Policyholder</th>
-                <th style={{ width: isMotorView ? "15%" : "13%" }}>Policy Number</th>
-                <th style={{ width: isMotorView ? "11%" : "10%" }}>Policy Type</th>
-                <th style={{ width: isMotorView ? "11%" : "10%" }}>Vehicle / Risk</th>
-                {!isMotorView ? <th style={{ width: "7.5%" }}>Start Date</th> : null}
-                <th style={{ width: isMotorView ? "10%" : "7.5%" }}>Expiry Date</th>
-                {!isMotorView ? <th style={{ width: "8.5%" }}>Sum Insured / IDV</th> : null}
-                <th style={{ width: isMotorView ? "8.5%" : "7.5%" }}>Premium</th>
-                <th style={{ width: isMotorView ? "10.5%" : "8.5%" }}>Renewal Mobile</th>
-                <th style={{ width: isMotorView ? "8.5%" : "7%" }}>Status</th>
-                <th style={{ width: "4%" }}>Actions</th>
-              </tr>
+              {isWarehouseView ? (
+                <tr>
+                  <th style={{ width: "12%" }}>Policy Type</th>
+                  <th style={{ width: "10%" }}>Contact No.</th>
+                  <th style={{ width: "12%" }}>Contact Person Name</th>
+                  <th style={{ width: "13%" }}>Policy No.</th>
+                  <th style={{ width: "18%" }}>Insured Name</th>
+                  <th style={{ width: "12%" }}>Sum Insured Description</th>
+                  <th style={{ width: "7.5%" }}>Premium</th>
+                  <th style={{ width: "7.5%" }}>Expiry Date</th>
+                  <th style={{ width: "10%" }}>Insurance Company</th>
+                  <th style={{ width: "4%" }}>Action</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th style={{ width: isMotorView ? "21%" : "16%" }}>Policyholder</th>
+                  <th style={{ width: isMotorView ? "15%" : "13%" }}>Policy Number</th>
+                  <th style={{ width: isMotorView ? "11%" : "10%" }}>Policy Type</th>
+                  <th style={{ width: isMotorView ? "11%" : "10%" }}>Vehicle / Risk</th>
+                  {!isMotorView ? <th style={{ width: "7.5%" }}>Start Date</th> : null}
+                  <th style={{ width: isMotorView ? "10%" : "7.5%" }}>Expiry Date</th>
+                  {!isMotorView ? <th style={{ width: "8.5%" }}>Sum Insured / IDV</th> : null}
+                  <th style={{ width: isMotorView ? "8.5%" : "7.5%" }}>Premium</th>
+                  <th style={{ width: isMotorView ? "10.5%" : "8.5%" }}>Renewal Mobile</th>
+                  <th style={{ width: isMotorView ? "8.5%" : "7%" }}>Status</th>
+                  <th style={{ width: "4%" }}>Actions</th>
+                </tr>
+              )}
             </thead>
             <tbody>
               {policies.map((policy) => {
@@ -417,6 +433,7 @@ export default function RenewalPoliciesPage() {
                     asset={asset}
                     statusTone={statusTone}
                     isMotorView={isMotorView}
+                    isWarehouseView={isWarehouseView}
                     menuOpen={activeActionPolicyId === policy.id}
                     menuPosition={actionMenuPosition}
                     onOpenMenu={(event) => openActionMenu(policy.id, event)}
@@ -480,6 +497,7 @@ function PolicyRegisterRow({
   asset,
   statusTone,
   isMotorView,
+  isWarehouseView,
   menuOpen,
   menuPosition,
   onOpenMenu,
@@ -489,6 +507,69 @@ function PolicyRegisterRow({
   onRowClick,
 }) {
   const cleanPolicyNo = String(policy.policyNumber || "—").replace(/:+$/, "").trim();
+
+  const actionDropdown = (
+    <div className="rn-dropdown">
+      <button type="button" className="rn-dropdown-btn" aria-label={`Actions for ${policy.policyNumber || policy.insuredName || "policy"}`} aria-expanded={menuOpen} onClick={onOpenMenu}>
+        <MoreVertical size={16} />
+      </button>
+      {menuOpen && typeof document !== "undefined" ? createPortal(
+        <>
+          <div className="rn-policy-register__menu-backdrop" onClick={onCloseMenu} />
+          <div
+            className="rn-dropdown-menu"
+            role="menu"
+            style={{
+              position: "fixed",
+              zIndex: 10000,
+              top: `${menuPosition?.top || 0}px`,
+              left: `${menuPosition?.left || 0}px`,
+              right: "auto",
+              width: `${menuPosition?.width || 230}px`,
+              maxHeight: "calc(100vh - 24px)",
+              overflowY: "auto",
+            }}
+          >
+            <ActionItem icon={<Eye />} label="View Profile" onClick={() => onCustomerAction(policy)} />
+            <ActionItem icon={<Phone />} label="Call Customer" onClick={() => onCall(policy)} />
+            <ActionItem icon={<Send style={{ color: "#25d366" }} />} label="Send WhatsApp" onClick={() => onCustomerAction(policy, "whatsapp")} />
+            <ActionItem icon={<Edit3 />} label="Edit Contact" onClick={() => onCustomerAction(policy, "edit")} />
+            <ActionItem icon={<MessageSquare />} label="Add Remark" onClick={() => onCustomerAction(policy, "remark")} />
+            <ActionItem icon={<UserPlus />} label="Assign Agent" onClick={() => onCustomerAction(policy, "assign")} />
+            <ActionItem icon={<FileText />} label="View Policies" onClick={() => onCustomerAction(policy)} />
+            <ActionItem icon={<Clipboard />} label="View Renewal Timeline" onClick={() => onCustomerAction(policy, "timeline")} />
+            <ActionItem icon={<CheckCircle style={{ color: "var(--rn-success)" }} />} label="Mark Renewed" onClick={() => onCustomerAction(policy, "renew")} />
+            <ActionItem danger icon={<XCircle />} label="Mark Lost" onClick={() => onCustomerAction(policy, "lost")} />
+          </div>
+        </>,
+        document.body,
+      ) : null}
+    </div>
+  );
+
+  if (isWarehouseView) {
+    const contactNo = policy.contactNumber || policy.renewalRecipientMobile || policy.contactPersonMobile || "—";
+    const contactPerson = policy.contactPerson || policy.contactPersonName || policy.renewalRecipientName || "—";
+    const sumInsuredDesc = policy.sumInsured || policy.idv || "—";
+    const insurer = policy.insuranceCompany || policy.companyName || "—";
+    const pType = policy.policyType || policy.displayPolicyType || "—";
+
+    return (
+      <tr className={policy.whatsappMessageSentAt ? "rn-row-whatsapp-sent" : ""} onClick={(event) => onRowClick(policy, event)}>
+        <td style={{ whiteSpace: "nowrap" }}>{pType}</td>
+        <td style={{ whiteSpace: "nowrap" }}><span className="rn-policy-register__mono">{contactNo}</span></td>
+        <td><strong>{contactPerson}</strong></td>
+        <td><span className="rn-policy-register__mono">{cleanPolicyNo}</span></td>
+        <td><strong className="rn-policy-register__primary">{policy.insuredName || "Name not available"}</strong></td>
+        <td>{sumInsuredDesc}</td>
+        <td style={{ whiteSpace: "nowrap" }}><strong>{formatRenewalRegisterAmount(policy.totalPremium || policy.premium)}</strong></td>
+        <td style={{ whiteSpace: "nowrap" }}><strong>{formatRenewalRegisterDate(policy.expiryDate)}</strong><small>{policy.daysStatus || ""}</small></td>
+        <td style={{ whiteSpace: "nowrap" }}>{insurer}</td>
+        <td className="rn-policy-register__actions">{actionDropdown}</td>
+      </tr>
+    );
+  }
+
   return (
     <tr className={policy.whatsappMessageSentAt ? "rn-row-whatsapp-sent" : ""} onClick={(event) => onRowClick(policy, event)}>
       <td><strong className="rn-policy-register__primary">{policy.insuredName || "Name not available"}</strong></td>
@@ -501,44 +582,7 @@ function PolicyRegisterRow({
       <td style={{ whiteSpace: "nowrap" }}>{formatRenewalRegisterAmount(policy.totalPremium || policy.premium)}</td>
       <td style={{ whiteSpace: "nowrap" }}>{policy.renewalRecipientMobile || policy.contactNumber || "—"}</td>
       <td style={{ whiteSpace: "nowrap" }}><span className={`rn-policy-register__status rn-policy-register__status--${statusTone}`}>{String(policy.renewalStatus || "unknown").replaceAll("_", " ")}</span></td>
-      <td className="rn-policy-register__actions">
-        <div className="rn-dropdown">
-          <button type="button" className="rn-dropdown-btn" aria-label={`Actions for ${policy.policyNumber || policy.insuredName || "policy"}`} aria-expanded={menuOpen} onClick={onOpenMenu}>
-            <MoreVertical size={16} />
-          </button>
-          {menuOpen && typeof document !== "undefined" ? createPortal(
-            <>
-              <div className="rn-policy-register__menu-backdrop" onClick={onCloseMenu} />
-              <div
-                className="rn-dropdown-menu"
-                role="menu"
-                style={{
-                  position: "fixed",
-                  zIndex: 10000,
-                  top: `${menuPosition?.top || 0}px`,
-                  left: `${menuPosition?.left || 0}px`,
-                  right: "auto",
-                  width: `${menuPosition?.width || 230}px`,
-                  maxHeight: "calc(100vh - 24px)",
-                  overflowY: "auto",
-                }}
-              >
-                <ActionItem icon={<Eye />} label="View Profile" onClick={() => onCustomerAction(policy)} />
-                <ActionItem icon={<Phone />} label="Call Customer" onClick={() => onCall(policy)} />
-                <ActionItem icon={<Send style={{ color: "#25d366" }} />} label="Send WhatsApp" onClick={() => onCustomerAction(policy, "whatsapp")} />
-                <ActionItem icon={<Edit3 />} label="Edit Contact" onClick={() => onCustomerAction(policy, "edit")} />
-                <ActionItem icon={<MessageSquare />} label="Add Remark" onClick={() => onCustomerAction(policy, "remark")} />
-                <ActionItem icon={<UserPlus />} label="Assign Agent" onClick={() => onCustomerAction(policy, "assign")} />
-                <ActionItem icon={<FileText />} label="View Policies" onClick={() => onCustomerAction(policy)} />
-                <ActionItem icon={<Clipboard />} label="View Renewal Timeline" onClick={() => onCustomerAction(policy, "timeline")} />
-                <ActionItem icon={<CheckCircle style={{ color: "var(--rn-success)" }} />} label="Mark Renewed" onClick={() => onCustomerAction(policy, "renew")} />
-                <ActionItem danger icon={<XCircle />} label="Mark Lost" onClick={() => onCustomerAction(policy, "lost")} />
-              </div>
-            </>,
-            document.body,
-          ) : null}
-        </div>
-      </td>
+      <td className="rn-policy-register__actions">{actionDropdown}</td>
     </tr>
   );
 }
