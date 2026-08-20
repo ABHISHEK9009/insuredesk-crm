@@ -57,18 +57,19 @@ export async function GET(request) {
 
     const monthlyTrendsQuery = `
       SELECT
-        TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month_key,
-        TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YY') AS short_month,
-        TO_CHAR(DATE_TRUNC('month', created_at), 'Month YYYY') AS month_label,
+        TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'YYYY-MM') AS month_key,
+        TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'Mon YY') AS short_month,
+        TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'Month YYYY') AS month_label,
+        EXTRACT(YEAR FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS year,
+        EXTRACT(MONTH FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS month,
         COUNT(*)::integer AS policy_count,
         COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
-        AND created_at >= NOW() - INTERVAL '6 months'
-      GROUP BY DATE_TRUNC('month', created_at)
-      ORDER BY DATE_TRUNC('month', created_at) ASC
+      GROUP BY 1, 2, 3, 4, 5
+      ORDER BY 1 ASC
     `;
 
     const categoryBreakdownQuery = `

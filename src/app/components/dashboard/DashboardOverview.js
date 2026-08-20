@@ -229,10 +229,55 @@ function ExecutiveKpiStrip({ summary = {}, premium = {} }) {
 // -------------------------------------------------------------
 // Component: Primary Production Trajectory Graph (Hero Chart)
 // -------------------------------------------------------------
+const MONTH_SELECTOR_OPTIONS = [
+  { value: "ALL", label: "All Months" },
+  { value: "1", label: "Jan (01)" },
+  { value: "2", label: "Feb (02)" },
+  { value: "3", label: "Mar (03)" },
+  { value: "4", label: "Apr (04)" },
+  { value: "5", label: "May (05)" },
+  { value: "6", label: "Jun (06)" },
+  { value: "7", label: "Jul (07)" },
+  { value: "8", label: "Aug (08)" },
+  { value: "9", label: "Sep (09)" },
+  { value: "10", label: "Oct (10)" },
+  { value: "11", label: "Nov (11)" },
+  { value: "12", label: "Dec (12)" },
+];
+
 function ProductionTrajectoryChart({ trends = [] }) {
   const [metric, setMetric] = useState("premium"); // 'premium' | 'count'
+  const [selectedYear, setSelectedYear] = useState("2026");
+  const [selectedMonth, setSelectedMonth] = useState("ALL");
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
+  // Available unique years extracted dynamically from data
+  const availableYears = useMemo(() => {
+    const set = new Set();
+    for (const t of trends) {
+      if (t.year) set.add(String(t.year));
+      else if (t.month_key) {
+        const y = t.month_key.slice(0, 4);
+        if (y) set.add(y);
+      }
+    }
+    const arr = Array.from(set).sort((a, b) => Number(b) - Number(a));
+    return arr.length > 0 ? arr : ["2026", "2025"];
+  }, [trends]);
+
+  // Ensure selectedYear is valid
+  useEffect(() => {
+    if (
+      availableYears.length > 0 &&
+      !availableYears.includes(selectedYear) &&
+      selectedYear !== "ALL" &&
+      selectedYear !== "LAST_6"
+    ) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [availableYears, selectedYear]);
+
+  // Filter trends based on Year and Month selection
   const data = useMemo(() => {
     if (!trends || trends.length === 0) {
       return [
@@ -244,8 +289,33 @@ function ProductionTrajectoryChart({ trends = [] }) {
         { shortMonth: "Current", totalPremium: 0, policyCount: 0 },
       ];
     }
-    return trends;
-  }, [trends]);
+
+    let filtered = [...trends];
+    if (selectedYear === "LAST_6") {
+      filtered = filtered.slice(-6);
+    } else if (selectedYear !== "ALL") {
+      filtered = filtered.filter((t) => {
+        const y = String(t.year || (t.month_key ? t.month_key.slice(0, 4) : ""));
+        return y === selectedYear;
+      });
+    }
+
+    if (selectedMonth !== "ALL") {
+      const mNum = Number(selectedMonth);
+      filtered = filtered.filter((t) => {
+        const m = Number(t.month || (t.month_key ? t.month_key.slice(5, 7) : 0));
+        return m === mNum;
+      });
+    }
+
+    if (filtered.length === 0) {
+      return [
+        { shortMonth: "No Data", totalPremium: 0, policyCount: 0, monthLabel: "No policies in selected period" }
+      ];
+    }
+
+    return filtered;
+  }, [trends, selectedYear, selectedMonth]);
 
   const width = 860;
   const height = 180;
@@ -256,34 +326,43 @@ function ProductionTrajectoryChart({ trends = [] }) {
   const plotWidth = width - paddingLeft - paddingRight;
   const plotHeight = height - paddingTop - paddingBottom;
 
-  const values = data.map((d) => (metric === "premium" ? d.totalPremium : d.policyCount));
+  const values = data.map((d) => (metric === "premium" ? Number(d.totalPremium || 0) : Number(d.policyCount || 0)));
   const rawMax = Math.max(...values, 0);
   const maxValue = rawMax > 0 ? rawMax * 1.15 : metric === "premium" ? 100000 : 10;
-  const stepX = data.length > 1 ? plotWidth / (data.length - 1) : 0;
+  const stepX = data.length > 1 ? plotWidth / (data.length - 1) : plotWidth / 2;
 
   const points = data.map((item, index) => {
-    const val = metric === "premium" ? item.totalPremium : item.policyCount;
-    const x = paddingLeft + index * stepX;
+    const val = metric === "premium" ? Number(item.totalPremium || 0) : Number(item.policyCount || 0);
+    const x = data.length === 1 ? paddingLeft + plotWidth / 2 : paddingLeft + index * stepX;
     const y = paddingTop + plotHeight - (val / maxValue) * plotHeight;
     return { ...item, x, y, value: val };
   });
 
-  const linePath = points.reduce((acc, pt, i) => {
-    if (i === 0) return `M ${pt.x} ${pt.y}`;
-    const prev = points[i - 1];
-    const cx1 = prev.x + (pt.x - prev.x) / 2;
-    const cy1 = prev.y;
-    const cx2 = prev.x + (pt.x - prev.x) / 2;
-    const cy2 = pt.y;
-    return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pt.x} ${pt.y}`;
-  }, "");
+  const linePath = points.length === 1
+    ? `M ${points[0].x - 30} ${points[0].y} L ${points[0].x + 30} ${points[0].y}`
+    : points.reduce((acc, pt, i) => {
+        if (i === 0) return `M ${pt.x} ${pt.y}`;
+        const prev = points[i - 1];
+        const cx1 = prev.x + (pt.x - prev.x) / 2;
+        const cy1 = prev.y;
+        const cx2 = prev.x + (pt.x - prev.x) / 2;
+        const cy2 = pt.y;
+        return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pt.x} ${pt.y}`;
+      }, "");
 
-  const areaPath = points.length
+  const areaPath = points.length > 1
     ? `${linePath} L ${points[points.length - 1].x} ${paddingTop + plotHeight} L ${points[0].x} ${paddingTop + plotHeight} Z`
     : "";
 
-  const totalPeriodPremium = data.reduce((acc, d) => acc + (d.totalPremium || 0), 0);
-  const latestMonth = data[data.length - 1] || {};
+  const totalPeriodPremium = data.reduce((acc, d) => acc + Number(d.totalPremium || 0), 0);
+  const totalPeriodCount = data.reduce((acc, d) => acc + Number(d.policyCount || 0), 0);
+  const latestOrSelected = data[data.length - 1] || {};
+
+  const periodTrajectoryLabel = selectedYear === "ALL"
+    ? "All-Time Trajectory"
+    : selectedYear === "LAST_6"
+    ? "6-Month Trajectory"
+    : `${selectedYear} Total`;
 
   return (
     <div className="dash-hero-chart-card">
@@ -294,6 +373,40 @@ function ProductionTrajectoryChart({ trends = [] }) {
           <p className="dash-card-subtitle">Fresh policy issuance volume & premium trajectory over time</p>
         </div>
         <div className="dash-hero-controls">
+          {/* Year Dropdown */}
+          <select
+            className="dash-chart-select"
+            value={selectedYear}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              setSelectedMonth("ALL");
+            }}
+            aria-label="Filter by Year"
+          >
+            {availableYears.map((yr) => (
+              <option key={yr} value={yr}>
+                Year {yr}
+              </option>
+            ))}
+            <option value="LAST_6">Last 6 Months</option>
+            <option value="ALL">All Years</option>
+          </select>
+
+          {/* Month Dropdown */}
+          <select
+            className="dash-chart-select"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            aria-label="Filter by Month"
+          >
+            {MONTH_SELECTOR_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Metric Toggle */}
           <div className="dash-pill-segmented">
             <button
               type="button"
@@ -370,7 +483,7 @@ function ProductionTrajectoryChart({ trends = [] }) {
             const isHovered = hoveredIndex === idx;
             return (
               <g
-                key={pt.monthLabel || idx}
+                key={pt.month_key || pt.monthLabel || idx}
                 className="dash-chart-node"
                 onMouseEnter={() => setHoveredIndex(idx)}
               >
@@ -432,11 +545,11 @@ function ProductionTrajectoryChart({ trends = [] }) {
       <div className="dash-hero-footer">
         <div className="dash-hero-stat-pill">
           <TrendingUp size={15} className="text-emerald-600" />
-          <span>Latest Month: <strong>{formatMoney(latestMonth.totalPremium || 0)}</strong> ({latestMonth.policyCount || 0} pol)</span>
+          <span>{latestOrSelected.monthLabel || latestOrSelected.shortMonth || "Selected"}: <strong>{formatMoney(latestOrSelected.totalPremium || 0)}</strong> ({latestOrSelected.policyCount || 0} pol)</span>
         </div>
         <div className="dash-hero-stat-pill">
           <Layers size={15} className="text-blue-600" />
-          <span>6-Month Trajectory: <strong>{formatMoney(totalPeriodPremium)}</strong></span>
+          <span>{periodTrajectoryLabel}: <strong>{formatMoney(totalPeriodPremium)}</strong> ({totalPeriodCount} pol)</span>
         </div>
       </div>
     </div>
