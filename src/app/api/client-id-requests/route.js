@@ -6,7 +6,6 @@ import { isValidClientEmail, matchesClientAccountIdentity } from "@/lib/client-a
 import { generateTemporaryClientMpin, provisionClientMpin } from "@/lib/client-portal/credentials";
 import {
   normalizeClientId,
-  withClientIdLock,
   withClientIdRequestLock,
   withClientPhoneLock,
   withClientPhoneLocks,
@@ -437,160 +436,130 @@ export async function PATCH(request) {
   }
   let result;
   try {
-    result = await withClientPhoneLock(item.organizationId, item.customerMobile, (phoneDatabase) =>
-      withClientIdRequestLock(
-        item.id,
-        async (tx) => {
-          const claim = await tx.task.updateMany({
-            where: { id: item.id, status: { in: OPEN_STATUSES } },
-            data: { status: "ASSIGNED", updatedById: actorId },
-          });
-          if (claim.count !== 1) {
-            return { updated: null, mappedPolicyCount: 0, resolutionConflict: true };
+    result = await prisma.$transaction(
+      async (tx) => {
+        const claim = await tx.task.updateMany({
+          where: { id: item.id, status: { in: OPEN_STATUSES } },
+          data: { status: "ASSIGNED", updatedById: actorId },
+        });
+        if (claim.count !== 1) {
+          return { updated: null, mappedPolicyCount: 0, resolutionConflict: true };
+        }
+
+        const policies = await tx.policyRecord.findMany({
+          where: { clientIdRequestId: item.id, clientIdPending: true, deletedAt: null },
+          select: { id: true, data: true, reviewedData: true, extractedData: true },
+        });
+
+        const finishResolution = async (account, resolutionType) => {
+          for (const policy of policies) {
+            await tx.policyRecord.update({
+              where: { id: policy.id },
+              data: {
+                data: { ...(policy.data || {}), clientId: account.id },
+                reviewedData: { ...(policy.reviewedData || policy.data || {}), clientId: account.id },
+                extractedData: policy.extractedData
+                  ? { ...policy.extractedData, clientId: "" }
+                  : policy.extractedData,
+                clientIdPending: false,
+                clientIdStatus: "LINKED",
+              },
+            });
           }
 
-          const policyRefs = await tx.policyRecord.findMany({
-            where: { clientIdRequestId: item.id, clientIdPending: true, deletedAt: null },
-            select: { id: true },
-          });
-          return withPolicyRecordLocks(
-            policyRefs.map((policy) => policy.id),
-            async (policyDatabase) => {
-              const policies = await policyDatabase.policyRecord.findMany({
-                where: { clientIdRequestId: item.id, clientIdPending: true, deletedAt: null },
-                select: { id: true, data: true, reviewedData: true, extractedData: true },
-              });
-              const finishResolution = async (database, account, resolutionType) => {
-                for (const policy of policies) {
-                  await database.policyRecord.update({
-                    where: { id: policy.id },
-                    data: {
-                      data: { ...(policy.data || {}), clientId: account.id },
-                      reviewedData: { ...(policy.reviewedData || policy.data || {}), clientId: account.id },
-                      extractedData: policy.extractedData
-                        ? { ...policy.extractedData, clientId: "" }
-                        : policy.extractedData,
-                      clientIdPending: false,
-                      clientIdStatus: "LINKED",
-                    },
-                  });
-                }
-
-                const resolvedTask = await database.task.update({
-                  where: { id: item.id },
-                  data: {
-                    status: "COMPLETED",
-                    completedAt: new Date(),
-                    updatedById: actorId,
-                    recordId: account.id,
-                    recordLabel: account.name,
-                    metadata: {
-                      ...(item.metadata || {}),
-                      resolvedClientId: account.id,
-                      resolvedClientName: account.name,
-                      resolutionType,
-                      resolvedByName: session.name || null,
-                      mappedPolicyCount: policies.length,
-                      workflowStatus: "LINKED",
-                      history: [
-                        ...getHistory(item.metadata),
-                        {
-                          event: resolutionType,
-                          actorId,
-                          actorName: session.name || session.email || "Super Admin",
-                          at: new Date().toISOString(),
-                          resolvedClientId: account.id,
-                          resolvedClientName: account.name,
-                          mappedPolicyCount: policies.length,
-                        },
-                      ],
-                    },
+          const resolvedTask = await tx.task.update({
+            where: { id: item.id },
+            data: {
+              status: "COMPLETED",
+              completedAt: new Date(),
+              updatedById: actorId,
+              recordId: account.id,
+              recordLabel: account.name,
+              metadata: {
+                ...(item.metadata || {}),
+                resolvedClientId: account.id,
+                resolvedClientName: account.name,
+                resolutionType,
+                resolvedByName: session.name || null,
+                mappedPolicyCount: policies.length,
+                workflowStatus: "LINKED",
+                history: [
+                  ...getHistory(item.metadata),
+                  {
+                    event: resolutionType,
+                    actorId,
+                    actorName: session.name || session.email || "Super Admin",
+                    at: new Date().toISOString(),
+                    resolvedClientId: account.id,
+                    resolvedClientName: account.name,
+                    mappedPolicyCount: policies.length,
                   },
-                });
-                return {
-                  updated: resolvedTask,
-                  mappedPolicyCount: policies.length,
-                  resolutionConflict: false,
-                };
-              };
-
-              if (action === "LINK_EXISTING") {
-                const clientId = normalizeClientId(body.clientId);
-                if (!clientId) throw workflowError("CLIENT_NOT_FOUND");
-                return withClientIdLock(
-                  clientId,
-                  async (clientDatabase) => {
-                    const account = await clientDatabase.clientAccount.findFirst({
-                      where: { id: clientId, organizationId: item.organizationId, deletedAt: null },
-                    });
-                    if (!account) throw workflowError("CLIENT_NOT_FOUND");
-                    return finishResolution(clientDatabase, account, "LINK_EXISTING");
-                  },
-                  policyDatabase,
-                );
-              }
-
-              const existingAccounts = await policyDatabase.clientAccount.findMany({
-                where: {
-                  organizationId: item.organizationId,
-                  deletedAt: null,
-                  phone: item.customerMobile,
-                },
-              });
-
-              const exactMatch = existingAccounts.find((acc) =>
-                matchesClientAccountIdentity(acc, {
-                  insuredName: item.customerName,
-                  contactNumber: item.customerMobile,
-                  email: item.metadata?.email,
-                }),
-              );
-
-              if (exactMatch) {
-                return withClientIdLock(
-                  exactMatch.id,
-                  async (clientDatabase) => {
-                    const account = await clientDatabase.clientAccount.findFirst({
-                      where: {
-                        id: exactMatch.id,
-                        organizationId: item.organizationId,
-                        deletedAt: null,
-                      },
-                    });
-                    if (!account) throw workflowError("CLIENT_NOT_FOUND");
-                    return finishResolution(clientDatabase, account, "LINK_EXISTING");
-                  },
-                  policyDatabase,
-                );
-              }
-
-              const account = await policyDatabase.clientAccount.create({
-                data: {
-                  name: item.customerName,
-                  phone: item.customerMobile,
-                  email: item.metadata?.email || null,
-                  organizationId: item.organizationId,
-                  createdById: actorId,
-                  updatedById: actorId,
-                },
-              });
-              let temporaryMpin = null;
-              try {
-                temporaryMpin = generateTemporaryClientMpin();
-                await provisionClientMpin(account, temporaryMpin, policyDatabase);
-              } catch (mpinErr) {
-                console.warn("Could not provision temporary MPIN for client account:", mpinErr);
-              }
-              return {
-                ...(await finishResolution(policyDatabase, account, "CREATE_NEW")),
-                temporaryMpin,
-              };
+                ],
+              },
             },
-            tx,
-          );
-        },
-        phoneDatabase,
-      ),
+          });
+          return {
+            updated: resolvedTask,
+            mappedPolicyCount: policies.length,
+            resolutionConflict: false,
+          };
+        };
+
+        if (action === "LINK_EXISTING") {
+          const clientId = normalizeClientId(body.clientId);
+          if (!clientId) throw workflowError("CLIENT_NOT_FOUND");
+          const account = await tx.clientAccount.findFirst({
+            where: { id: clientId, organizationId: item.organizationId, deletedAt: null },
+          });
+          if (!account) throw workflowError("CLIENT_NOT_FOUND");
+          return finishResolution(account, "LINK_EXISTING");
+        }
+
+        const existingAccounts = await tx.clientAccount.findMany({
+          where: {
+            organizationId: item.organizationId,
+            deletedAt: null,
+            phone: item.customerMobile,
+          },
+        });
+
+        const exactMatch = existingAccounts.find((acc) =>
+          matchesClientAccountIdentity(acc, {
+            insuredName: item.customerName,
+            contactNumber: item.customerMobile,
+            email: item.metadata?.email,
+          }),
+        );
+
+        if (exactMatch) {
+          return finishResolution(exactMatch, "LINK_EXISTING");
+        }
+
+        const account = await tx.clientAccount.create({
+          data: {
+            name: item.customerName,
+            phone: item.customerMobile,
+            email: item.metadata?.email || null,
+            organizationId: item.organizationId,
+            createdById: actorId,
+            updatedById: actorId,
+          },
+        });
+
+        let temporaryMpin = null;
+        try {
+          temporaryMpin = generateTemporaryClientMpin();
+          await provisionClientMpin(account, temporaryMpin, tx);
+        } catch (mpinErr) {
+          console.warn("Could not provision temporary MPIN for client account:", mpinErr);
+        }
+
+        return {
+          ...(await finishResolution(account, "CREATE_NEW")),
+          temporaryMpin,
+        };
+      },
+      { maxWait: 15000, timeout: 30000 },
     );
   } catch (error) {
     console.error("Client ID resolution error:", error);

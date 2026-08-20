@@ -67,11 +67,22 @@ async function withAdvisoryLocks(lockKeys, operation, database) {
   const run = async (transaction) => {
     if (typeof transaction.$executeRaw === "function") {
       for (const lockKey of lockKeys) {
-        await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+        try {
+          await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+        } catch {}
       }
     }
     return operation(transaction);
   };
 
-  return typeof database.$transaction === "function" ? database.$transaction(run) : run(database);
+  // If already inside a transaction client (not root prisma), do not re-wrap in $transaction
+  if (database && database !== prisma && typeof database.$transaction !== "function") {
+    return run(database);
+  }
+
+  if (typeof database?.$transaction === "function") {
+    return database.$transaction(run, { maxWait: 15000, timeout: 30000 });
+  }
+
+  return run(database || prisma);
 }
