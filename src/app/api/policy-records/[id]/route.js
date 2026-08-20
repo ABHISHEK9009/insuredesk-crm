@@ -162,14 +162,10 @@ export async function PUT(request, { params }) {
     }
     if (reviewedData.clientId) {
       const activeClient = await findActiveClientAccount(reviewedData.clientId, existing.organizationId);
-      if (!activeClient) {
-        return Response.json(
-          { error: "Select an active Client ID from this organization before saving." },
-          { status: 400 },
-        );
+      if (activeClient) {
+        reviewedData.clientId = activeClient.id;
+        mergedData.clientId = activeClient.id;
       }
-      reviewedData.clientId = activeClient.id;
-      mergedData.clientId = activeClient.id;
     }
     const previousClientIdCandidate = String(
       existing.reviewedData?.clientId || existing.data?.clientId || "",
@@ -222,8 +218,11 @@ export async function PUT(request, { params }) {
           data: mergedData,
           updatedById: actorId,
           contactPersonMobile: policyCustomerMobile || reviewedData.contactNumber || null,
-          contactPersonName: policyCustomerName || null,
+          contactPersonName: policyCustomerName || reviewedData.contactPerson || null,
           contactPersonEmail: reviewedData.email || reviewedData.customerEmail || null,
+          renewalRecipientMobile: policyCustomerMobile || reviewedData.contactNumber || null,
+          renewalRecipientName: policyCustomerName || reviewedData.contactPerson || null,
+          renewalRecipientEmail: reviewedData.email || reviewedData.customerEmail || null,
           clientIdRequestId: clientIdPending ? verifiedClientIdRequest.id : null,
           clientIdPending,
           clientIdStatus: clientIdPending

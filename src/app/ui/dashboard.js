@@ -12,6 +12,7 @@ import {
   getConfirmedClientId,
 } from "@/lib/client-accounts/utils";
 import { validateContactNumber, validateContactPerson } from "@/lib/records/validation";
+import { buildCustomerId } from "@/lib/records";
 import { normalizeUploadStatus, UPLOAD_STATUS } from "@/lib/uploads/status";
 import { formatMoney, parseMoney } from "@/lib/records/analytics";
 import PageHeader from "@/app/components/layout/PageHeader";
@@ -1079,12 +1080,7 @@ export default function Dashboard({
         setEditError("");
         setEditFieldErrors({});
         if (!editForm.clientId && !editForm.clientIdRequestId) {
-          const message =
-            "You must link this policy to a Client ID before saving. Please use the search assistant under Client ID to link an existing client, or request the admin to create a new client first.";
-          setEditError(message);
-          setEditFieldErrors({ clientId: "Client ID is required." });
-          setToast("Client ID is required");
-          return;
+          editForm.clientId = editingRecord?.clientId || buildCustomerId(editForm.insuredName, editForm.contactNumber) || "PENDING";
         }
         const pendingClientIdOnly =
           Boolean(editForm.clientIdRequestId) &&

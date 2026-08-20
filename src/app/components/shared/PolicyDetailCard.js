@@ -494,7 +494,7 @@ export default function PolicyDetailCard({
                           options={FIELD_OPTIONS[key]}
                           wide={["riskLocation", "description", "occupancy", "remark"].includes(key)}
                           error={fieldError}
-                          disabled={isContactNumber && Boolean(contactPersonError)}
+                          disabled={false}
                           insuredName={editForm.insuredName}
                           contactNumber={editForm.contactNumber}
                           email={editForm.email}
