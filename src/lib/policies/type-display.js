@@ -28,11 +28,10 @@ export function normalizePolicyFamily(record = {}) {
     return "Motor Policy";
   }
   if (
-    /\b(fire|sfsp|standard\s+fire|msme\s+suraksha|burglary|warehouse|stock|contents|property|industrial\s+all\s+risk)\b/.test(
-      haystack,
-    )
+    /\b(warehouse|mpwlc|godown|warehousing)\b/.test(haystack) ||
+    String(record.sourceFile || "").toLowerCase().includes("warehouse")
   ) {
-    return "Fire Policy";
+    return "Warehouse Policy";
   }
   if (
     /\b(health|mediclaim|medical|family\s+floater|critical\s+illness|hospital|personal\s+accident|pa policy)\b/.test(
@@ -50,14 +49,21 @@ export function normalizePolicyFamily(record = {}) {
   if (/\b(marine|transit|cargo|inland\s+transit)\b/.test(haystack)) {
     return "Marine Policy";
   }
-  if (/\b(home|householder|building|contents)\b/.test(haystack)) {
+  if (/\b(home|householder|building|contents|griha)\b/.test(haystack)) {
     return "Home Policy";
   }
-  if (/\b(engineering|contractor|erection|machinery|boiler|plant)\b/.test(haystack)) {
+  if (/\b(engineering|contractor|erection|machinery|boiler|plant|ear)\b/.test(haystack)) {
     return "Engineering Policy";
   }
-  if (/\b(liability|professional\s+indemnity|public\s+liability|workmen|cyber)\b/.test(haystack)) {
+  if (/\b(liability|professional\s+indemnity|public\s+liability|workmen|cyber|wc|cgl)\b/.test(haystack)) {
     return "Liability Policy";
+  }
+  if (
+    /\b(fire|sfsp|standard\s+fire|msme\s+suraksha|burglary|stock|property|industrial\s+all\s+risk)\b/.test(
+      haystack,
+    )
+  ) {
+    return "Fire Policy";
   }
 
   return cleanPolicyType(record.policyType || record.selectedPolicyType || "General Policy");

@@ -176,12 +176,13 @@ export async function GET(request) {
           (CASE
             WHEN policy_haystack ~ '\\m(motor|vehicle|private\\s+car|two\\s+wheeler|commercial\\s+vehicle|goods\\s+carrying|auto\\s+secure|registration|chassis|engine)\\M'
               OR policy_haystack ~ '\\m[a-z]{2}[-\\s]?\\d{1,2}[-\\s]?[a-z]{1,3}[-\\s]?\\d{4}\\M' THEN 'Motor Policy'
-            WHEN policy_haystack ~ '\\m(fire|sfsp|standard\\s+fire|msme\\s+suraksha|burglary|warehouse|stock|contents|property|industrial\\s+all\\s+risk)\\M' THEN 'Fire Policy'
+            WHEN policy_haystack ~ '\\m(warehouse|mpwlc|godown|warehousing)\\M'
+              OR LOWER(COALESCE(reviewed_data->>'sourceFile', data->>'sourceFile', '')) LIKE '%warehouse%' THEN 'Warehouse Policy'
             WHEN policy_haystack ~ '\\m(health|mediclaim|medical|family\\s+floater|critical\\s+illness|hospital|personal\\s+accident|pa policy)\\M' THEN 'Health Policy'
             WHEN policy_haystack ~ '\\m(life|term\\s+life|endowment|ulip|whole\\s+life|annuity|pension)\\M' THEN 'Life Policy'
             WHEN policy_haystack ~ '\\m(travel|journey|overseas|student\\s+travel)\\M' THEN 'Travel Policy'
             WHEN policy_haystack ~ '\\m(marine|transit|cargo|inland\\s+transit)\\M' THEN 'Marine Policy'
-            WHEN policy_haystack ~ '\\m(commercial|business|shop|office|sme|package)\\M' THEN 'Commercial Policy'
+            WHEN policy_haystack ~ '\\m(commercial|business|shop|office|sme|package|fire|sfsp|standard\\s+fire|msme\\s+suraksha|burglary|wc|workman|liability|cgl|ear|erection|griha)\\M' THEN 'Commercial Policy'
             ELSE 'Other Policy'
            END) AS policy_family,
           (CASE
@@ -287,7 +288,9 @@ export async function GET(request) {
           -- Policy Type Filter
           AND (
             $7 = 'All' 
-            OR (LOWER($7) = 'other' AND policy_family NOT IN ('Motor Policy', 'Fire Policy'))
+            OR (LOWER($7) IN ('other', 'non-motor', 'nonmotor') AND policy_family NOT IN ('Motor Policy', 'Warehouse Policy'))
+            OR (LOWER($7) IN ('warehouse', 'fire') AND policy_family = 'Warehouse Policy')
+            OR (LOWER($7) = 'motor' AND policy_family = 'Motor Policy')
             OR LOWER(policy_type) = LOWER($7) 
             OR LOWER(selected_policy_type) = LOWER($7)
             OR LOWER(policy_family) = LOWER($7)
@@ -351,7 +354,9 @@ export async function GET(request) {
         )
         AND (
           $7 = 'All'
-          OR (LOWER($7) = 'other' AND policy_family NOT IN ('Motor Policy', 'Fire Policy'))
+          OR (LOWER($7) IN ('other', 'non-motor', 'nonmotor') AND policy_family NOT IN ('Motor Policy', 'Warehouse Policy'))
+          OR (LOWER($7) IN ('warehouse', 'fire') AND policy_family = 'Warehouse Policy')
+          OR (LOWER($7) = 'motor' AND policy_family = 'Motor Policy')
           OR LOWER(policy_type) = LOWER($7)
           OR LOWER(selected_policy_type) = LOWER($7)
           OR LOWER(policy_family) = LOWER($7)
@@ -371,8 +376,8 @@ export async function GET(request) {
       SELECT
         COUNT(*)::integer AS all_count,
         COUNT(*) FILTER (WHERE policy_family = 'Motor Policy')::integer AS motor_count,
-        COUNT(*) FILTER (WHERE policy_family = 'Fire Policy')::integer AS warehouse_count,
-        COUNT(*) FILTER (WHERE policy_family NOT IN ('Motor Policy', 'Fire Policy'))::integer AS other_count
+        COUNT(*) FILTER (WHERE policy_family = 'Warehouse Policy')::integer AS warehouse_count,
+        COUNT(*) FILTER (WHERE policy_family NOT IN ('Motor Policy', 'Warehouse Policy'))::integer AS other_count
       FROM active_policies
       WHERE
         (

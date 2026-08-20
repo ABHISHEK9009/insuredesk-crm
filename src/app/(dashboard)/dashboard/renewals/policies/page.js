@@ -328,7 +328,9 @@ export default function RenewalPoliciesPage() {
     due_30: "Renewals Due Within 30 Days",
   }[contextTab];
   const isMotorView = policyType === "Motor";
-  const isWarehouseView = policyType === "Fire";
+  const isWarehouseView = policyType === "Warehouse" || policyType === "Fire";
+  const isNonMotorView = policyType === "Other" || policyType === "Non-Motor";
+  const isCustomTable = isWarehouseView || isNonMotorView;
 
   return (
     <section className="rn-policy-register">
@@ -393,7 +395,7 @@ export default function RenewalPoliciesPage() {
         ) : (
           <table className="rn-table rn-policy-register__table">
             <thead>
-              {isWarehouseView ? (
+              {isCustomTable ? (
                 <tr>
                   <th style={{ width: "12%" }}>Policy Type</th>
                   <th style={{ width: "10%" }}>Contact No.</th>
@@ -433,7 +435,7 @@ export default function RenewalPoliciesPage() {
                     asset={asset}
                     statusTone={statusTone}
                     isMotorView={isMotorView}
-                    isWarehouseView={isWarehouseView}
+                    isCustomTable={isCustomTable}
                     menuOpen={activeActionPolicyId === policy.id}
                     menuPosition={actionMenuPosition}
                     onOpenMenu={(event) => openActionMenu(policy.id, event)}
@@ -497,7 +499,7 @@ function PolicyRegisterRow({
   asset,
   statusTone,
   isMotorView,
-  isWarehouseView,
+  isCustomTable,
   menuOpen,
   menuPosition,
   onOpenMenu,
@@ -547,7 +549,7 @@ function PolicyRegisterRow({
     </div>
   );
 
-  if (isWarehouseView) {
+  if (isCustomTable) {
     const contactNo = policy.contactNumber || policy.renewalRecipientMobile || policy.contactPersonMobile || "—";
     const contactPerson = policy.contactPerson || policy.contactPersonName || policy.renewalRecipientName || "—";
     const sumInsuredDesc = policy.sumInsured || policy.idv || "—";

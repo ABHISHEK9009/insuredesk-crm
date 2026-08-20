@@ -3,19 +3,19 @@ import { parseRenewalDate } from "./dates";
 export const RENEWAL_REGISTER_POLICY_TYPES = [
   ["All", "All policy types"],
   ["Motor", "Motor"],
-  ["Fire", "Fire / Warehouse"],
+  ["Warehouse", "Warehouse Policy"],
+  ["Other", "Non-Motor Policy"],
   ["Health", "Health"],
   ["Marine", "Marine"],
   ["Life", "Life"],
   ["Commercial", "Commercial"],
-  ["Other", "Other"],
 ];
 
 export const RENEWAL_REGISTER_CATEGORY_TABS = [
   { value: "All", label: "All Renewals", countKey: "all" },
   { value: "Motor", label: "Motor Policy", countKey: "motor" },
-  { value: "Fire", label: "Warehouse Policy", countKey: "warehouse" },
-  { value: "Other", label: "Other Policies", countKey: "other" },
+  { value: "Warehouse", label: "Warehouse Policy", countKey: "warehouse" },
+  { value: "Other", label: "Non-Motor Policy", countKey: "other" },
 ];
 
 export const RENEWAL_REGISTER_MONTHS = [
