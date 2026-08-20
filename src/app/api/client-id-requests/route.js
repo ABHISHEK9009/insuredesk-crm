@@ -530,35 +530,34 @@ export async function PATCH(request) {
                 );
               }
 
-              const existingAccount = await policyDatabase.clientAccount.findFirst({
+              const existingAccounts = await policyDatabase.clientAccount.findMany({
                 where: {
                   organizationId: item.organizationId,
                   deletedAt: null,
                   phone: item.customerMobile,
                 },
               });
-              if (existingAccount) {
+
+              const exactMatch = existingAccounts.find((acc) =>
+                matchesClientAccountIdentity(acc, {
+                  insuredName: item.customerName,
+                  contactNumber: item.customerMobile,
+                  email: item.metadata?.email,
+                }),
+              );
+
+              if (exactMatch) {
                 return withClientIdLock(
-                  existingAccount.id,
+                  exactMatch.id,
                   async (clientDatabase) => {
                     const account = await clientDatabase.clientAccount.findFirst({
                       where: {
-                        id: existingAccount.id,
+                        id: exactMatch.id,
                         organizationId: item.organizationId,
                         deletedAt: null,
-                        phone: item.customerMobile,
                       },
                     });
                     if (!account) throw workflowError("CLIENT_NOT_FOUND");
-                    if (
-                      !matchesClientAccountIdentity(account, {
-                        insuredName: item.customerName,
-                        contactNumber: item.customerMobile,
-                        email: item.metadata?.email,
-                      })
-                    ) {
-                      throw workflowError("IDENTITY_CONFLICT");
-                    }
                     return finishResolution(clientDatabase, account, "LINK_EXISTING");
                   },
                   policyDatabase,
