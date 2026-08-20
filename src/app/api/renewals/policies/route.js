@@ -415,10 +415,12 @@ export async function GET(request) {
       });
     }
 
+    const isRegisterTab = tab === "register";
+
     const [countResult, dataResult, summaryResult, categoryResult] = await Promise.all([
       prisma.$queryRawUnsafe(countQuery, ...queryParams),
       prisma.$queryRawUnsafe(dataQuery, ...queryParams, limit, offset),
-      prisma.$queryRawUnsafe(summaryQuery, ...queryParams),
+      isRegisterTab ? Promise.resolve([{}]) : prisma.$queryRawUnsafe(summaryQuery, ...queryParams),
       prisma.$queryRawUnsafe(categoryQuery, ...queryParams),
     ]);
 
