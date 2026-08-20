@@ -408,16 +408,16 @@ export default function RenewalPoliciesPage() {
                 </tr>
               ) : (
                 <tr>
-                  <th style={{ width: isMotorView ? "21%" : "16%" }}>Policyholder</th>
-                  <th style={{ width: isMotorView ? "15%" : "13%" }}>Policy Number</th>
-                  <th style={{ width: isMotorView ? "11%" : "10%" }}>Policy Type</th>
-                  <th style={{ width: isMotorView ? "11%" : "10%" }}>Vehicle / Risk</th>
+                  <th style={{ width: isMotorView ? "23%" : "16%" }}>Policyholder</th>
+                  <th style={{ width: isMotorView ? "16%" : "13%" }}>Policy Number</th>
+                  <th style={{ width: isMotorView ? "12%" : "10%" }}>Policy Type</th>
+                  <th style={{ width: isMotorView ? "13%" : "10%" }}>Vehicle / Risk</th>
                   {!isMotorView ? <th style={{ width: "7.5%" }}>Start Date</th> : null}
-                  <th style={{ width: isMotorView ? "10%" : "7.5%" }}>Expiry Date</th>
+                  <th style={{ width: isMotorView ? "12%" : "7.5%" }}>Expiry Date</th>
                   {!isMotorView ? <th style={{ width: "8.5%" }}>Sum Insured / IDV</th> : null}
-                  <th style={{ width: isMotorView ? "8.5%" : "7.5%" }}>Premium</th>
-                  <th style={{ width: isMotorView ? "10.5%" : "8.5%" }}>Renewal Mobile</th>
-                  <th style={{ width: isMotorView ? "8.5%" : "7%" }}>Status</th>
+                  {!isMotorView ? <th style={{ width: "7.5%" }}>Premium</th> : null}
+                  <th style={{ width: isMotorView ? "11%" : "8.5%" }}>Renewal Mobile</th>
+                  <th style={{ width: isMotorView ? "9%" : "7%" }}>Status</th>
                   <th style={{ width: "4%" }}>Actions</th>
                 </tr>
               )}
@@ -579,7 +579,7 @@ function PolicyRegisterRow({
       {!isMotorView ? <td style={{ whiteSpace: "nowrap" }}>{formatRenewalRegisterDate(policy.startDate)}</td> : null}
       <td style={{ whiteSpace: "nowrap" }}><strong>{formatRenewalRegisterDate(policy.expiryDate)}</strong>{!isMotorView ? <small>{policy.daysStatus || ""}</small> : null}</td>
       {!isMotorView ? <td style={{ whiteSpace: "nowrap" }}>{formatRenewalRegisterAmount(policy.sumInsured || policy.idv)}</td> : null}
-      <td style={{ whiteSpace: "nowrap" }}>{formatRenewalRegisterAmount(policy.totalPremium || policy.premium)}</td>
+      {!isMotorView ? <td style={{ whiteSpace: "nowrap" }}>{formatRenewalRegisterAmount(policy.totalPremium || policy.premium)}</td> : null}
       <td style={{ whiteSpace: "nowrap" }}>{policy.renewalRecipientMobile || policy.contactNumber || "—"}</td>
       <td style={{ whiteSpace: "nowrap" }}><span className={`rn-policy-register__status rn-policy-register__status--${statusTone}`}>{String(policy.renewalStatus || "unknown").replaceAll("_", " ")}</span></td>
       <td className="rn-policy-register__actions">{actionDropdown}</td>
