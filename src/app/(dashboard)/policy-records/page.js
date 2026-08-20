@@ -28,20 +28,25 @@ async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
       SELECT 
         COUNT(*)::integer as total_all,
         COUNT(CASE WHEN (
-          (COALESCE(reviewed_data->>'vehicleNumber', data->>'vehicleNumber', reviewed_data->>'registrationNumber', data->>'registrationNumber', '') ~* '^[A-Z]{2}[0-9]')
-          OR (COALESCE(reviewed_data->>'makeModel', data->>'makeModel', reviewed_data->>'vehicleMake', data->>'vehicleMake', '') != '')
-          OR (COALESCE(reviewed_data->>'policyCategory', data->>'policyCategory', reviewed_data->>'documentCategory', data->>'documentCategory', selected_service_category, detected_service_category, '') ILIKE '%motor%')
-          OR (COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'motor|vehicle|private car|two[ -]?wheeler|bike|scooter|commercial vehicle|taxi|school bus|goods carrying|passenger carrying|auto secure|liability only|comprehensive|own damage|package policy|bundled|drive assure|gcv|pcv|trailer|standalone motor|act policy|third party')
-        ) AND NOT (
-          COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'warehouse|fire|burglary|msme|sfsp|health|mediclaim|floater'
+          (
+            (COALESCE(reviewed_data->>'vehicleNumber', data->>'vehicleNumber', reviewed_data->>'registrationNumber', data->>'registrationNumber', '') ~* '^[A-Z]{2}[0-9]')
+            OR (COALESCE(reviewed_data->>'makeModel', data->>'makeModel', reviewed_data->>'vehicleMake', data->>'vehicleMake', '') != '' AND COALESCE(reviewed_data->>'makeModel', data->>'makeModel', '') !~* 'hospital|waiting|benefit')
+            OR (COALESCE(reviewed_data->>'policyCategory', data->>'policyCategory', reviewed_data->>'documentCategory', data->>'documentCategory', selected_service_category, detected_service_category, '') ILIKE '%motor%')
+            OR (COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'motor|vehicle|private car|two[ -]?wheeler|bike|scooter|commercial vehicle|taxi|school bus|goods carrying|passenger carrying|auto secure|liability only|comprehensive|own damage|package policy|bundled|drive assure|gcv|pcv|trailer|standalone motor|act policy|third party')
+          )
+          AND NOT (
+            COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'floater|health|mediclaim|hospital|optima|individual|gmc|gpa|warehouse|fire|burglary|msme|sfsp'
+            OR COALESCE(selected_service_category, detected_service_category, '') ~* 'health|fire|warehouse|burglary'
+            OR COALESCE(source_file, pdf_file_name, '') ~* 'health policy|health'
+          )
         ) THEN 1 END)::integer as motor_count,
         COUNT(CASE WHEN (
           COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', selected_service_category, detected_service_category, '') ~* 'warehouse|fire|burglary|msme|sfsp|stock|property|business guard|laghu|sookshma|fidelity|guarantee|house breaking|udyam suraksha|griha raksha'
         ) THEN 1 END)::integer as warehouse_count,
         COUNT(CASE WHEN (
-          COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', selected_service_category, detected_service_category, '') ~* 'health|mediclaim|hospital|floater|optima|individual'
-        ) AND NOT (
-          COALESCE(reviewed_data->>'vehicleNumber', data->>'vehicleNumber', reviewed_data->>'registrationNumber', data->>'registrationNumber', '') ~* '^[A-Z]{2}[0-9]'
+          COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'floater|health|mediclaim|hospital|optima|individual|gmc|gpa'
+          OR COALESCE(selected_service_category, detected_service_category, '') ILIKE '%health%'
+          OR COALESCE(source_file, pdf_file_name, '') ~* 'health policy|health'
         ) THEN 1 END)::integer as health_count
       FROM pdf_records
       WHERE deleted_at IS NULL

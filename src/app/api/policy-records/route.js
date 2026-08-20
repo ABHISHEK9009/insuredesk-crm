@@ -221,7 +221,20 @@ export async function GET(request) {
         "udyam suraksha",
         "griha raksha",
       ];
-      const healthTerms = ["health", "mediclaim", "hospital", "family floater", "optima", "individual"];
+      const healthTerms = [
+        "health",
+        "mediclaim",
+        "hospital",
+        "floater",
+        "family floater",
+        "optima",
+        "individual",
+        "gmc",
+        "gpa",
+        "critical illness",
+        "top up",
+        "topup",
+      ];
 
       if (group === "motor") {
         const ors = [
@@ -260,6 +273,10 @@ export async function GET(request) {
                 { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
               ],
             })),
+            { NOT: { selectedServiceCategory: { contains: "health", mode: "insensitive" } } },
+            { NOT: { detectedServiceCategory: { contains: "health", mode: "insensitive" } } },
+            { NOT: { sourceFile: { contains: "health", mode: "insensitive" } } },
+            { NOT: { pdfFileName: { contains: "health", mode: "insensitive" } } },
           ],
         });
       } else if (group === "health") {
@@ -271,6 +288,8 @@ export async function GET(request) {
           ]),
           { selectedServiceCategory: { contains: "health", mode: "insensitive" } },
           { detectedServiceCategory: { contains: "health", mode: "insensitive" } },
+          { sourceFile: { contains: "health", mode: "insensitive" } },
+          { pdfFileName: { contains: "health", mode: "insensitive" } },
         ];
         andFilters.push({ OR: ors });
       } else if (group === "warehouse" || group === "fire") {
