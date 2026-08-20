@@ -52,8 +52,9 @@ export function getPresetDates(preset) {
   const now = new Date();
   const start = new Date(now);
   const end = new Date(now);
+  const p = String(preset || "").toLowerCase().replace(/_/g, "-");
 
-  switch (preset) {
+  switch (p) {
     case "today":
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
@@ -149,7 +150,7 @@ export async function loadScopedPolicyRecords(options = {}) {
   try {
     return await loadScopedPolicyRecordsUnsafe(options);
   } catch (error) {
-    console.error("Policy records server load failed:", getServerLoadErrorMessage(error));
+    console.error("Scoped policy records load failed:", error instanceof Error ? error.message : error);
     return options.page || options.limit
       ? {
           records: [],
@@ -262,6 +263,7 @@ async function loadScopedPolicyRecordsUnsafe(options = {}) {
       "vehicle",
       "private car",
       "two wheeler",
+      "two-wheeler",
       "bike",
       "scooter",
       "commercial vehicle",
@@ -272,9 +274,17 @@ async function loadScopedPolicyRecordsUnsafe(options = {}) {
       "auto secure",
       "liability only",
       "comprehensive",
-      "own damage"
+      "own damage",
+      "package policy",
+      "bundled",
+      "drive assure",
+      "gcv",
+      "pcv",
+      "trailer",
+      "standalone motor",
+      "act policy",
+      "third party",
     ];
-    const healthTerms = ["health", "mediclaim", "hospital", "family floater"];
     const warehouseTerms = [
       "fire",
       "sfsp",
@@ -288,46 +298,108 @@ async function loadScopedPolicyRecordsUnsafe(options = {}) {
       "sookshma",
       "fidelity",
       "guarantee",
-      "house breaking"
+      "house breaking",
+      "udyam suraksha",
+      "griha raksha",
     ];
+    const healthTerms = ["health", "mediclaim", "hospital", "family floater", "optima", "individual"];
 
     if (group === "motor") {
-      const ors = motorTerms.map((term) => ({
-        OR: [
+      const ors = [
+        ...motorTerms.flatMap((term) => [
           { selectedPolicyType: { contains: term, mode: "insensitive" } },
           { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
           { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+        ]),
+        { selectedServiceCategory: { contains: "motor", mode: "insensitive" } },
+        { detectedServiceCategory: { contains: "motor", mode: "insensitive" } },
+        { reviewedData: { path: ["policyCategory"], string_contains: "motor", mode: "insensitive" } },
+        { data: { path: ["policyCategory"], string_contains: "motor", mode: "insensitive" } },
+        { reviewedData: { path: ["documentCategory"], string_contains: "motor", mode: "insensitive" } },
+        { data: { path: ["documentCategory"], string_contains: "motor", mode: "insensitive" } },
+        { reviewedData: { path: ["vehicleNumber"], not: "" } },
+        { data: { path: ["vehicleNumber"], not: "" } },
+        { reviewedData: { path: ["registrationNumber"], not: "" } },
+        { data: { path: ["registrationNumber"], not: "" } },
+        { reviewedData: { path: ["makeModel"], not: "" } },
+        { data: { path: ["makeModel"], not: "" } },
+      ];
+      andFilters.push({
+        AND: [
+          { OR: ors },
+          ...warehouseTerms.map((term) => ({
+            NOT: [
+              { selectedPolicyType: { contains: term, mode: "insensitive" } },
+              { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            ],
+          })),
+          ...healthTerms.map((term) => ({
+            NOT: [
+              { selectedPolicyType: { contains: term, mode: "insensitive" } },
+              { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            ],
+          })),
         ],
-      }));
-      andFilters.push({ OR: ors.flatMap((o) => o.OR) });
+      });
     } else if (group === "health") {
-      const ors = healthTerms.map((term) => ({
-        OR: [
+      const ors = [
+        ...healthTerms.flatMap((term) => [
           { selectedPolicyType: { contains: term, mode: "insensitive" } },
           { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
           { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
-        ],
-      }));
-      andFilters.push({ OR: ors.flatMap((o) => o.OR) });
+        ]),
+        { selectedServiceCategory: { contains: "health", mode: "insensitive" } },
+        { detectedServiceCategory: { contains: "health", mode: "insensitive" } },
+      ];
+      andFilters.push({ OR: ors });
     } else if (group === "warehouse" || group === "fire") {
-      const ors = warehouseTerms.map((term) => ({
-        OR: [
+      const ors = [
+        ...warehouseTerms.flatMap((term) => [
           { selectedPolicyType: { contains: term, mode: "insensitive" } },
           { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
           { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
-        ],
-      }));
-      andFilters.push({ OR: ors.flatMap((o) => o.OR) });
+        ]),
+        { selectedServiceCategory: { contains: "fire", mode: "insensitive" } },
+        { detectedServiceCategory: { contains: "fire", mode: "insensitive" } },
+        { selectedServiceCategory: { contains: "warehouse", mode: "insensitive" } },
+        { detectedServiceCategory: { contains: "warehouse", mode: "insensitive" } },
+        { selectedServiceCategory: { contains: "burglary", mode: "insensitive" } },
+        { detectedServiceCategory: { contains: "burglary", mode: "insensitive" } },
+      ];
+      andFilters.push({ OR: ors });
     } else if (group === "other") {
-      const excludeTerms = [...motorTerms, ...healthTerms, ...warehouseTerms];
-      excludeTerms.forEach((term) => {
-        andFilters.push({
-          NOT: [
-            { selectedPolicyType: { contains: term, mode: "insensitive" } },
-            { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
-            { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
-          ],
-        });
+      andFilters.push({
+        AND: [
+          ...motorTerms.map((term) => ({
+            NOT: [
+              { selectedPolicyType: { contains: term, mode: "insensitive" } },
+              { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            ],
+          })),
+          ...warehouseTerms.map((term) => ({
+            NOT: [
+              { selectedPolicyType: { contains: term, mode: "insensitive" } },
+              { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            ],
+          })),
+          ...healthTerms.map((term) => ({
+            NOT: [
+              { selectedPolicyType: { contains: term, mode: "insensitive" } },
+              { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            ],
+          })),
+          { selectedServiceCategory: { not: "Motor Insurance" } },
+          { detectedServiceCategory: { not: "Motor Insurance" } },
+          { selectedServiceCategory: { not: "Fire Insurance" } },
+          { detectedServiceCategory: { not: "Fire Insurance" } },
+          { selectedServiceCategory: { not: "Health Insurance" } },
+          { detectedServiceCategory: { not: "Health Insurance" } },
+        ],
       });
     } else {
       andFilters.push({

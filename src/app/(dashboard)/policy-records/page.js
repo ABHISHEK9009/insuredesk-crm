@@ -21,20 +21,36 @@ function addHiddenPolicyRecordSources(where) {
   return where;
 }
 
-function withPolicyTypeTerms(baseWhere, terms) {
-  return {
-    ...baseWhere,
-    OR: terms.flatMap((term) => [
-      { selectedPolicyType: { contains: term, mode: "insensitive" } },
-      { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
-      { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
-    ]),
-  };
-}
-
-async function loadPolicyRecordTabCounts({ basePolicyWhere, isSuperAdmin, orgId, session }) {
+async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
   try {
     void session;
+    const categoryCountQuery = `
+      SELECT 
+        COUNT(*)::integer as total_all,
+        COUNT(CASE WHEN (
+          (COALESCE(reviewed_data->>'vehicleNumber', data->>'vehicleNumber', reviewed_data->>'registrationNumber', data->>'registrationNumber', '') ~* '^[A-Z]{2}[0-9]')
+          OR (COALESCE(reviewed_data->>'makeModel', data->>'makeModel', reviewed_data->>'vehicleMake', data->>'vehicleMake', '') != '')
+          OR (COALESCE(reviewed_data->>'policyCategory', data->>'policyCategory', reviewed_data->>'documentCategory', data->>'documentCategory', selected_service_category, detected_service_category, '') ILIKE '%motor%')
+          OR (COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'motor|vehicle|private car|two[ -]?wheeler|bike|scooter|commercial vehicle|taxi|school bus|goods carrying|passenger carrying|auto secure|liability only|comprehensive|own damage|package policy|bundled|drive assure|gcv|pcv|trailer|standalone motor|act policy|third party')
+        ) AND NOT (
+          COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', '') ~* 'warehouse|fire|burglary|msme|sfsp|health|mediclaim|floater'
+        ) THEN 1 END)::integer as motor_count,
+        COUNT(CASE WHEN (
+          COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', selected_service_category, detected_service_category, '') ~* 'warehouse|fire|burglary|msme|sfsp|stock|property|business guard|laghu|sookshma|fidelity|guarantee|house breaking|udyam suraksha|griha raksha'
+        ) THEN 1 END)::integer as warehouse_count,
+        COUNT(CASE WHEN (
+          COALESCE(selected_policy_type, reviewed_data->>'policyType', data->>'policyType', selected_service_category, detected_service_category, '') ~* 'health|mediclaim|hospital|floater|optima|individual'
+        ) AND NOT (
+          COALESCE(reviewed_data->>'vehicleNumber', data->>'vehicleNumber', reviewed_data->>'registrationNumber', data->>'registrationNumber', '') ~* '^[A-Z]{2}[0-9]'
+        ) THEN 1 END)::integer as health_count
+      FROM pdf_records
+      WHERE deleted_at IS NULL
+        AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+        ${MANUAL_RENEWAL_SQL_EXCLUSION}
+        AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
+        AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx';
+    `;
+
     const duplicateCountQuery = `
       SELECT COUNT(*)::integer as count FROM pdf_records
       WHERE deleted_at IS NULL
@@ -56,38 +72,18 @@ async function loadPolicyRecordTabCounts({ basePolicyWhere, isSuperAdmin, orgId,
         )
     `;
 
-    const motorTerms = [
-      "motor", "vehicle", "private car", "two wheeler", "bike", "scooter",
-      "commercial vehicle", "taxi", "school bus", "goods carrying",
-      "passenger carrying", "auto secure", "liability only", "comprehensive", "own damage"
-    ];
-    const healthTerms = ["health", "mediclaim", "hospital", "family floater"];
-    const warehouseTerms = [
-      "fire", "sfsp", "burglary", "msme", "warehouse", "stock", "property",
-      "business guard", "laghu", "sookshma", "fidelity", "guarantee", "house breaking"
-    ];
-
-    const [totalAll, totalDuplicatesResult, motorCount, warehouseCount, healthCount] = await Promise.all([
-      prisma.policyRecord.count({ where: basePolicyWhere }),
+    const [countsResult, totalDuplicatesResult] = await Promise.all([
+      prisma.$queryRawUnsafe(categoryCountQuery, isSuperAdmin, orgId),
       prisma.$queryRawUnsafe(duplicateCountQuery, isSuperAdmin, orgId),
-      prisma.policyRecord.count({ where: withPolicyTypeTerms(basePolicyWhere, motorTerms) }),
-      prisma.policyRecord.count({ where: withPolicyTypeTerms(basePolicyWhere, warehouseTerms) }),
-      prisma.policyRecord.count({ where: withPolicyTypeTerms(basePolicyWhere, healthTerms) }),
     ]);
 
+    const counts = countsResult[0] || {};
+    const totalAll = counts.total_all || 0;
+    const motorCount = counts.motor_count || 0;
+    const warehouseCount = counts.warehouse_count || 0;
+    const healthCount = counts.health_count || 0;
+    const otherCount = Math.max(0, totalAll - (motorCount + warehouseCount + healthCount));
     const totalDuplicates = totalDuplicatesResult[0]?.count || 0;
-
-    // "Other" LOB counts are those that don't match motor, health, or warehouse
-    const otherCount = await prisma.policyRecord.count({
-      where: {
-        ...basePolicyWhere,
-        NOT: [
-          withPolicyTypeTerms({}, motorTerms),
-          withPolicyTypeTerms({}, warehouseTerms),
-          withPolicyTypeTerms({}, healthTerms),
-        ],
-      },
-    });
 
     const categories = [];
     if (motorCount > 0) {
@@ -132,7 +128,7 @@ export default async function PolicyRecordsPage(props) {
   const viewCategory = searchParams.viewCategory || "all";
   const startDate = searchParams.startDate || "";
   const endDate = searchParams.endDate || "";
-  const datePreset = searchParams.datePreset || "all";
+  const datePreset = searchParams.datePreset !== undefined ? searchParams.datePreset : "this-month";
   const lifecycle = ["active", "inactive"].includes(searchParams.lifecycle) ? searchParams.lifecycle : "all";
 
   const session = await getCurrentSessionFromCookies();
@@ -167,7 +163,6 @@ export default async function PolicyRecordsPage(props) {
   const countsPayload = await getCachedTabCounts({
     key: cacheKey,
     fetcher: () => loadPolicyRecordTabCounts({
-      basePolicyWhere: policyRecordWhere,
       isSuperAdmin,
       orgId,
       session,

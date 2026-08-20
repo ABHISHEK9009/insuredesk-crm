@@ -177,46 +177,156 @@ export async function GET(request) {
 
     if (viewCategory !== "all" && viewCategory !== "duplicates") {
       const group = viewCategory.toLowerCase();
-      const categoryTerms = {
-        motor: [
-          "motor",
-          "vehicle",
-          "private car",
-          "two wheeler",
-          "bike",
-          "scooter",
-          "commercial vehicle",
-          "taxi",
-          "school bus",
-          "goods carrying",
-          "passenger carrying",
-          "auto secure",
-        ],
-        health: ["health", "mediclaim", "hospital", "family floater"],
-        fire: [
-          "fire",
-          "sfsp",
-          "burglary",
-          "msme",
-          "warehouse",
-          "stock",
-          "property",
-          "business guard",
-          "laghu",
-          "sookshma",
-        ],
-        life: ["life assured", "life policy", "term life", "endowment"],
-        home: ["home building", "home contents", "home policy"],
-        cyber: ["cyber", "ransomware", "data breach"],
-      };
-      const terms = categoryTerms[group] || [];
-      if (terms.length > 0) {
-        andFilters.push({
-          OR: terms.flatMap((term) => [
+      const motorTerms = [
+        "motor",
+        "vehicle",
+        "private car",
+        "two wheeler",
+        "two-wheeler",
+        "bike",
+        "scooter",
+        "commercial vehicle",
+        "taxi",
+        "school bus",
+        "goods carrying",
+        "passenger carrying",
+        "auto secure",
+        "liability only",
+        "comprehensive",
+        "own damage",
+        "package policy",
+        "bundled",
+        "drive assure",
+        "gcv",
+        "pcv",
+        "trailer",
+        "standalone motor",
+        "act policy",
+        "third party",
+      ];
+      const warehouseTerms = [
+        "fire",
+        "sfsp",
+        "burglary",
+        "msme",
+        "warehouse",
+        "stock",
+        "property",
+        "business guard",
+        "laghu",
+        "sookshma",
+        "fidelity",
+        "guarantee",
+        "house breaking",
+        "udyam suraksha",
+        "griha raksha",
+      ];
+      const healthTerms = ["health", "mediclaim", "hospital", "family floater", "optima", "individual"];
+
+      if (group === "motor") {
+        const ors = [
+          ...motorTerms.flatMap((term) => [
             { selectedPolicyType: { contains: term, mode: "insensitive" } },
             { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
             { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
           ]),
+          { selectedServiceCategory: { contains: "motor", mode: "insensitive" } },
+          { detectedServiceCategory: { contains: "motor", mode: "insensitive" } },
+          { reviewedData: { path: ["policyCategory"], string_contains: "motor", mode: "insensitive" } },
+          { data: { path: ["policyCategory"], string_contains: "motor", mode: "insensitive" } },
+          { reviewedData: { path: ["documentCategory"], string_contains: "motor", mode: "insensitive" } },
+          { data: { path: ["documentCategory"], string_contains: "motor", mode: "insensitive" } },
+          { reviewedData: { path: ["vehicleNumber"], not: "" } },
+          { data: { path: ["vehicleNumber"], not: "" } },
+          { reviewedData: { path: ["registrationNumber"], not: "" } },
+          { data: { path: ["registrationNumber"], not: "" } },
+          { reviewedData: { path: ["makeModel"], not: "" } },
+          { data: { path: ["makeModel"], not: "" } },
+        ];
+        andFilters.push({
+          AND: [
+            { OR: ors },
+            ...warehouseTerms.map((term) => ({
+              NOT: [
+                { selectedPolicyType: { contains: term, mode: "insensitive" } },
+                { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+                { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              ],
+            })),
+            ...healthTerms.map((term) => ({
+              NOT: [
+                { selectedPolicyType: { contains: term, mode: "insensitive" } },
+                { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+                { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              ],
+            })),
+          ],
+        });
+      } else if (group === "health") {
+        const ors = [
+          ...healthTerms.flatMap((term) => [
+            { selectedPolicyType: { contains: term, mode: "insensitive" } },
+            { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+          ]),
+          { selectedServiceCategory: { contains: "health", mode: "insensitive" } },
+          { detectedServiceCategory: { contains: "health", mode: "insensitive" } },
+        ];
+        andFilters.push({ OR: ors });
+      } else if (group === "warehouse" || group === "fire") {
+        const ors = [
+          ...warehouseTerms.flatMap((term) => [
+            { selectedPolicyType: { contains: term, mode: "insensitive" } },
+            { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+            { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+          ]),
+          { selectedServiceCategory: { contains: "fire", mode: "insensitive" } },
+          { detectedServiceCategory: { contains: "fire", mode: "insensitive" } },
+          { selectedServiceCategory: { contains: "warehouse", mode: "insensitive" } },
+          { detectedServiceCategory: { contains: "warehouse", mode: "insensitive" } },
+          { selectedServiceCategory: { contains: "burglary", mode: "insensitive" } },
+          { detectedServiceCategory: { contains: "burglary", mode: "insensitive" } },
+        ];
+        andFilters.push({ OR: ors });
+      } else if (group === "other") {
+        andFilters.push({
+          AND: [
+            ...motorTerms.map((term) => ({
+              NOT: [
+                { selectedPolicyType: { contains: term, mode: "insensitive" } },
+                { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+                { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              ],
+            })),
+            ...warehouseTerms.map((term) => ({
+              NOT: [
+                { selectedPolicyType: { contains: term, mode: "insensitive" } },
+                { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+                { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              ],
+            })),
+            ...healthTerms.map((term) => ({
+              NOT: [
+                { selectedPolicyType: { contains: term, mode: "insensitive" } },
+                { reviewedData: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+                { data: { path: ["policyType"], string_contains: term, mode: "insensitive" } },
+              ],
+            })),
+            { selectedServiceCategory: { not: "Motor Insurance" } },
+            { detectedServiceCategory: { not: "Motor Insurance" } },
+            { selectedServiceCategory: { not: "Fire Insurance" } },
+            { detectedServiceCategory: { not: "Fire Insurance" } },
+            { selectedServiceCategory: { not: "Health Insurance" } },
+            { detectedServiceCategory: { not: "Health Insurance" } },
+          ],
+        });
+      } else {
+        andFilters.push({
+          OR: [
+            { selectedPolicyType: { equals: viewCategory, mode: "insensitive" } },
+            { reviewedData: { path: ["policyType"], string_contains: viewCategory, mode: "insensitive" } },
+            { data: { path: ["policyType"], string_contains: viewCategory, mode: "insensitive" } },
+          ],
         });
       }
     }

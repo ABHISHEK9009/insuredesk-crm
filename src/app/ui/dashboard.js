@@ -289,7 +289,7 @@ export default function Dashboard({
   initialViewCategory = "all",
   initialStartDate = "",
   initialEndDate = "",
-  initialDatePreset = "all",
+  initialDatePreset = "this-month",
   initialLifecycle = "all",
   tabCounts = null,
   serverPaginatedCustomers = false,
@@ -432,7 +432,7 @@ export default function Dashboard({
     else params.delete("startDate");
     if (endVal) params.set("endDate", endVal);
     else params.delete("endDate");
-    if (presetVal && presetVal !== "all") params.set("datePreset", presetVal);
+    if (presetVal) params.set("datePreset", presetVal);
     else params.delete("datePreset");
     if (lifecycleVal && lifecycleVal !== "all") params.set("lifecycle", lifecycleVal);
     else params.delete("lifecycle");
