@@ -1,6 +1,9 @@
 const tataAigWarehouse = require("./tata-aig/warehouse.cjs");
 const iciciLombardHealth = require("./icici-lombard/health.cjs");
 const hdfcErgoHealth = require("./hdfc-ergo/health.cjs");
+const unitedIndiaHealth = require("./united-india/health.cjs");
+const tataAigHealth = require("./tata-aig/health.cjs");
+const careHealthHealth = require("./care-health/health.cjs");
 const iffcoTokioMotor = require("./iffco-tokio/motor.cjs");
 const tataAigMotor = require("./tata-aig/motor.cjs");
 const libertyMotor = require("./liberty/motor.cjs");
@@ -15,6 +18,9 @@ const trainers = [
   tataAigWarehouse,
   iciciLombardHealth,
   hdfcErgoHealth,
+  unitedIndiaHealth,
+  tataAigHealth,
+  careHealthHealth,
   iffcoTokioMotor,
   tataAigMotor,
   libertyMotor,
@@ -25,8 +31,6 @@ const trainers = [
   unitedIndiaWarehouse,
   unitedIndiaBurglary,
 ];
-const ICICI_LOMBARD_HEALTH_FORMAT = "ICICI_LOMBARD_HEALTH_ELEVATE_V1";
-const HDFC_ERGO_HEALTH_FORMAT = "HDFC_ERGO_HEALTH_OPTIMA_SECURE_V1";
 const protectedScopeFields = [
   "sourceFile",
   "insuranceCompany",
@@ -46,6 +50,7 @@ function normalizeInsurer(value = "") {
     [/United\s+India/i, "united-india"],
     [/New\s+India/i, "new-india"],
     [/HDFC\s*ERGO/i, "hdfc-ergo"],
+    [/Care\s*Health|Religare/i, "care-health"],
     [/(?:Future\s+)?Generali/i, "generali"],
     [/Royal\s+Sundaram/i, "royal-sundaram"],
     [/Shriram/i, "shriram"],
@@ -77,28 +82,68 @@ function slug(value = "") {
     .replace(/^-|-$/g, "");
 }
 
-function isIciciLombardElevateHealth(result = {}, context = {}) {
-  const insurer = normalizeInsurer(result.insuranceCompany || result.companyName);
+function isIciciLombardHealth(result = {}, context = {}) {
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/ICICI\s+Lombard/i.test(insurer)) return false;
+
   const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Goods\s+Carrying|Commercial\s+Vehicle/i.test(text)) return false;
+
   return (
-    insurer === "icici-lombard" &&
-    /Product\s+Name\s*ELEVATE\b/i.test(text) &&
-    /ICIHLIP\d{5}[A-Z]\d{6}/i.test(text) &&
-    /\bPolicyholder\s+Details\b/i.test(text) &&
-    /\bInsured\s+Details\b/i.test(text)
+    /ELEVATE|ICIHLIP|Complete\s+Health|Health\s+Shield/i.test(text) ||
+    (/\bPolicyholder\s+Details\b/i.test(text) && /\bInsured\s+Details\b/i.test(text))
   );
 }
 
-function isHdfcErgoOptimaSecureHealth(result = {}, context = {}) {
-  const insurer = normalizeInsurer(result.insuranceCompany || result.companyName);
+function isHdfcErgoHealth(result = {}, context = {}) {
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/HDFC\s*ERGO/i.test(insurer)) return false;
+
   const text = String(context.text || result.sourceText || "");
+  if (!/HDFC\s*ERGO/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV|CSC\s+Name/i.test(text)) return false;
+
   return (
-    insurer === "hdfc-ergo" &&
-    /\bmy\s*:\s*Optima\s+Secure\b/i.test(text) &&
-    /\bHDFHLIP\d{5}[A-Z]\d{6}\b/i.test(text) &&
-    /Insured\s+Person[’']s\s+Details\s+and\s+Sum\s+Insured\s*[-–]\s*Optima\s+Secure/i.test(text) &&
-    /Policy\s+Type\s*:\s*Family\s+Floater/i.test(text)
+    /\bOptima\s+Secure\b/i.test(text) ||
+    /\bOptima\s+Restore\b/i.test(text) ||
+    /\bmy\s*:\s*health\b/i.test(text) ||
+    /\bHealth\s*Suraksha\b/i.test(text) ||
+    /\bHDFHLIP\d{5}[A-Z]\d{6}\b/i.test(text) ||
+    /Health\s+insurance\s+policy\s+reference\s+no/i.test(text) ||
+    (/Policy\s+Schedule/i.test(text) && /Health/i.test(text) && /Sum\s+Insured/i.test(text))
   );
+}
+
+function isUnitedIndiaHealth(result = {}, context = {}) {
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/United\s+India/i.test(insurer)) return false;
+
+  const text = String(context.text || result.sourceText || "");
+  const header = text.slice(0, 4000);
+  if (!/UNITED\s+INDIA\s+INSURANCE/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Goods\s+Carrying|Commercial\s+Vehicle|Registration\s+No/i.test(header)) return false;
+
+  return /INDIVIDUAL\s+HEALTH\s+INSURANCE|HEALTH\s+POLICY\s+SCHEDULE|UIIHLIP/i.test(header);
+}
+
+function isTataAigHealth(result = {}, context = {}) {
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/TATA\s*AIG/i.test(insurer)) return false;
+
+  const text = String(context.text || result.sourceText || "");
+  if (!/TATA\s*AIG/i.test(text)) return false;
+  if (/Auto\s*Secure|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle/i.test(text)) return false;
+
+  return /Medicare|Health\s*AdvantEdge|TATHLIP|Health\s*Card|80\s*D\s*Certi/i.test(text);
+}
+
+function isCareHealth(result = {}, context = {}) {
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/Care\s*Health|Religare/i.test(insurer)) return false;
+
+  const text = String(context.text || result.sourceText || "");
+  return /Care\s*Health|careinsurance\.com|Religare/i.test(text);
 }
 
 function isGoDigitMotor(result = {}, context = {}) {
@@ -135,6 +180,22 @@ function isTataAigMotor(result = {}, context = {}) {
 }
 
 function deriveTrainingScope(result = {}, context = {}) {
+  if (isIciciLombardHealth(result, context)) {
+    return { insurer: "icici-lombard", category: "health" };
+  }
+  if (isHdfcErgoHealth(result, context)) {
+    return { insurer: "hdfc-ergo", category: "health" };
+  }
+  if (isUnitedIndiaHealth(result, context)) {
+    return { insurer: "united-india", category: "health" };
+  }
+  if (isTataAigHealth(result, context)) {
+    return { insurer: "tata-aig", category: "health" };
+  }
+  if (isCareHealth(result, context)) {
+    return { insurer: "care-health", category: "health" };
+  }
+
   const insurer = isTataAigMotor(result, context)
     ? "tata-aig"
     : isGoDigitMotor(result, context)
@@ -144,28 +205,59 @@ function deriveTrainingScope(result = {}, context = {}) {
       : normalizeInsurer(result.insuranceCompany || result.companyName);
   return {
     insurer,
-    category:
-      isIciciLombardElevateHealth(result, context) || isHdfcErgoOptimaSecureHealth(result, context)
-      ? "health"
-      : normalizeCategory(result.documentCategory),
+    category: normalizeCategory(result.documentCategory),
   };
 }
 
 function establishTrainingIdentity(result = {}, context = {}) {
-  if (isIciciLombardElevateHealth(result, context)) {
+  if (isIciciLombardHealth(result, context)) {
     return {
       ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
       documentCategory: "Health Insurance",
-      documentFormat: ICICI_LOMBARD_HEALTH_FORMAT,
-      sourceDocumentType: ICICI_LOMBARD_HEALTH_FORMAT,
+      documentFormat: "ICICI_LOMBARD_HEALTH_ELEVATE_V1",
+      sourceDocumentType: "ICICI_LOMBARD_HEALTH_ELEVATE_V1",
     };
   }
-  if (isHdfcErgoOptimaSecureHealth(result, context)) {
+  if (isHdfcErgoHealth(result, context)) {
     return {
       ...result,
+      insuranceCompany: "HDFC ERGO General Insurance Company Limited",
+      companyName: "HDFC ERGO General Insurance Company Limited",
       documentCategory: "Health Insurance",
-      documentFormat: HDFC_ERGO_HEALTH_FORMAT,
-      sourceDocumentType: HDFC_ERGO_HEALTH_FORMAT,
+      documentFormat: "HDFC_ERGO_HEALTH_OPTIMA_SECURE_V1",
+      sourceDocumentType: "HDFC_ERGO_HEALTH_OPTIMA_SECURE_V1",
+    };
+  }
+  if (isUnitedIndiaHealth(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "United India Insurance Company Limited",
+      companyName: "United India Insurance Company Limited",
+      documentCategory: "Health Insurance",
+      documentFormat: "UNITED_INDIA_HEALTH_V1",
+      sourceDocumentType: "UNITED_INDIA_HEALTH_V1",
+    };
+  }
+  if (isTataAigHealth(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Tata AIG General Insurance Company Limited",
+      companyName: "Tata AIG General Insurance Company Limited",
+      documentCategory: "Health Insurance",
+      documentFormat: "TATA_AIG_HEALTH_V1",
+      sourceDocumentType: "TATA_AIG_HEALTH_V1",
+    };
+  }
+  if (isCareHealth(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Care Health Insurance Limited",
+      companyName: "Care Health Insurance Limited",
+      documentCategory: "Health Insurance",
+      documentFormat: "CARE_HEALTH_V1",
+      sourceDocumentType: "CARE_HEALTH_V1",
     };
   }
   if (isGoDigitMotor(result, context)) {

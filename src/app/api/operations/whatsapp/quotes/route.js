@@ -91,7 +91,11 @@ export async function POST(request) {
     if (!user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
     const payload = await request.json();
-    const { vehicleNumber, groupName, messageBody, mediaBase64 } = payload || {};
+    const { vehicleNumber, groupName, messageBody, mediaBase64, attachmentFileName, attachmentType } = payload || {};
+
+    const isPdf = attachmentType === "document" ||
+      String(attachmentFileName || "").toLowerCase().endsWith(".pdf") ||
+      String(mediaBase64 || "").startsWith("data:application/pdf");
 
     const entry = await buildRenewalQuoteEntry({
       groupName: groupName || "Renewal Quote New",
@@ -99,6 +103,8 @@ export async function POST(request) {
       body: messageBody || vehicleNumber,
       caption: messageBody,
       mediaBase64,
+      attachmentFileName: attachmentFileName || (isPdf ? "quote.pdf" : "quote.jpg"),
+      attachmentType: isPdf ? "document" : "image",
       timestamp: new Date(),
     });
 
@@ -110,6 +116,8 @@ export async function POST(request) {
         messageBody: messageBody || `Quote for ${vehicleNumber}`,
         vehicleNumber: String(vehicleNumber).replace(/[\s-]/g, "").toUpperCase(),
         mediaBase64: mediaBase64 || "",
+        attachmentFileName: attachmentFileName || (isPdf ? "quote.pdf" : "quote.jpg"),
+        attachmentType: isPdf ? "document" : "image",
         receivedAt: new Date(),
       };
       await storeRenewalQuoteEntry(manualEntry);

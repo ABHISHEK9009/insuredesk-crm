@@ -61,11 +61,15 @@ export function isRenewalQuoteGroup(groupName = "") {
   return RENEWAL_QUOTE_GROUP_PATTERN.test(String(groupName || ""));
 }
 
-export async function buildRenewalQuoteEntry({ groupName, senderName, body, caption, messageBody, mediaBase64, timestamp, sourceMessageId } = {}) {
+export async function buildRenewalQuoteEntry({ groupName, senderName, body, caption, messageBody, mediaBase64, timestamp, sourceMessageId, attachmentFileName, attachmentType } = {}) {
   const cleanedBody = String(body || caption || messageBody || "").trim();
-  let vehicleNumber = extractVehicleNumber(cleanedBody);
+  let vehicleNumber = extractVehicleNumber(cleanedBody) || extractVehicleNumber(attachmentFileName || "");
 
-  if (!vehicleNumber && mediaBase64) {
+  const isPdf = attachmentType === "document" ||
+    String(attachmentFileName || "").toLowerCase().endsWith(".pdf") ||
+    String(mediaBase64 || "").startsWith("data:application/pdf");
+
+  if (!vehicleNumber && mediaBase64 && !isPdf) {
     const ocrText = await extractOcrTextFromImage(mediaBase64);
     if (ocrText) {
       vehicleNumber = extractVehicleNumber(ocrText);
@@ -79,6 +83,8 @@ export async function buildRenewalQuoteEntry({ groupName, senderName, body, capt
     messageBody: cleanedBody,
     vehicleNumber,
     mediaBase64: mediaBase64 || "",
+    attachmentFileName: attachmentFileName || (isPdf ? "quote.pdf" : "quote.jpg"),
+    attachmentType: isPdf ? "document" : "image",
     receivedAt: timestamp ? new Date(timestamp) : new Date(),
     sourceMessageId,
   };

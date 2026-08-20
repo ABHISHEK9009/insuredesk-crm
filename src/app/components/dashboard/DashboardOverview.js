@@ -26,7 +26,7 @@ import {
 // -------------------------------------------------------------
 // Constants, Formats & Brand Helpers
 // -------------------------------------------------------------
-const DASHBOARD_CACHE_KEY = "bimaheadquarter.dashboard.overview.cache.v2";
+const DASHBOARD_CACHE_KEY = "bimaheadquarter.dashboard.overview.cache.v5";
 
 const PALETTE = [
   "#2563eb", // Royal Blue
@@ -168,19 +168,19 @@ const EMPTY_PREMIUM = {
 // -------------------------------------------------------------
 // Component: Top Executive KPI Metric Strip (4 Stat Cards)
 // -------------------------------------------------------------
-function ExecutiveKpiStrip({ summary = {}, premium = {} }) {
+function ExecutiveKpiStrip({ summary = {}, premium = {}, periodLabel = "" }) {
   return (
     <section className="dash-exec-kpi-grid">
-      {/* 1. Active In-Force Portfolio */}
+      {/* 1. Policies In Period */}
       <Link href="/policy-records?lifecycle=active" className="dash-exec-card tone-blue" prefetch={false}>
         <div className="dash-exec-accent-bar" />
         <div className="dash-exec-card-head">
-          <span className="dash-exec-label">ACTIVE PORTFOLIO</span>
+          <span className="dash-exec-label">POLICIES ISSUED</span>
           <div className="dash-exec-icon-wrap"><ShieldCheck size={18} /></div>
         </div>
         <div className="dash-exec-body">
           <strong className="dash-exec-value">{summary.activePolicies || 0}</strong>
-          <span className="dash-exec-sub">In-force active coverage</span>
+          <span className="dash-exec-sub">Booked policies in {periodLabel || "period"}</span>
         </div>
       </Link>
 
@@ -197,29 +197,29 @@ function ExecutiveKpiStrip({ summary = {}, premium = {} }) {
         </div>
       </Link>
 
-      {/* 3. MTD Booked Premium */}
+      {/* 3. Booked Premium */}
       <div className="dash-exec-card tone-purple">
         <div className="dash-exec-accent-bar" />
         <div className="dash-exec-card-head">
-          <span className="dash-exec-label">MTD PRODUCTION</span>
+          <span className="dash-exec-label">BOOKED PREMIUM</span>
           <div className="dash-exec-icon-wrap"><TrendingUp size={18} /></div>
         </div>
         <div className="dash-exec-body">
-          <strong className="dash-exec-value">{formatCompactMoney(premium.mtdPremium || 0)}</strong>
-          <span className="dash-exec-sub">{premium.mtdCount || 0} policies issued this month</span>
+          <strong className="dash-exec-value">{formatCompactMoney(summary.totalPremium || premium.periodPremium || premium.ytdPremium || 0)}</strong>
+          <span className="dash-exec-sub">{formatMoney(summary.totalPremium || 0)} total value</span>
         </div>
       </div>
 
-      {/* 4. YTD Cumulative Production */}
+      {/* 4. Renewed / Retention */}
       <div className="dash-exec-card tone-amber">
         <div className="dash-exec-accent-bar" />
         <div className="dash-exec-card-head">
-          <span className="dash-exec-label">YTD CUMULATIVE</span>
+          <span className="dash-exec-label">RENEWAL & LEADS</span>
           <div className="dash-exec-icon-wrap"><Award size={18} /></div>
         </div>
         <div className="dash-exec-body">
-          <strong className="dash-exec-value">{formatCompactMoney(premium.ytdPremium || 0)}</strong>
-          <span className="dash-exec-sub">{premium.ytdCount || 0} policies financial year to date</span>
+          <strong className="dash-exec-value">{summary.renewedPolicies || summary.convertedLeads || 0}</strong>
+          <span className="dash-exec-sub">{summary.pendingRenewals || 0} pending dues | {summary.totalLeads || 0} leads</span>
         </div>
       </div>
     </section>
@@ -229,100 +229,34 @@ function ExecutiveKpiStrip({ summary = {}, premium = {} }) {
 // -------------------------------------------------------------
 // Component: Primary Production Trajectory Graph (Hero Chart)
 // -------------------------------------------------------------
-const MONTH_SELECTOR_OPTIONS = [
-  { value: "ALL", label: "All Months" },
-  { value: "1", label: "Jan (01)" },
-  { value: "2", label: "Feb (02)" },
-  { value: "3", label: "Mar (03)" },
-  { value: "4", label: "Apr (04)" },
-  { value: "5", label: "May (05)" },
-  { value: "6", label: "Jun (06)" },
-  { value: "7", label: "Jul (07)" },
-  { value: "8", label: "Aug (08)" },
-  { value: "9", label: "Sep (09)" },
-  { value: "10", label: "Oct (10)" },
-  { value: "11", label: "Nov (11)" },
-  { value: "12", label: "Dec (12)" },
-];
-
-function ProductionTrajectoryChart({ trends = [] }) {
-  const [metric, setMetric] = useState("premium"); // 'premium' | 'count'
-  const [selectedYear, setSelectedYear] = useState("2026");
-  const [selectedMonth, setSelectedMonth] = useState("ALL");
+function ProductionTrajectoryChart({ trends = [], periodInfo = {} }) {
+  const [metric, setMetric] = useState("premium"); // "premium" | "count"
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  // Available unique years extracted dynamically from data
-  const availableYears = useMemo(() => {
-    const set = new Set();
-    for (const t of trends) {
-      if (t.year) set.add(String(t.year));
-      else if (t.month_key) {
-        const y = t.month_key.slice(0, 4);
-        if (y) set.add(y);
-      }
-    }
-    const arr = Array.from(set).sort((a, b) => Number(b) - Number(a));
-    return arr.length > 0 ? arr : ["2026", "2025"];
-  }, [trends]);
-
-  // Ensure selectedYear is valid
-  useEffect(() => {
-    if (
-      availableYears.length > 0 &&
-      !availableYears.includes(selectedYear) &&
-      selectedYear !== "ALL" &&
-      selectedYear !== "LAST_6"
-    ) {
-      setSelectedYear(availableYears[0]);
-    }
-  }, [availableYears, selectedYear]);
-
-  // Filter trends based on Year and Month selection
   const data = useMemo(() => {
     if (!trends || trends.length === 0) {
       return [
-        { shortMonth: "M-5", totalPremium: 0, policyCount: 0 },
-        { shortMonth: "M-4", totalPremium: 0, policyCount: 0 },
-        { shortMonth: "M-3", totalPremium: 0, policyCount: 0 },
-        { shortMonth: "M-2", totalPremium: 0, policyCount: 0 },
-        { shortMonth: "M-1", totalPremium: 0, policyCount: 0 },
-        { shortMonth: "Current", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Jan", month_key: "2026-01", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Feb", month_key: "2026-02", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Mar", month_key: "2026-03", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Apr", month_key: "2026-04", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "May", month_key: "2026-05", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Jun", month_key: "2026-06", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Jul", month_key: "2026-07", totalPremium: 0, policyCount: 0 },
+        { shortMonth: "Aug", month_key: "2026-08", totalPremium: 0, policyCount: 0 },
       ];
     }
+    return trends;
+  }, [trends]);
 
-    let filtered = [...trends];
-    if (selectedYear === "LAST_6") {
-      filtered = filtered.slice(-6);
-    } else if (selectedYear !== "ALL") {
-      filtered = filtered.filter((t) => {
-        const y = String(t.year || (t.month_key ? t.month_key.slice(0, 4) : ""));
-        return y === selectedYear;
-      });
-    }
-
-    if (selectedMonth !== "ALL") {
-      const mNum = Number(selectedMonth);
-      filtered = filtered.filter((t) => {
-        const m = Number(t.month || (t.month_key ? t.month_key.slice(5, 7) : 0));
-        return m === mNum;
-      });
-    }
-
-    if (filtered.length === 0) {
-      return [
-        { shortMonth: "No Data", totalPremium: 0, policyCount: 0, monthLabel: "No policies in selected period" }
-      ];
-    }
-
-    return filtered;
-  }, [trends, selectedYear, selectedMonth]);
+  const activeHoverIndex = hoveredIndex !== null ? hoveredIndex : data.length - 1;
 
   const width = 860;
-  const height = 180;
-  const paddingLeft = 56;
-  const paddingRight = 16;
-  const paddingTop = 14;
-  const paddingBottom = 26;
+  const height = 220;
+  const paddingLeft = 70;
+  const paddingRight = 24;
+  const paddingTop = 32;
+  const paddingBottom = 30;
   const plotWidth = width - paddingLeft - paddingRight;
   const plotHeight = height - paddingTop - paddingBottom;
 
@@ -356,73 +290,39 @@ function ProductionTrajectoryChart({ trends = [] }) {
 
   const totalPeriodPremium = data.reduce((acc, d) => acc + Number(d.totalPremium || 0), 0);
   const totalPeriodCount = data.reduce((acc, d) => acc + Number(d.policyCount || 0), 0);
-  const latestOrSelected = data[data.length - 1] || {};
+  const focusedMonthItem = activeHoverIndex !== null && data[activeHoverIndex] ? data[activeHoverIndex] : data[data.length - 1] || {};
 
-  const periodTrajectoryLabel = selectedYear === "ALL"
-    ? "All-Time Trajectory"
-    : selectedYear === "LAST_6"
-    ? "6-Month Trajectory"
-    : `${selectedYear} Total`;
+  const getShortMonthLabel = (pt) => {
+    if (pt.shortMonth) {
+      return pt.shortMonth;
+    }
+    return pt.monthLabel || "";
+  };
 
   return (
     <div className="dash-hero-chart-card">
+      {/* 1. Header: Title & Metric Segmented Switch */}
       <div className="dash-card-header">
         <div>
           <div className="dash-card-tag">PRODUCTION VELOCITY</div>
-          <h3 className="dash-card-title">Monthly Business Production</h3>
+          <h3 className="dash-card-title">Business Production Trajectory</h3>
           <p className="dash-card-subtitle">Fresh policy issuance volume & premium trajectory over time</p>
         </div>
-        <div className="dash-hero-controls">
-          {/* Year Dropdown */}
-          <select
-            className="dash-chart-select"
-            value={selectedYear}
-            onChange={(e) => {
-              setSelectedYear(e.target.value);
-              setSelectedMonth("ALL");
-            }}
-            aria-label="Filter by Year"
+        <div className="dash-pill-segmented">
+          <button
+            type="button"
+            className={metric === "premium" ? "active" : ""}
+            onClick={() => setMetric("premium")}
           >
-            {availableYears.map((yr) => (
-              <option key={yr} value={yr}>
-                Year {yr}
-              </option>
-            ))}
-            <option value="LAST_6">Last 6 Months</option>
-            <option value="ALL">All Years</option>
-          </select>
-
-          {/* Month Dropdown */}
-          <select
-            className="dash-chart-select"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            aria-label="Filter by Month"
+            Premium (₹)
+          </button>
+          <button
+            type="button"
+            className={metric === "count" ? "active" : ""}
+            onClick={() => setMetric("count")}
           >
-            {MONTH_SELECTOR_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          {/* Metric Toggle */}
-          <div className="dash-pill-segmented">
-            <button
-              type="button"
-              className={metric === "premium" ? "active" : ""}
-              onClick={() => setMetric("premium")}
-            >
-              Premium (₹)
-            </button>
-            <button
-              type="button"
-              className={metric === "count" ? "active" : ""}
-              onClick={() => setMetric("count")}
-            >
-              Policies (#)
-            </button>
-          </div>
+            Policies (#)
+          </button>
         </div>
       </div>
 
@@ -457,7 +357,7 @@ function ProductionTrajectoryChart({ trends = [] }) {
                   y2={y}
                   className="dash-chart-gridline"
                 />
-                <text x={paddingLeft - 8} y={y + 3.5} className="dash-chart-axis-y">
+                <text x={paddingLeft - 10} y={y + 3.5} className="dash-chart-axis-y">
                   {metric === "premium" ? formatCompactMoney(labelVal) : Math.round(labelVal)}
                 </text>
               </g>
@@ -480,10 +380,13 @@ function ProductionTrajectoryChart({ trends = [] }) {
 
           {/* Nodes & Hover Tooltips */}
           {points.map((pt, idx) => {
-            const isHovered = hoveredIndex === idx;
+            const isHovered = activeHoverIndex === idx;
+            const stepSkip = points.length > 18 ? 3 : points.length > 10 ? 2 : 1;
+            const showLabel = points.length <= 12 ? true : idx % stepSkip === 0;
+
             return (
               <g
-                key={pt.month_key || pt.monthLabel || idx}
+                key={pt.month_key || pt.monthKey || pt.monthLabel || idx}
                 className="dash-chart-node"
                 onMouseEnter={() => setHoveredIndex(idx)}
               >
@@ -499,26 +402,28 @@ function ProductionTrajectoryChart({ trends = [] }) {
                   />
                 ) : null}
 
-                <text
-                  x={pt.x}
-                  y={height - 6}
-                  className={`dash-chart-axis-x ${isHovered ? "active" : ""}`}
-                >
-                  {pt.shortMonth || pt.monthLabel}
-                </text>
+                {showLabel ? (
+                  <text
+                    x={pt.x}
+                    y={height - 8}
+                    className={`dash-chart-axis-x ${isHovered ? "active" : ""}`}
+                  >
+                    {getShortMonthLabel(pt)}
+                  </text>
+                ) : null}
 
                 <circle
                   cx={pt.x}
                   cy={pt.y}
-                  r={isHovered ? 6.5 : 4.5}
+                  r={isHovered ? 6 : points.length > 16 ? 3 : 4}
                   fill="#ffffff"
                   stroke="#2563eb"
-                  strokeWidth={isHovered ? 3 : 2}
+                  strokeWidth={isHovered ? 2.5 : 1.8}
                   className="dash-chart-dot"
                 />
 
                 {isHovered ? (
-                  <g transform={`translate(${Math.min(Math.max(pt.x, 70), width - 70)}, ${Math.max(pt.y - 38, 8)})`}>
+                  <g transform={`translate(${Math.min(Math.max(pt.x, 70), width - 70)}, ${Math.max(pt.y - 42, 10)})`}>
                     <rect
                       x="-65"
                       y="-8"
@@ -544,12 +449,17 @@ function ProductionTrajectoryChart({ trends = [] }) {
 
       <div className="dash-hero-footer">
         <div className="dash-hero-stat-pill">
-          <TrendingUp size={15} className="text-emerald-600" />
-          <span>{latestOrSelected.monthLabel || latestOrSelected.shortMonth || "Selected"}: <strong>{formatMoney(latestOrSelected.totalPremium || 0)}</strong> ({latestOrSelected.policyCount || 0} pol)</span>
+          <TrendingUp size={15} className="text-blue-600" />
+          <span>
+            {focusedMonthItem.monthLabel || focusedMonthItem.shortMonth || "Focused Month"}:{" "}
+            <strong>{formatMoney(focusedMonthItem.totalPremium || 0)}</strong> ({focusedMonthItem.policyCount || 0} pol)
+          </span>
         </div>
         <div className="dash-hero-stat-pill">
-          <Layers size={15} className="text-blue-600" />
-          <span>{periodTrajectoryLabel}: <strong>{formatMoney(totalPeriodPremium)}</strong> ({totalPeriodCount} pol)</span>
+          <Layers size={15} className="text-indigo-600" />
+          <span>
+            {periodInfo.label || "Period Total"}: <strong>{formatMoney(totalPeriodPremium)}</strong> ({totalPeriodCount} pol)
+          </span>
         </div>
       </div>
     </div>
@@ -1247,6 +1157,11 @@ function ImmediateActionRadar({ summary = {} }) {
 // Main Dashboard Overview Component
 // -------------------------------------------------------------
 export default function DashboardOverview() {
+  const [selectedPeriod, setSelectedPeriod] = useState("YTD");
+  const [selectedMonth, setSelectedMonth] = useState("ALL");
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [periodInfo, setPeriodInfo] = useState({ label: "Year 2026", startIso: null, endIso: null });
+
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [premium, setPremium] = useState(EMPTY_PREMIUM);
   const [monthlyTrends, setMonthlyTrends] = useState([]);
@@ -1262,9 +1177,17 @@ export default function DashboardOverview() {
     setIsRefreshing(true);
     setError("");
     try {
+      const params = new URLSearchParams();
+      if (selectedPeriod) params.set("period", selectedPeriod);
+      if (selectedMonth && selectedMonth !== "ALL") params.set("month", selectedMonth);
+      if (selectedCategory && selectedCategory !== "ALL") params.set("category", selectedCategory);
+
+      const queryStr = params.toString() ? `?${params.toString()}` : "";
+      const headerQueryStr = params.toString() ? `?summaryOnly=true&${params.toString()}` : "?summaryOnly=true";
+
       const [overviewData, reportingData] = await Promise.all([
-        fetchJson("/api/dashboard/overview", signal),
-        fetchJson("/api/dashboard/header-data?summaryOnly=true", signal),
+        fetchJson(`/api/dashboard/overview${queryStr}`, signal),
+        fetchJson(`/api/dashboard/header-data${headerQueryStr}`, signal),
       ]);
 
       const headerCounts = reportingData.renewalCounts || {};
@@ -1279,11 +1202,18 @@ export default function DashboardOverview() {
         lostPolicies: Number(headerCounts.lost || 0),
       };
 
-      const newPremium = { ...EMPTY_PREMIUM, ...headerCounts };
+      const newPremium = {
+        ...EMPTY_PREMIUM,
+        ...headerCounts,
+        periodPremium: overviewData.summary?.totalPremium || 0,
+        periodCount: overviewData.summary?.activePolicies || 0,
+      };
+
       const newTrends = overviewData.monthlyTrends || [];
       const newCats = overviewData.categoryBreakdown || [];
       const newInsurers = overviewData.insurerBreakdown || [];
       const newAgentReport = overviewData.leadAgentReport || null;
+      const newPeriodInfo = overviewData.periodBounds || { label: "Active Period" };
 
       setSummary(newSummary);
       setPremium(newPremium);
@@ -1291,22 +1221,7 @@ export default function DashboardOverview() {
       setCategoryBreakdown(newCats);
       setInsurerBreakdown(newInsurers);
       setLeadAgentReport(newAgentReport);
-
-      if (typeof globalThis !== "undefined" && globalThis.sessionStorage) {
-        try {
-          globalThis.sessionStorage.setItem(
-            DASHBOARD_CACHE_KEY,
-            JSON.stringify({
-              summary: newSummary,
-              premium: newPremium,
-              monthlyTrends: newTrends,
-              categoryBreakdown: newCats,
-              insurerBreakdown: newInsurers,
-              leadAgentReport: newAgentReport,
-            }),
-          );
-        } catch {}
-      }
+      setPeriodInfo(newPeriodInfo);
     } catch (loadError) {
       if (loadError?.name !== "AbortError") {
         setError(loadError?.message || "Dashboard data could not be loaded.");
@@ -1314,7 +1229,7 @@ export default function DashboardOverview() {
     } finally {
       if (!signal.aborted) setIsRefreshing(false);
     }
-  }, []);
+  }, [selectedPeriod, selectedMonth, selectedCategory]);
 
   useEffect(() => {
     const controller = new globalThis.AbortController();
@@ -1334,7 +1249,7 @@ export default function DashboardOverview() {
         </div>
       ) : null}
 
-      {/* 1. Header Command Tower */}
+      {/* 1. Header Command Tower with Global Time-Machine Controls */}
       <header className="dash-tower-head">
         <div className="dash-tower-title-group">
           <div className="dash-live-badge">
@@ -1346,6 +1261,81 @@ export default function DashboardOverview() {
         </div>
 
         <div className="dash-tower-actions">
+          {/* Global Period & Category Selectors */}
+          <div className="dash-tower-filters">
+            <div className="dash-global-select-wrap">
+              <Calendar size={14} className="text-blue-600" />
+              <select
+                className="dash-global-select"
+                value={selectedPeriod}
+                onChange={(e) => {
+                  setSelectedPeriod(e.target.value);
+                  setSelectedMonth("ALL");
+                }}
+                aria-label="Select Dashboard Reporting Period"
+              >
+                <option value="TODAY">Today (Daily / EOD)</option>
+                <option value="MTD">This Month (MTD)</option>
+                <option value="YTD">Year 2026 (YTD)</option>
+                <option value="2025">Year 2025 (Full Year)</option>
+                <option value="2024">Year 2024 (Full Year)</option>
+                <option value="LAST_30">Last 30 Days</option>
+                <option value="LAST_90">Last 90 Days</option>
+                <option value="ALL">All Time (Historical)</option>
+              </select>
+            </div>
+
+            {/* Optional Specific Month Filter */}
+            <div className="dash-global-select-wrap">
+              <select
+                className="dash-global-select no-icon"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label="Filter by Specific Month"
+              >
+                <option value="ALL">All Months</option>
+                <option value="1">Jan (01)</option>
+                <option value="2">Feb (02)</option>
+                <option value="3">Mar (03)</option>
+                <option value="4">Apr (04)</option>
+                <option value="5">May (05)</option>
+                <option value="6">Jun (06)</option>
+                <option value="7">Jul (07)</option>
+                <option value="8">Aug (08)</option>
+                <option value="9">Sep (09)</option>
+                <option value="10">Oct (10)</option>
+                <option value="11">Nov (11)</option>
+                <option value="12">Dec (12)</option>
+              </select>
+            </div>
+
+            {/* Policy Type / Category Filter */}
+            <div className="dash-global-select-wrap">
+              <select
+                className="dash-global-select no-icon"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                aria-label="Filter by Policy Type"
+              >
+                <option value="ALL">All Policy Types</option>
+                <option value="MOTOR">Motor Insurance</option>
+                <option value="FIRE">Fire Insurance</option>
+                <option value="WAREHOUSE">Warehouse Insurance</option>
+                <option value="HEALTH">Health Insurance</option>
+                <option value="COMMERCIAL">Commercial Insurance</option>
+                <option value="BURGLARY">Burglary Insurance</option>
+              </select>
+            </div>
+
+            <div className="dash-global-period-pill">
+              <Sparkles size={13} className="text-blue-600" />
+              <span>
+                {selectedCategory !== "ALL" ? `${selectedCategory.charAt(0) + selectedCategory.slice(1).toLowerCase()} • ` : ""}
+                {periodInfo.label || "Active Period"}
+              </span>
+            </div>
+          </div>
+
           <Link href="/manual-policy-entry" className="dash-btn-primary" prefetch={false}>
             <Sparkles size={15} /> Add Policy
           </Link>
@@ -1364,14 +1354,14 @@ export default function DashboardOverview() {
       </header>
 
       {/* 2. Top Executive KPI Strip */}
-      <ExecutiveKpiStrip summary={summary} premium={premium} />
+      <ExecutiveKpiStrip summary={summary} premium={premium} periodLabel={periodInfo.label} />
 
       {/* 3. Action Radar (if urgent items exist) */}
       <ImmediateActionRadar summary={summary} />
 
       {/* 4. Balanced Primary Hero Grid: Production Trajectory (60%) + Portfolio Mix Donut (40%) */}
       <div className="dash-hero-grid">
-        <ProductionTrajectoryChart trends={monthlyTrends} />
+        <ProductionTrajectoryChart trends={monthlyTrends} periodInfo={periodInfo} />
         <PortfolioMixCard categories={categoryBreakdown} />
       </div>
 

@@ -11,6 +11,90 @@ function tenantSql(session) {
   return [session.role === "SUPER_ADMIN", session.organizationId ?? null];
 }
 
+function getPeriodBounds(period = "YTD", yearParam = null, monthParam = null) {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
+  const parts = formatter.formatToParts(now);
+  const currentYear = Number(parts.find((p) => p.type === "year")?.value || 2026);
+  const currentMonth = Number(parts.find((p) => p.type === "month")?.value || 8);
+  const currentDay = Number(parts.find((p) => p.type === "day")?.value || 20);
+
+  let startIso = null;
+  let endIso = null;
+  let label = "All Time";
+
+  const p = (period || "").toUpperCase();
+  const yr = yearParam && yearParam !== "ALL" ? Number(yearParam) : null;
+  const mo = monthParam && monthParam !== "ALL" ? Number(monthParam) : null;
+
+  if (mo && (yr || p === "2026" || p === "2025" || p === "2024" || p === "YTD")) {
+    const targetYr = yr || (p === "2025" ? 2025 : p === "2024" ? 2024 : currentYear);
+    const start = new Date(Date.UTC(targetYr, mo - 1, 1, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(targetYr, mo, 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    const mName = new Date(targetYr, mo - 1, 1).toLocaleString("en-US", { month: "long" });
+    label = `${mName} ${targetYr}`;
+  } else if (yr) {
+    const start = new Date(Date.UTC(yr, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(yr + 1, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = `Year ${yr}`;
+  } else if (p === "TODAY") {
+    const start = new Date(Date.UTC(currentYear, currentMonth - 1, currentDay, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(currentYear, currentMonth - 1, currentDay + 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = `Today (${currentDay}/${currentMonth}/${currentYear})`;
+  } else if (p === "MTD") {
+    const start = new Date(Date.UTC(currentYear, currentMonth - 1, 1, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    const mName = new Date(currentYear, currentMonth - 1, 1).toLocaleString("en-US", { month: "long" });
+    label = `This Month (${mName} ${currentYear})`;
+  } else if (p === "YTD" || p === "2026") {
+    const targetYr = currentYear || 2026;
+    const start = new Date(Date.UTC(targetYr, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(targetYr + 1, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = `Year ${targetYr}`;
+  } else if (p === "2025") {
+    const start = new Date(Date.UTC(2025, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(2026, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = "Year 2025";
+  } else if (p === "2024") {
+    const start = new Date(Date.UTC(2024, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000);
+    const end = new Date(Date.UTC(2025, 0, 1, 0, 0, 0) - 5.5 * 3600 * 1000 - 1);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = "Year 2024";
+  } else if (p === "LAST_30") {
+    const end = now;
+    const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = "Last 30 Days";
+  } else if (p === "LAST_90") {
+    const end = now;
+    const start = new Date(now.getTime() - 90 * 24 * 3600 * 1000);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+    label = "Last 90 Days";
+  }
+
+  return { startIso, endIso, label };
+}
+
 export async function GET(request) {
   try {
     const token = request.cookies.get("token")?.value;
@@ -19,9 +103,24 @@ export async function GET(request) {
     const session = await verifyJWT(token);
     if (!session) return Response.json({ error: "Invalid or expired session" }, { status: 401 });
 
+    const url = new URL(request.url);
+    const periodParam = url.searchParams.get("period") || "YTD";
+    const yearParam = url.searchParams.get("year") || null;
+    const monthParam = url.searchParams.get("month") || null;
+    const categoryParam = (url.searchParams.get("category") || url.searchParams.get("policyType") || "").toUpperCase().trim();
+    const categoryFilterVal = categoryParam && categoryParam !== "ALL" ? categoryParam : null;
+
+    const { startIso, endIso, label: dateRangeLabel } = getPeriodBounds(periodParam, yearParam, monthParam);
+
     const [isSuperAdmin, organizationId] = tenantSql(session);
-    const sqlParams = [isSuperAdmin, organizationId];
+    const sqlParams = [isSuperAdmin, organizationId, startIso, endIso, categoryFilterVal];
     const tenantFilter = getTenantFilter(session, "read");
+
+    const safePremiumSql = `(CASE
+      WHEN NULLIF(REGEXP_REPLACE(COALESCE(reviewed_data->>'totalPremium', data->>'totalPremium', reviewed_data->>'netPremium', data->>'netPremium', ''), '[^0-9.]', '', 'g'), '') ~ '^[0-9]+(\\.[0-9]+)?$'
+      THEN CAST(REGEXP_REPLACE(COALESCE(reviewed_data->>'totalPremium', data->>'totalPremium', reviewed_data->>'netPremium', data->>'netPremium', ''), '[^0-9.]', '', 'g') AS NUMERIC)
+      ELSE 0
+    END)`;
 
     const policySummaryQuery = `
       WITH active_records AS (
@@ -35,42 +134,117 @@ export async function GET(request) {
             NULLIF(BTRIM(data->>'Insured Name'), ''),
             'Unnamed insured'
           ) AS customer_name,
-          is_active_policy
+          is_active_policy,
+          ${safePremiumSql} AS premium
         FROM pdf_records
         WHERE deleted_at IS NULL
           AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
           ${MANUAL_RENEWAL_SQL_EXCLUSION}
           AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
           AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx'
+          AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+          AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+          AND ($5::text IS NULL OR COALESCE(
+            NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+            NULLIF(BTRIM(data->>'policyCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+            NULLIF(BTRIM(data->>'documentCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+            NULLIF(BTRIM(data->>'policyType'), ''),
+            'General Insurance'
+          ) ILIKE '%' || $5::text || '%')
       )
       SELECT
         COUNT(*) FILTER (WHERE is_active_policy = true)::integer AS active_policies,
-        COUNT(DISTINCT customer_name) FILTER (WHERE is_active_policy = true)::integer AS total_customers
+        COUNT(DISTINCT customer_name) FILTER (WHERE is_active_policy = true)::integer AS total_customers,
+        COALESCE(SUM(premium) FILTER (WHERE is_active_policy = true), 0)::numeric AS total_premium
       FROM active_records
     `;
 
-    const safePremiumSql = `(CASE
-      WHEN NULLIF(REGEXP_REPLACE(COALESCE(reviewed_data->>'totalPremium', data->>'totalPremium', reviewed_data->>'netPremium', data->>'netPremium', ''), '[^0-9.]', '', 'g'), '') ~ '^[0-9]+(\\.[0-9]+)?$'
-      THEN CAST(REGEXP_REPLACE(COALESCE(reviewed_data->>'totalPremium', data->>'totalPremium', reviewed_data->>'netPremium', data->>'netPremium', ''), '[^0-9.]', '', 'g') AS NUMERIC)
-      ELSE 0
-    END)`;
-
-    const monthlyTrendsQuery = `
-      SELECT
-        TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'YYYY-MM') AS month_key,
-        TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'Mon YY') AS short_month,
-        TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'Month YYYY') AS month_label,
-        EXTRACT(YEAR FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS year,
-        EXTRACT(MONTH FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS month,
-        COUNT(*)::integer AS policy_count,
-        COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
-      FROM pdf_records
-      WHERE deleted_at IS NULL
-        AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
-        ${MANUAL_RENEWAL_SQL_EXCLUSION}
-      GROUP BY 1, 2, 3, 4, 5
-      ORDER BY 1 ASC
-    `;
+    let trendsQuery;
+    if (periodParam === "TODAY") {
+      trendsQuery = `
+        SELECT
+          EXTRACT(HOUR FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS hour_num,
+          TO_CHAR(COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata', 'HH12 AM') AS short_month,
+          TO_CHAR(COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata', 'HH12:MI AM') AS month_label,
+          TO_CHAR(COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24') AS month_key,
+          COUNT(*)::integer AS policy_count,
+          COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
+        FROM pdf_records
+        WHERE deleted_at IS NULL
+          AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+          ${MANUAL_RENEWAL_SQL_EXCLUSION}
+          AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+          AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+          AND ($5::text IS NULL OR COALESCE(
+            NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+            NULLIF(BTRIM(data->>'policyCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+            NULLIF(BTRIM(data->>'documentCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+            NULLIF(BTRIM(data->>'policyType'), ''),
+            'General Insurance'
+          ) ILIKE '%' || $5::text || '%')
+        GROUP BY 1, 2, 3, 4
+        ORDER BY hour_num ASC
+      `;
+    } else if (periodParam === "MTD" || (monthParam && monthParam !== "ALL")) {
+      trendsQuery = `
+        SELECT
+          TO_CHAR(COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata', 'DD Mon') AS short_month,
+          TO_CHAR(COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata', 'DD Mon YYYY') AS month_label,
+          TO_CHAR(COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD') AS month_key,
+          EXTRACT(DAY FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS day,
+          COUNT(*)::integer AS policy_count,
+          COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
+        FROM pdf_records
+        WHERE deleted_at IS NULL
+          AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+          ${MANUAL_RENEWAL_SQL_EXCLUSION}
+          AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+          AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+          AND ($5::text IS NULL OR COALESCE(
+            NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+            NULLIF(BTRIM(data->>'policyCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+            NULLIF(BTRIM(data->>'documentCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+            NULLIF(BTRIM(data->>'policyType'), ''),
+            'General Insurance'
+          ) ILIKE '%' || $5::text || '%')
+        GROUP BY 1, 2, 3, 4
+        ORDER BY month_key ASC
+      `;
+    } else {
+      trendsQuery = `
+        SELECT
+          TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'YYYY-MM') AS month_key,
+          TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'Mon YY') AS short_month,
+          TO_CHAR(DATE_TRUNC('month', COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata'), 'Month YYYY') AS month_label,
+          EXTRACT(YEAR FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS year,
+          EXTRACT(MONTH FROM COALESCE(saved_at, created_at) AT TIME ZONE 'Asia/Kolkata')::integer AS month,
+          COUNT(*)::integer AS policy_count,
+          COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
+        FROM pdf_records
+        WHERE deleted_at IS NULL
+          AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+          ${MANUAL_RENEWAL_SQL_EXCLUSION}
+          AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+          AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+          AND ($5::text IS NULL OR COALESCE(
+            NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+            NULLIF(BTRIM(data->>'policyCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+            NULLIF(BTRIM(data->>'documentCategory'), ''),
+            NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+            NULLIF(BTRIM(data->>'policyType'), ''),
+            'General Insurance'
+          ) ILIKE '%' || $5::text || '%')
+        GROUP BY 1, 2, 3, 4, 5
+        ORDER BY 1 ASC
+      `;
+    }
 
     const categoryBreakdownQuery = `
       SELECT
@@ -87,6 +261,17 @@ export async function GET(request) {
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
+        AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+        AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+        AND ($5::text IS NULL OR COALESCE(
+          NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+          NULLIF(BTRIM(data->>'policyCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+          NULLIF(BTRIM(data->>'documentCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+          NULLIF(BTRIM(data->>'policyType'), ''),
+          'General Insurance'
+        ) ILIKE '%' || $5::text || '%')
       GROUP BY 1
       ORDER BY count DESC
       LIMIT 8
@@ -107,6 +292,17 @@ export async function GET(request) {
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
+        AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+        AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+        AND ($5::text IS NULL OR COALESCE(
+          NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+          NULLIF(BTRIM(data->>'policyCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+          NULLIF(BTRIM(data->>'documentCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+          NULLIF(BTRIM(data->>'policyType'), ''),
+          'General Insurance'
+        ) ILIKE '%' || $5::text || '%')
       GROUP BY 1
       ORDER BY total_premium DESC
       LIMIT 8
@@ -115,7 +311,7 @@ export async function GET(request) {
     const recentPoliciesQuery = `
       SELECT
         id,
-        created_at AS "createdAt",
+        COALESCE(saved_at, created_at) AS "createdAt",
         COALESCE(
           NULLIF(BTRIM(reviewed_data->>'insuredName'), ''),
           NULLIF(BTRIM(data->>'insuredName'), ''),
@@ -152,9 +348,27 @@ export async function GET(request) {
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
-      ORDER BY created_at DESC
+        AND ($3::timestamptz IS NULL OR COALESCE(saved_at, created_at) >= $3::timestamptz)
+        AND ($4::timestamptz IS NULL OR COALESCE(saved_at, created_at) <= $4::timestamptz)
+        AND ($5::text IS NULL OR COALESCE(
+          NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
+          NULLIF(BTRIM(data->>'policyCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+          NULLIF(BTRIM(data->>'documentCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+          NULLIF(BTRIM(data->>'policyType'), ''),
+          'General Insurance'
+        ) ILIKE '%' || $5::text || '%')
+      ORDER BY COALESCE(saved_at, created_at) DESC
       LIMIT 6
     `;
+
+    const dateFilterPrisma = (startIso || endIso)
+      ? {
+          ...(startIso ? { gte: new Date(startIso) } : {}),
+          ...(endIso ? { lte: new Date(endIso) } : {}),
+        }
+      : undefined;
 
     const [
       policyRows,
@@ -179,8 +393,8 @@ export async function GET(request) {
           _count: { id: true },
         })
         .catch(() => []),
-      prisma.$queryRawUnsafe(monthlyTrendsQuery, ...sqlParams).catch((err) => {
-        console.error("monthlyTrendsQuery error:", err);
+      prisma.$queryRawUnsafe(trendsQuery, ...sqlParams).catch((err) => {
+        console.error("trendsQuery error:", err);
         return [];
       }),
       prisma.$queryRawUnsafe(categoryBreakdownQuery, ...sqlParams).catch((err) => {
@@ -198,20 +412,32 @@ export async function GET(request) {
       prisma.claim
         .groupBy({
           by: ["status"],
-          where: { ...tenantFilter, deletedAt: null },
+          where: {
+            ...tenantFilter,
+            deletedAt: null,
+            ...(dateFilterPrisma ? { createdAt: dateFilterPrisma } : {}),
+          },
           _count: { id: true },
         })
         .catch(() => []),
       prisma.leadGeneration
         .groupBy({
           by: ["status"],
-          where: { ...tenantFilter, deletedAt: null },
+          where: {
+            ...tenantFilter,
+            deletedAt: null,
+            ...(dateFilterPrisma ? { createdAt: dateFilterPrisma } : {}),
+          },
           _count: { id: true },
         })
         .catch(() => []),
       prisma.leadGeneration
         .findMany({
-          where: { ...tenantFilter, deletedAt: null },
+          where: {
+            ...tenantFilter,
+            deletedAt: null,
+            ...(dateFilterPrisma ? { createdAt: dateFilterPrisma } : {}),
+          },
           orderBy: { updatedAt: "desc" },
           take: 8,
           select: {
@@ -254,12 +480,51 @@ export async function GET(request) {
       leadGroups.find((g) => g.status === status)?._count?.id || 0;
     const totalLeads = leadGroups.reduce((acc, g) => acc + (g._count?.id || 0), 0);
 
+    let finalTrends = monthlyTrends || [];
+    if (periodParam === "TODAY") {
+      const hourlyMap = new Map();
+      (monthlyTrends || []).forEach((r) => {
+        hourlyMap.set(Number(r.hour_num), {
+          count: Number(r.policy_count || 0),
+          premium: Number(r.total_premium || 0),
+          label: r.month_label,
+        });
+      });
+
+      const activeHours = Array.from(hourlyMap.keys());
+      const startHour = activeHours.length > 0 ? Math.min(9, ...activeHours) : 9;
+      const endHour = activeHours.length > 0 ? Math.max(18, ...activeHours) : 18;
+
+      const timeline = [];
+      for (let h = startHour; h <= endHour; h++) {
+        const d = new Date();
+        d.setHours(h, 0, 0, 0);
+        const shortLabel = d.toLocaleString("en-US", { hour: "numeric", hour12: true });
+        const existing = hourlyMap.get(h) || { count: 0, premium: 0 };
+        timeline.push({
+          shortMonth: shortLabel,
+          monthLabel: existing.count > 0 && existing.label ? `${existing.label} (Today)` : `${shortLabel} (Today)`,
+          monthKey: `today-${h}`,
+          hour: h,
+          policyCount: existing.count,
+          totalPremium: existing.premium,
+        });
+      }
+      finalTrends = timeline;
+    }
+
     return Response.json({
       success: true,
       viewerRole: session.role,
+      periodBounds: {
+        startIso,
+        endIso,
+        label: dateRangeLabel,
+      },
       summary: {
         activePolicies: Number(policy.active_policies) || 0,
         totalCustomers: Number(policy.total_customers) || 0,
+        totalPremium: Number(policy.total_premium) || 0,
         needsReview: uploadCount(UPLOAD_STATUS.REVIEW_REQUIRED),
         failedExtractions: uploadCount(UPLOAD_STATUS.FAILED),
         totalClaims,
@@ -275,12 +540,14 @@ export async function GET(request) {
         convertedLeads: getLeadCount("WON"),
         lostLeads: getLeadCount("LOST"),
       },
-      monthlyTrends: monthlyTrends.map((t) => ({
-        monthKey: t.month_key,
-        shortMonth: t.short_month,
-        monthLabel: t.month_label,
-        policyCount: Number(t.policy_count) || 0,
-        totalPremium: Number(t.total_premium) || 0,
+      monthlyTrends: finalTrends.map((t) => ({
+        monthKey: t.monthKey || t.month_key,
+        shortMonth: t.shortMonth || t.short_month,
+        monthLabel: t.monthLabel || t.month_label,
+        year: Number(t.year) || (t.month_key ? Number(String(t.month_key).slice(0, 4)) : null),
+        month: Number(t.month) || (t.month_key ? Number(String(t.month_key).slice(5, 7)) : null),
+        policyCount: Number(t.policyCount ?? t.policy_count ?? 0),
+        totalPremium: Number(t.totalPremium ?? t.total_premium ?? 0),
       })),
       categoryBreakdown: categoryRows.map((c) => ({
         category: c.category,

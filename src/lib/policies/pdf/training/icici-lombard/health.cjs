@@ -29,14 +29,26 @@ function matches({ text = "" }) {
 }
 
 function normalizeHealthDate(value = "") {
-  const match = String(value).match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
-  if (!match) return "";
-  const month = MONTHS[match[1].toLowerCase()];
-  return month ? `${match[2].padStart(2, "0")}/${month}/${match[3]}` : "";
+  if (!value) return "";
+  const dmyMatch = String(value).match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (dmyMatch) {
+    return `${dmyMatch[1].padStart(2, "0")}/${dmyMatch[2].padStart(2, "0")}/${dmyMatch[3]}`;
+  }
+  const textMatch = String(value).match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (textMatch) {
+    const month = MONTHS[textMatch[1].toLowerCase()] || MONTHS[textMatch[1].slice(0, 3).toLowerCase()];
+    if (month) return `${textMatch[2].padStart(2, "0")}/${month}/${textMatch[3]}`;
+  }
+  const dMonYMatch = String(value).match(/(\d{1,2})[-/\s]+([A-Za-z]{3,9})[-/\s]+(\d{4})/);
+  if (dMonYMatch) {
+    const month = MONTHS[dMonYMatch[2].toLowerCase()] || MONTHS[dMonYMatch[2].slice(0, 3).toLowerCase()];
+    if (month) return `${dMonYMatch[1].padStart(2, "0")}/${month}/${dMonYMatch[3]}`;
+  }
+  return "";
 }
 
 function extractDateList(value = "") {
-  return (String(value).match(/[A-Za-z]+\s+\d{1,2},?\s+\d{4}/g) || []).map(normalizeHealthDate);
+  return (String(value).match(/[A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[-/][A-Za-z]{3,9}[-/]\d{4}|\d{1,2}\/\d{1,2}\/\d{4}/g) || []).map(normalizeHealthDate);
 }
 
 function splitDenseNames(value = "") {
@@ -128,11 +140,14 @@ function train({ text = "", result }) {
   const proposerName = matchGroup(policyholder, /Proposer\s*Name\s*(.+?)(?=Email\s+ID)/i);
   const address = cleanHdfcValue(matchGroup(policyholder, /\nAddress\s*([^\n]+)/i));
   const productName = matchGroup(policyDetails, /Product\s+Name\s*([^\n]+)/i);
-  const policyPeriod = policyDetails.match(
-    /Policy\s+Start\s+Date\s*&\s*Time\s*([A-Za-z]+\s+\d{1,2},\s*\d{4})[\s\S]{0,50}?Policy\s+End\s+Date\s*&\s*Time\s*([A-Za-z]+\s+\d{1,2},\s*\d{4})/i,
-  );
-  const startDate = normalizeHealthDate(policyPeriod?.[1] || "");
-  const expiryDate = normalizeHealthDate(policyPeriod?.[2] || "");
+
+  const startMatch = text.match(/Policy\s+Start\s+Date\s*&\s*Time\s*([0-9A-Za-z, -]+?)(?=\s+\d{2}:\d{2}|Policy\s+End|\n)/i) ||
+    text.match(/Period\s+of\s+Insurance\s*:\s*From\s*([0-9A-Za-z, -]+?)(?=\s+to|\s+To|\n)/i);
+  const endMatch = text.match(/Policy\s+End\s+Date\s*&\s*Time\s*([0-9A-Za-z, -]+?)(?=\s+\d{2}:\d{2}|\n)/i) ||
+    text.match(/To\s*[:\s]*([0-9A-Za-z, -]+?)(?=\s+Midnight|\n|$)/i);
+
+  const startDate = normalizeHealthDate(startMatch?.[1] || "");
+  const expiryDate = normalizeHealthDate(endMatch?.[1] || "");
   const premiums = extractPremiums(text);
   const nominee = extractNominee(text);
   const insuredMembers = extractInsuredMembers(text, startDate);
@@ -140,13 +155,15 @@ function train({ text = "", result }) {
   const totalPremium = premiums.totalPremium || result.totalPremium;
 
   return {
-    productName: productName || result.productName,
-    policyNumber: matchGroup(policyDetails, /Policy\s+Number\s*([A-Z0-9/-]+)/i) || result.policyNumber,
-    policyType: matchGroup(policyDetails, /Policy\s+Type\s*([^\n]+)/i) || result.policyType,
+    productName: productName || result.productName || "ICICI Lombard Health",
+    policyNumber: matchGroup(policyDetails, /Policy\s+Number\s*([A-Z0-9/-]+)/i) || matchGroup(text, /Policy\s+Number\s*([A-Z0-9/-]+)/i) || result.policyNumber,
+    policyType: matchGroup(policyDetails, /Policy\s+Type\s*([^\n]+)/i) || result.policyType || "Health Insurance",
     policyTenure:
       matchGroup(policyDetails, /Policy\s+Tenure\s*(.+?)(?=Policy\s+Type)/i) || result.policyTenure,
     startDate: startDate || result.startDate,
+    policyStartDate: startDate || result.policyStartDate || result.startDate,
     expiryDate: expiryDate || result.expiryDate,
+    policyEndDate: expiryDate || result.policyEndDate || result.expiryDate,
     zone: matchGroup(policyDetails, /Zone\s*(.+?)(?=Premium\s+Payment\s+Frequency)/i) || result.zone,
     premiumPaymentFrequency:
       matchGroup(policyDetails, /Premium\s+Payment\s+Frequency\s*([^\n]+)/i) ||
