@@ -61,7 +61,11 @@ export async function GET(request) {
           policy_type,
           raw_follow_up,
           -- Clean numeric values
-          CAST(COALESCE(NULLIF(regexp_replace(raw_premium, '[^0-9.]', '', 'g'), ''), '0') AS DECIMAL) as premium,
+          (CASE
+            WHEN NULLIF(regexp_replace(raw_premium, '[^0-9.]', '', 'g'), '') ~ '^[0-9]+(\\.[0-9]+)?$'
+            THEN CAST(regexp_replace(raw_premium, '[^0-9.]', '', 'g') AS DECIMAL)
+            ELSE 0
+          END) as premium,
           (CASE
             WHEN COALESCE(TRIM(raw_expiry), '') = '' THEN NULL
             WHEN raw_expiry ~ '^\\d{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[0-1])' THEN CAST(SUBSTRING(raw_expiry FROM 1 FOR 10) AS DATE)

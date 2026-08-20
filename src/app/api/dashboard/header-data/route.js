@@ -151,6 +151,8 @@ export async function GET(request) {
     const startOfThisYear = makeIndiaDate(todayParts.year, 1, 1);
 
     const statsParams = [
+
+    const statsParams = [
       isSuperAdmin,
       orgId,
       todayStr,
@@ -159,6 +161,12 @@ export async function GET(request) {
       startOfThisYear.toISOString(),
       startOfNextMonth.toISOString(),
     ];
+      dated AS (
+        SELECT 
+          saved_at,
+          renewal_activity_at,
+          is_active_policy,
+          renewal_status,
 
     const statsQuery = `
       WITH parsed AS (
@@ -167,14 +175,7 @@ export async function GET(request) {
           COALESCE(renewal_date, saved_at) as renewal_activity_at,
           is_active_policy,
           renewal_status,
-          CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
-            NULLIF(reviewed_data->>'netPremium', ''),
-            NULLIF(data->>'netPremium', ''),
-            NULLIF(reviewed_data->>'totalPremium', ''),
-            NULLIF(reviewed_data->>'premium', ''),
-            NULLIF(data->>'totalPremium', ''),
-            NULLIF(data->>'premium', '')
-          ), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC) as premium,
+          ${premiumExpression()} as premium,
           COALESCE(reviewed_data->>'expiryDate', reviewed_data->>'policyEndDate', data->>'expiryDate', data->>'policyEndDate') AS raw_expiry
         FROM pdf_records
         WHERE deleted_at IS NULL
@@ -202,14 +203,7 @@ export async function GET(request) {
         FROM (
           SELECT
             p.id,
-            CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
-              NULLIF(p.reviewed_data->>'netPremium', ''),
-              NULLIF(p.data->>'netPremium', ''),
-              NULLIF(p.reviewed_data->>'totalPremium', ''),
-              NULLIF(p.reviewed_data->>'premium', ''),
-              NULLIF(p.data->>'totalPremium', ''),
-              NULLIF(p.data->>'premium', '')
-            ), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC) as premium
+            ${premiumExpression("p.")} as premium
           FROM pdf_records marker
           JOIN pdf_records p ON p.id = marker.renewed_policy_id
           WHERE marker.deleted_at IS NULL
@@ -224,14 +218,7 @@ export async function GET(request) {
           UNION ALL
           SELECT
             p.id,
-            CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
-              NULLIF(p.reviewed_data->>'netPremium', ''),
-              NULLIF(p.data->>'netPremium', ''),
-              NULLIF(p.reviewed_data->>'totalPremium', ''),
-              NULLIF(p.reviewed_data->>'premium', ''),
-              NULLIF(p.data->>'totalPremium', ''),
-              NULLIF(p.data->>'premium', '')
-            ), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC) as premium
+            ${premiumExpression("p.")} as premium
           FROM pdf_records p
           WHERE p.deleted_at IS NULL
             AND p.saved_at >= $5::timestamptz
@@ -277,14 +264,7 @@ export async function GET(request) {
           is_active_policy,
           renewal_status,
           created_by_id,
-          CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
-            NULLIF(reviewed_data->>'netPremium', ''),
-            NULLIF(data->>'netPremium', ''),
-            NULLIF(reviewed_data->>'totalPremium', ''),
-            NULLIF(reviewed_data->>'premium', ''),
-            NULLIF(data->>'totalPremium', ''),
-            NULLIF(data->>'premium', '')
-          ), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC) as premium,
+          ${premiumExpression()} as premium,
           COALESCE(reviewed_data->>'expiryDate', reviewed_data->>'policyEndDate', data->>'expiryDate', data->>'policyEndDate') AS raw_expiry
         FROM pdf_records
         WHERE deleted_at IS NULL
@@ -314,14 +294,7 @@ export async function GET(request) {
           SELECT
             p.id,
             p.created_by_id,
-            CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
-              NULLIF(p.reviewed_data->>'netPremium', ''),
-              NULLIF(p.data->>'netPremium', ''),
-              NULLIF(p.reviewed_data->>'totalPremium', ''),
-              NULLIF(p.reviewed_data->>'premium', ''),
-              NULLIF(p.data->>'totalPremium', ''),
-              NULLIF(p.data->>'premium', '')
-            ), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC) as premium
+            ${premiumExpression("p.")} as premium
           FROM pdf_records marker
           JOIN pdf_records p ON p.id = marker.renewed_policy_id
           WHERE marker.deleted_at IS NULL
@@ -337,14 +310,7 @@ export async function GET(request) {
           SELECT
             p.id,
             p.created_by_id,
-            CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
-              NULLIF(p.reviewed_data->>'netPremium', ''),
-              NULLIF(p.data->>'netPremium', ''),
-              NULLIF(p.reviewed_data->>'totalPremium', ''),
-              NULLIF(p.reviewed_data->>'premium', ''),
-              NULLIF(p.data->>'totalPremium', ''),
-              NULLIF(p.data->>'premium', '')
-            ), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC) as premium
+            ${premiumExpression("p.")} as premium
           FROM pdf_records p
           WHERE p.deleted_at IS NULL
             AND p.saved_at >= $5::timestamptz

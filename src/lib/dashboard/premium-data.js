@@ -9,14 +9,21 @@ import {
 const TERMINAL_STATUSES = "'RENEWED', 'LOST', 'NOT_INTERESTED', 'WRONG_NUMBER', 'RENEWED_ELSEWHERE'";
 const LOST_STATUSES = "'LOST', 'NOT_INTERESTED', 'WRONG_NUMBER', 'RENEWED_ELSEWHERE'";
 
-const premiumExpression = (alias = "") => `CAST(COALESCE(NULLIF(regexp_replace(COALESCE(
+const rawPremiumStr = (alias = "") => `COALESCE(
   NULLIF(${alias}reviewed_data->>'netPremium', ''),
   NULLIF(${alias}data->>'netPremium', ''),
   NULLIF(${alias}reviewed_data->>'totalPremium', ''),
   NULLIF(${alias}reviewed_data->>'premium', ''),
   NULLIF(${alias}data->>'totalPremium', ''),
   NULLIF(${alias}data->>'premium', '')
-), '[^0-9.]', '', 'g'), ''), '0') AS NUMERIC)`;
+)`;
+
+const cleanedPremiumStr = (alias = "") => `NULLIF(regexp_replace(${rawPremiumStr(alias)}, '[^0-9.]', '', 'g'), '')`;
+
+const premiumExpression = (alias = "") => `CASE
+  WHEN ${cleanedPremiumStr(alias)} ~ '^[0-9]+(\\.[0-9]+)?$' THEN CAST(${cleanedPremiumStr(alias)} AS NUMERIC)
+  ELSE 0
+END`;
 
 const expiryExpression = `CASE
   WHEN raw_expiry ~ '^\\d{4}-\\d{2}-\\d{2}' THEN CAST(SUBSTRING(raw_expiry FROM 1 FOR 10) AS DATE)

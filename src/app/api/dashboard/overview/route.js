@@ -49,21 +49,19 @@ export async function GET(request) {
       FROM active_records
     `;
 
+    const safePremiumSql = `(CASE
+      WHEN NULLIF(REGEXP_REPLACE(COALESCE(reviewed_data->>'totalPremium', data->>'totalPremium', reviewed_data->>'netPremium', data->>'netPremium', ''), '[^0-9.]', '', 'g'), '') ~ '^[0-9]+(\\.[0-9]+)?$'
+      THEN CAST(REGEXP_REPLACE(COALESCE(reviewed_data->>'totalPremium', data->>'totalPremium', reviewed_data->>'netPremium', data->>'netPremium', ''), '[^0-9.]', '', 'g') AS NUMERIC)
+      ELSE 0
+    END)`;
+
     const monthlyTrendsQuery = `
       SELECT
         TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month_key,
         TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YY') AS short_month,
         TO_CHAR(DATE_TRUNC('month', created_at), 'Month YYYY') AS month_label,
         COUNT(*)::integer AS policy_count,
-        COALESCE(SUM(
-          COALESCE(
-            NULLIF(REGEXP_REPLACE(reviewed_data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(reviewed_data->>'netPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(data->>'netPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            0
-          )
-        ), 0)::numeric AS total_premium
+        COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
@@ -83,15 +81,7 @@ export async function GET(request) {
           'General Insurance'
         ) AS category,
         COUNT(*)::integer AS count,
-        COALESCE(SUM(
-          COALESCE(
-            NULLIF(REGEXP_REPLACE(reviewed_data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(reviewed_data->>'netPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(data->>'netPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            0
-          )
-        ), 0)::numeric AS total_premium
+        COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
@@ -111,15 +101,7 @@ export async function GET(request) {
           'Unknown Insurer'
         ) AS insurer,
         COUNT(*)::integer AS count,
-        COALESCE(SUM(
-          COALESCE(
-            NULLIF(REGEXP_REPLACE(reviewed_data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(reviewed_data->>'netPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            NULLIF(REGEXP_REPLACE(data->>'netPremium', '[^0-9.]', '', 'g'), '')::numeric,
-            0
-          )
-        ), 0)::numeric AS total_premium
+        COALESCE(SUM(${safePremiumSql}), 0)::numeric AS total_premium
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
@@ -136,28 +118,35 @@ export async function GET(request) {
         COALESCE(
           NULLIF(BTRIM(reviewed_data->>'insuredName'), ''),
           NULLIF(BTRIM(data->>'insuredName'), ''),
-          'Policyholder'
-        ) AS "insuredName",
+          NULLIF(BTRIM(reviewed_data->>'customerName'), ''),
+          NULLIF(BTRIM(data->>'customerName'), ''),
+          'Unnamed Customer'
+        ) AS "customerName",
         COALESCE(
           NULLIF(BTRIM(reviewed_data->>'insuranceCompany'), ''),
           NULLIF(BTRIM(data->>'insuranceCompany'), ''),
-          'Insurance Co.'
-        ) AS "insuranceCompany",
+          NULLIF(BTRIM(reviewed_data->>'companyName'), ''),
+          NULLIF(BTRIM(data->>'companyName'), ''),
+          'Unknown Insurer'
+        ) AS "companyName",
         COALESCE(
-          NULLIF(BTRIM(reviewed_data->>'policyCategory'), ''),
-          NULLIF(BTRIM(data->>'policyCategory'), ''),
+          NULLIF(BTRIM(reviewed_data->>'policyType'), ''),
+          NULLIF(BTRIM(data->>'policyType'), ''),
+          NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+          NULLIF(BTRIM(data->>'documentCategory'), ''),
           'Policy'
+        ) AS "policyType",
+        COALESCE(
+          NULLIF(BTRIM(reviewed_data->>'documentCategory'), ''),
+          NULLIF(BTRIM(data->>'documentCategory'), ''),
+          'General Insurance'
         ) AS "documentCategory",
         COALESCE(
           NULLIF(BTRIM(reviewed_data->>'policyNumber'), ''),
           NULLIF(BTRIM(data->>'policyNumber'), ''),
           'Pending'
         ) AS "policyNumber",
-        COALESCE(
-          NULLIF(REGEXP_REPLACE(reviewed_data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-          NULLIF(REGEXP_REPLACE(data->>'totalPremium', '[^0-9.]', '', 'g'), '')::numeric,
-          0
-        ) AS "totalPremium"
+        ${safePremiumSql} AS "totalPremium"
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
