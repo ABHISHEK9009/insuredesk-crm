@@ -1082,18 +1082,11 @@ export default function Dashboard({
         if (!editForm.clientId && !editForm.clientIdRequestId) {
           editForm.clientId = editingRecord?.clientId || buildCustomerId(editForm.insuredName, editForm.contactNumber) || "PENDING";
         }
-        const pendingClientIdOnly =
-          Boolean(editForm.clientIdRequestId) &&
-          editValidation.contactErrors.length === 0 &&
-          editValidation.missingRequired.every((key) => key === "clientId" || key === "Client ID");
-        if (!editValidation.valid && !pendingClientIdOnly) {
-          const message = formatReviewValidationError(
-            editValidation.missingRequired,
-            editValidation.contactErrors,
-          );
+        if (editValidation.contactErrors.length > 0) {
+          const message = editValidation.contactErrors.join(" ");
           setEditError(message);
           setEditFieldErrors(buildEditFieldErrors(editValidation));
-          setToast("Fix highlighted fields before saving");
+          setToast("Fix contact fields before saving");
           return;
         }
         const reviewedData = (editValidation.visibleFields || []).reduce(

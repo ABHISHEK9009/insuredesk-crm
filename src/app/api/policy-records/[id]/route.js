@@ -195,7 +195,7 @@ export async function PUT(request, { params }) {
       return Response.json({ error: validation.contactErrors.join(" ") }, { status: 400 });
     }
 
-    if (!validation.valid) {
+    if (!validation.valid && !mergedData.insuredName && !mergedData.policyNumber) {
       return Response.json(
         {
           error: formatReviewValidationError(validation.missingRequired, validation.contactErrors),
