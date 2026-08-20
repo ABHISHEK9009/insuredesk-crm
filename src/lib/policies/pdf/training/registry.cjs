@@ -1,6 +1,7 @@
 const tataAigWarehouse = require("./tata-aig/warehouse.cjs");
 const iciciLombardHealth = require("./icici-lombard/health.cjs");
 const hdfcErgoHealth = require("./hdfc-ergo/health.cjs");
+const hdfcErgoMotor = require("./hdfc-ergo/motor.cjs");
 const unitedIndiaHealth = require("./united-india/health.cjs");
 const tataAigHealth = require("./tata-aig/health.cjs");
 const careHealthHealth = require("./care-health/health.cjs");
@@ -18,6 +19,7 @@ const trainers = [
   tataAigWarehouse,
   iciciLombardHealth,
   hdfcErgoHealth,
+  hdfcErgoMotor,
   unitedIndiaHealth,
   tataAigHealth,
   careHealthHealth,
@@ -149,6 +151,7 @@ function isCareHealth(result = {}, context = {}) {
 function isGoDigitMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   if (/TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text)) return false;
+  if (/HDFC\s*ERGO/i.test(text)) return false;
   return (
     /Go\s+Digit|godigit\.com|Digit\s+Two-Wheeler/i.test(text) &&
     /Motor|Two-Wheeler|Private\s+Car|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
@@ -179,12 +182,26 @@ function isTataAigMotor(result = {}, context = {}) {
   );
 }
 
+function isHdfcErgoMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  if (!/HDFC\s*ERGO/i.test(text)) return false;
+  if (/Optima\s+Secure|Optima\s+Restore|my\s*:\s*health|Health\s*Suraksha/i.test(text)) return false;
+  return (
+    /Standalone\s+Motor\s+Own\s+Damage|Proposal\s+Form\s+cum\s+Transcript\s+Letter|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Vehicle\s+Details|Total\s+IDV|PMTB\d+/i.test(text)
+  );
+}
+
 function deriveTrainingScope(result = {}, context = {}) {
   if (isIciciLombardHealth(result, context)) {
     return { insurer: "icici-lombard", category: "health" };
   }
   if (isHdfcErgoHealth(result, context)) {
     return { insurer: "hdfc-ergo", category: "health" };
+  }
+  if (isHdfcErgoMotor(result, context)) {
+    return { insurer: "hdfc-ergo", category: "motor" };
   }
   if (isUnitedIndiaHealth(result, context)) {
     return { insurer: "united-india", category: "health" };
@@ -281,6 +298,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       insuranceCompany: "The New India Assurance Company Limited",
       companyName: "The New India Assurance Company Limited",
       documentCategory: "Motor Insurance",
+    };
+  }
+  if (isHdfcErgoMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "HDFC ERGO General Insurance Company Limited",
+      companyName: "HDFC ERGO General Insurance Company Limited",
+      documentCategory: "Motor Insurance",
+      documentFormat: "HDFC_ERGO_MOTOR_V1",
+      sourceDocumentType: "HDFC_ERGO_MOTOR_V1",
     };
   }
   return result;
