@@ -260,7 +260,12 @@ export default function ClientManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ requestId: request.id, action, clientId }),
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server error while processing request. Please refresh and try again.");
+      }
       if (!res.ok) throw new Error(data.error || "Client ID request could not be resolved.");
       if (data.temporaryMpin) {
         setTemporaryCredential({

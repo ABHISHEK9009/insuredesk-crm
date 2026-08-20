@@ -574,8 +574,13 @@ export async function PATCH(request) {
                   updatedById: actorId,
                 },
               });
-              const temporaryMpin = generateTemporaryClientMpin();
-              await provisionClientMpin(account, temporaryMpin, policyDatabase);
+              let temporaryMpin = null;
+              try {
+                temporaryMpin = generateTemporaryClientMpin();
+                await provisionClientMpin(account, temporaryMpin, policyDatabase);
+              } catch (mpinErr) {
+                console.warn("Could not provision temporary MPIN for client account:", mpinErr);
+              }
               return {
                 ...(await finishResolution(policyDatabase, account, "CREATE_NEW")),
                 temporaryMpin,
@@ -588,6 +593,7 @@ export async function PATCH(request) {
       ),
     );
   } catch (error) {
+    console.error("Client ID resolution error:", error);
     if (error?.code === "CLIENT_NOT_FOUND") {
       return NextResponse.json(
         { error: "That Client ID was not found in this organization." },
@@ -603,7 +609,10 @@ export async function PATCH(request) {
         { status: 409 },
       );
     }
-    throw error;
+    return NextResponse.json(
+      { error: error?.message || "Client ID request could not be resolved." },
+      { status: 500 },
+    );
   }
 
   if (result.resolutionConflict) {
