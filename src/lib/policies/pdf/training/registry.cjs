@@ -47,7 +47,7 @@ function normalizeInsurer(value = "") {
   const known = [
     [/ICICI\s+Lombard/i, "icici-lombard"],
     [/TATA\s*AIG/i, "tata-aig"],
-    [/IFFCO\s*Tokio/i, "iffco-tokio"],
+    [/IFFCO\s*[- ]?\s*Tokio/i, "iffco-tokio"],
     [/Bajaj\s*Allianz/i, "bajaj-allianz"],
     [/United\s+India/i, "united-india"],
     [/New\s+India/i, "new-india"],
