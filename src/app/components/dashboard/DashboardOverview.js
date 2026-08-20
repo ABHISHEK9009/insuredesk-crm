@@ -26,8 +26,6 @@ import {
 // -------------------------------------------------------------
 // Constants, Formats & Brand Helpers
 // -------------------------------------------------------------
-const DASHBOARD_CACHE_KEY = "bimaheadquarter.dashboard.overview.cache.v5";
-
 const PALETTE = [
   "#2563eb", // Royal Blue
   "#10b981", // Emerald
@@ -1177,13 +1175,13 @@ export default function DashboardOverview() {
     setIsRefreshing(true);
     setError("");
     try {
-      const params = new URLSearchParams();
-      if (selectedPeriod) params.set("period", selectedPeriod);
-      if (selectedMonth && selectedMonth !== "ALL") params.set("month", selectedMonth);
-      if (selectedCategory && selectedCategory !== "ALL") params.set("category", selectedCategory);
+      const queryParts = [];
+      if (selectedPeriod) queryParts.push(`period=${encodeURIComponent(selectedPeriod)}`);
+      if (selectedMonth && selectedMonth !== "ALL") queryParts.push(`month=${encodeURIComponent(selectedMonth)}`);
+      if (selectedCategory && selectedCategory !== "ALL") queryParts.push(`category=${encodeURIComponent(selectedCategory)}`);
 
-      const queryStr = params.toString() ? `?${params.toString()}` : "";
-      const headerQueryStr = params.toString() ? `?summaryOnly=true&${params.toString()}` : "?summaryOnly=true";
+      const queryStr = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+      const headerQueryStr = queryParts.length > 0 ? `?summaryOnly=true&${queryParts.join("&")}` : "?summaryOnly=true";
 
       const [overviewData, reportingData] = await Promise.all([
         fetchJson(`/api/dashboard/overview${queryStr}`, signal),

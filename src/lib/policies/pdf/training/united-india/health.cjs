@@ -1,5 +1,4 @@
-const { normalizeAmount } = require("../../utils/amounts.cjs");
-const { matchGroup } = require("../../utils/regex.cjs");
+const { normalizeAmount, sumAmounts } = require("../../utils/amounts.cjs");
 const { cleanHdfcValue, sliceText } = require("../../utils/text.cjs");
 
 const scope = { insurer: "united-india", category: "health" };
@@ -18,6 +17,10 @@ function normalizeDate(value = "") {
   return match ? `${match[1].padStart(2, "0")}/${match[2].padStart(2, "0")}/${match[3]}` : "";
 }
 
+function formatAmount(value = "") {
+  return value ? sumAmounts(value) : "";
+}
+
 function cleanPersonName(value = "") {
   return cleanHdfcValue(value).replace(/^(?:Mr|Mrs|Ms|Miss|Dr|Shri|Smt|MR|MRS|MS|MISS|DR|SHRI|SMT)\.?\s+/i, "");
 }
@@ -31,7 +34,7 @@ function extractInsuredMembers(text = "") {
 
   nameMatches.forEach((nm, idx) => {
     const cleanNm = cleanPersonName(nm);
-    if (cleanNm && !members.some(m => m.name === cleanNm)) {
+    if (cleanNm && !members.some((m) => m.name === cleanNm)) {
       members.push({
         name: cleanNm,
         dateOfBirth: dobMatches[idx] || "",
@@ -87,14 +90,8 @@ function train({ text = "", result = {} }) {
   const members = extractInsuredMembers(text);
 
   return {
-    insuranceCompany: "United India Insurance Company Limited",
-    companyName: "United India Insurance Company Limited",
-    documentCategory: "Health Insurance",
-    policyCategory: "Health Insurance",
     policyType: "Individual Health Insurance",
     productName: "Individual Health Insurance Policy",
-    documentFormat: "UNITED_INDIA_HEALTH_V1",
-    sourceDocumentType: "UNITED_INDIA_HEALTH_V1",
     policyNumber: policyNumber || result.policyNumber,
     insuredName: cleanHolder || result.insuredName,
     customerName: cleanHolder || result.customerName,
@@ -104,15 +101,15 @@ function train({ text = "", result = {} }) {
     startDate: policyStartDate,
     policyEndDate,
     expiryDate: policyEndDate,
-    totalPremium,
-    grossPremium: totalPremium,
-    premium: totalPremium,
-    premiumIncludingGst: totalPremium,
-    netPremium,
-    basicPremium: netPremium,
-    sumInsured,
-    totalSumInsured: sumInsured,
-    insuredMembers: members.length > 0 ? members : result.insuredMembers || [],
+    totalPremium: totalPremium ? formatAmount(totalPremium) : result.totalPremium,
+    grossPremium: totalPremium ? formatAmount(totalPremium) : result.grossPremium,
+    premium: totalPremium ? formatAmount(totalPremium) : result.premium,
+    premiumIncludingGst: totalPremium ? formatAmount(totalPremium) : result.premiumIncludingGst,
+    netPremium: netPremium ? formatAmount(netPremium) : totalPremium,
+    basicPremium: netPremium ? formatAmount(netPremium) : totalPremium,
+    sumInsured: sumInsured ? formatAmount(sumInsured) : result.sumInsured,
+    totalSumInsured: sumInsured ? formatAmount(sumInsured) : result.totalSumInsured,
+    insuredMembers: members.length > 0 ? members : (cleanHolder ? [{ name: cleanHolder }] : result.insuredMembers || []),
     extractionTrainingVersion: "UNITED_INDIA_HEALTH_V1",
   };
 }

@@ -1,6 +1,5 @@
 const { normalizeAmount, sumAmounts } = require("../../utils/amounts.cjs");
-const { matchGroup } = require("../../utils/regex.cjs");
-const { cleanHdfcValue, sliceText } = require("../../utils/text.cjs");
+const { cleanHdfcValue } = require("../../utils/text.cjs");
 
 const scope = { insurer: "care-health", category: "health" };
 const MONTHS = {
