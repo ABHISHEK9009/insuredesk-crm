@@ -1062,7 +1062,13 @@ export default function Dashboard({
   }
 
   function updateEditField(key, value) {
-    setEditForm((current) => ({ ...current, [key]: value }));
+    setEditForm((current) => {
+      const next = { ...current, [key]: value };
+      if (key === "clientId" && value) {
+        next.clientIdRequestId = null;
+      }
+      return next;
+    });
     setEditFieldErrors((current) => {
       if (!current[key]) return current;
       const next = { ...current };

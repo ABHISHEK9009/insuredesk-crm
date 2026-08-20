@@ -121,7 +121,14 @@ export async function PUT(request, { params }) {
     }
     let clientIdPending = false;
     let verifiedClientIdRequest = null;
-    if (clientIdRequestId) {
+    if (reviewedData.clientId) {
+      clientIdPending = false;
+      const activeClient = await findActiveClientAccount(reviewedData.clientId, existing.organizationId);
+      if (activeClient) {
+        reviewedData.clientId = activeClient.id;
+        mergedData.clientId = activeClient.id;
+      }
+    } else if (clientIdRequestId) {
       verifiedClientIdRequest = await prisma.task.findFirst({
         where: {
           id: clientIdRequestId,
@@ -132,39 +139,15 @@ export async function PUT(request, { params }) {
             : { createdById: existing.createdById }),
         },
       });
-      if (!verifiedClientIdRequest || !matchesClientIdRequest(verifiedClientIdRequest, reviewedData)) {
-        return Response.json(
-          { error: "The Client ID request is invalid or does not match this policy." },
-          { status: 400 },
-        );
-      }
-      const resolvedClientId =
-        verifiedClientIdRequest.metadata?.resolvedClientId || verifiedClientIdRequest.recordId;
-      if (verifiedClientIdRequest.status === "COMPLETED" && resolvedClientId) {
-        if (
-          reviewedData.clientId &&
-          String(reviewedData.clientId).toLowerCase() !== String(resolvedClientId).toLowerCase()
-        ) {
-          return Response.json({ error: "Use the Client ID approved for this request." }, { status: 409 });
+      if (verifiedClientIdRequest) {
+        const resolvedClientId =
+          verifiedClientIdRequest.metadata?.resolvedClientId || verifiedClientIdRequest.recordId;
+        if (verifiedClientIdRequest.status === "COMPLETED" && resolvedClientId) {
+          reviewedData.clientId = resolvedClientId;
+          mergedData.clientId = resolvedClientId;
+        } else {
+          clientIdPending = true;
         }
-        reviewedData.clientId = resolvedClientId;
-        mergedData.clientId = resolvedClientId;
-      } else if (verifiedClientIdRequest.status === "COMPLETED") {
-        return Response.json({ error: "This Client ID request has no resolved client." }, { status: 409 });
-      } else if (reviewedData.clientId) {
-        return Response.json(
-          { error: "This Client ID request must be resolved before a client can be linked directly." },
-          { status: 409 },
-        );
-      } else {
-        clientIdPending = true;
-      }
-    }
-    if (reviewedData.clientId) {
-      const activeClient = await findActiveClientAccount(reviewedData.clientId, existing.organizationId);
-      if (activeClient) {
-        reviewedData.clientId = activeClient.id;
-        mergedData.clientId = activeClient.id;
       }
     }
     const previousClientIdCandidate = String(
