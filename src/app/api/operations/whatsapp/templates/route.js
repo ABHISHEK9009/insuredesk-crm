@@ -10,6 +10,11 @@ const DEFAULT_TEMPLATES = {
     mediaUrl: "",
     mediaType: "IMAGE",
   },
+  due_soon_non_motor: {
+    body: "Dear {{customerName}},\n\nYour {{productName}} Insurance Policy with {{companyName}} is scheduled to expire soon.\n\nPolicy Number: {{policyNumber}}\nProduct: {{productName}}\nExpiry Date: {{expiryDate}}\nNet Premium: ₹{{netPremium}}\n\nKindly contact us to renew before expiry.\n\nBest regards,\nBima Headquarter",
+    mediaUrl: "",
+    mediaType: "PDF",
+  },
   today: {
     body: "URGENT RENEWAL NOTICE 🚨\n\nDear {{customerName}},\n\nYour insurance policy {{policyNumber}} expires TODAY ({{expiryDate}}).\n\nPlease approve calculation to issue renewal instantly.\n\nBest regards,\nBima Headquarter",
     mediaUrl: "",
@@ -29,6 +34,11 @@ const DEFAULT_TEMPLATES = {
     body: "Dear {{customerName}},\n\nThe Motor Insurance Policy for *{{customerName}}* with *{{companyName}}* is scheduled to expire soon.\n\n*Policy Number:* {{policyNumber}}\n*Vehicle:* {{vehicleName}}\n*Registration No.:* {{registrationNumber}}\n*Expiry Date:* {{expiryDate}}\n\nPlease connect with us in advance to ensure a smooth renewal, avoid any interruption in coverage, and explore the best renewal options available.\n\nPhone: +91 88188 89660\nWebsite: www.bimaheadquarter.com\n\n*Team BimaHeadquarter by InsureDesk IMF Pvt. Ltd.*\n_Your Trusted Insurance Partner_",
     mediaUrl: "",
     mediaType: "IMAGE",
+  },
+  renewal_reminder_non_motor: {
+    body: "Dear {{customerName}},\n\nYour {{productName}} Insurance Policy with *{{companyName}}* is scheduled to expire soon.\n\n*Policy Number:* {{policyNumber}}\n*Product:* {{productName}}\n*Expiry Date:* {{expiryDate}}\n\nPlease connect with us in advance to ensure a smooth renewal, avoid any interruption in coverage, and explore the best renewal options available.\n\nPhone: +91 88188 89660\nWebsite: www.bimaheadquarter.com\n\n*Team BimaHeadquarter by InsureDesk IMF Pvt. Ltd.*\n_Your Trusted Insurance Partner_",
+    mediaUrl: "",
+    mediaType: "PDF",
   },
   birthday_wish: {
     body: "Dear {{customerName}},\n\nWishing you a very Happy Birthday! 🎂 May this year bring you joy, health, and prosperity.\n\nBest regards,\n{{companyName}}",

@@ -1,6 +1,6 @@
 import renewalImportIdentity from "./import-identity.cjs";
-import { calculateDaysLeft } from "./dates";
-import { normalizeCustomerName, resolvePolicyCustomerName } from "./customer-name";
+import { calculateDaysLeft } from "./dates.js";
+import { normalizeCustomerName, resolvePolicyCustomerName } from "./customer-name.js";
 
 const RENEWAL_HELP_NUMBER = "+91 88188 89660";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -11,6 +11,7 @@ export const RENEWAL_WHATSAPP_CUSTOM_FIELDS = [
   { label: "Customer Name", placeholder: "{CustomerName}", example: "BHAIJILAL CHOUHAN" },
   { label: "Insurance Company", placeholder: "{InsuranceCompany}", example: "IFFCO Tokio" },
   { label: "Policy Number", placeholder: "{PolicyNumber}", example: "N4116778" },
+  { label: "Product Name", placeholder: "{ProductName}", example: "Individual Health Insurance" },
   { label: "Vehicle Make", placeholder: "{VehicleMake}", example: "MG" },
   { label: "Vehicle Model", placeholder: "{VehicleModel}", example: "H Savvy" },
   { label: "Registration Number", placeholder: "{RegistrationNumber}", example: "MP04ZL6963" },
@@ -83,6 +84,100 @@ function renewalVehicleDescription(policy = {}) {
   return `${vehicle}${vehicleNumber ? ` (${vehicleNumber})` : ""}`;
 }
 
+export function isMotorPolicy(policy = {}) {
+  const cat = String(
+    policy.policyCategory ||
+    policy.category ||
+    policy.lob ||
+    policy.lineOfBusiness ||
+    policy.documentCategory ||
+    "",
+  ).toLowerCase();
+
+  if (
+    cat.includes("health") ||
+    cat.includes("mediclaim") ||
+    cat.includes("life") ||
+    cat.includes("fire") ||
+    cat.includes("marine") ||
+    cat.includes("burglary") ||
+    cat.includes("warehouse") ||
+    cat.includes("commercial") ||
+    cat.includes("engineering") ||
+    cat.includes("workmen") ||
+    cat.includes("travel")
+  ) {
+    return false;
+  }
+
+  if (
+    cat.includes("motor") ||
+    cat.includes("vehicle") ||
+    cat.includes("car") ||
+    cat.includes("bike") ||
+    cat.includes("two wheeler") ||
+    cat.includes("four wheeler")
+  ) {
+    return true;
+  }
+
+  const prod = String(
+    policy.productName ||
+    policy.product ||
+    policy.policyType ||
+    policy.displayPolicyType ||
+    "",
+  ).toLowerCase();
+
+  if (
+    prod.includes("health") ||
+    prod.includes("mediclaim") ||
+    prod.includes("optima") ||
+    prod.includes("medicare") ||
+    prod.includes("life") ||
+    prod.includes("term") ||
+    prod.includes("fire") ||
+    prod.includes("marine") ||
+    prod.includes("burglary") ||
+    prod.includes("warehouse") ||
+    prod.includes("commercial")
+  ) {
+    return false;
+  }
+
+  if (
+    prod.includes("motor") ||
+    prod.includes("car") ||
+    prod.includes("auto") ||
+    prod.includes("two wheeler") ||
+    prod.includes("commercial vehicle") ||
+    prod.includes("goods carrying") ||
+    prod.includes("passenger")
+  ) {
+    return true;
+  }
+
+  const reg = String(policy.vehicleNumber || policy.registrationNumber || "").trim();
+  if (reg && reg !== "N/A" && reg !== "-" && /^[A-Z]{2}[0-9]/i.test(reg)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function resolveNonMotorProduct(policy = {}) {
+  const prod = String(
+    policy.productName ||
+    policy.product ||
+    policy.displayPolicyType ||
+    policy.policyType ||
+    policy.policyCategory ||
+    policy.category ||
+    "General",
+  ).trim();
+  return prod;
+}
+
 export function buildRenewalWhatsAppMessage({ recipientName, agentName, customerName, policies = [], referenceDate } = {}) {
   const name = normalizeCustomerName(customerName) || "Valued Customer";
   const recipient = normalizeRenewalContactName(
@@ -96,13 +191,37 @@ export function buildRenewalWhatsAppMessage({ recipientName, agentName, customer
         ? Number(policy.daysRemaining)
         : calculateDaysLeft(policy.expiryDate, referenceDate);
       const policyCustomerName = String(policy.insuredName || name).trim() || name;
-      return `The Motor Insurance Policy for *${policyCustomerName}* with *${String(policy.insuranceCompany || "your insurer").trim()}* is scheduled to expire soon.
+      const insuranceCompany = String(policy.insuranceCompany || policy.companyName || "your insurer").trim();
+      const policyNumber = String(policy.policyNumber || "N/A").trim();
+      const expiryDate = renewalDueDate(policy.expiryDate);
+      const daysRemainingText = daysLeft !== null && daysLeft !== undefined ? `${daysLeft} days` : "N/A";
 
-*Policy Number:* ${String(policy.policyNumber || "N/A").trim()}
+      const motor = isMotorPolicy(policy);
+
+      if (motor) {
+        return `The Motor Insurance Policy for *${policyCustomerName}* with *${insuranceCompany}* is scheduled to expire soon.
+
+*Policy Number:* ${policyNumber}
 *Vehicle:* ${renewalVehicleDescription(policy).replace(/\s+\([^)]*\)$/, "")}
 *Registration No.:* ${String(policy.vehicleNumber || policy.registrationNumber || "N/A").trim()}
-*Expiry Date:* ${renewalDueDate(policy.expiryDate)}
-*Days Remaining:* ${daysLeft ?? "N/A"} days`;
+*Expiry Date:* ${expiryDate}
+*Days Remaining:* ${daysRemainingText}`;
+      } else {
+        const fullProductName = resolveNonMotorProduct(policy);
+        let headlineProduct = fullProductName
+          .replace(/\s*\([^)]*\)/g, "")
+          .replace(/\s+Insurance(?:\s+Policy)?$/i, "")
+          .replace(/\s+Policy$/i, "")
+          .trim();
+        if (!headlineProduct) headlineProduct = fullProductName;
+
+        return `Your ${headlineProduct} Insurance Policy with ${insuranceCompany} is scheduled to expire soon.
+
+Policy Number: ${policyNumber}
+Product: ${fullProductName}
+Expiry Date: ${expiryDate}
+Days Remaining: ${daysRemainingText}`;
+      }
     })
     .join("\n\n");
 

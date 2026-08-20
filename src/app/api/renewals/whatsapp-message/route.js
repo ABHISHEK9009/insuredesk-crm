@@ -337,11 +337,13 @@ ${orgName} Team`;
         const vehicleName = [p.vehicleMake, p.vehicleModel].filter(Boolean).join(" ") || p.makeModel || policyType;
         const regNum = String(p.vehicleNumber || p.registrationNumber || "N/A").trim();
         const netPrem = p.netPremium ? String(p.netPremium) : "N/A";
+        const productName = String(p.productName || p.product || p.displayPolicyType || p.policyType || "Insurance").trim();
         return text
           .replace(/\{\{customerName\}\}/g, contactName)
           .replace(/\{\{companyName\}\}/g, orgName)
           .replace(/\{\{policyNumber\}\}/g, policyNumber)
           .replace(/\{\{policyType\}\}/g, policyType)
+          .replace(/\{\{productName\}\}/g, productName)
           .replace(/\{\{expiryDate\}\}/g, expiryDate)
           .replace(/\{\{vehicleName\}\}/g, vehicleName)
           .replace(/\{\{registrationNumber\}\}/g, regNum)
