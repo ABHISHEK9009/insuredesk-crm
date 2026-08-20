@@ -295,6 +295,12 @@ export async function PUT(request, { params }) {
       );
 
     const persistRecord = async (database) => {
+      if (reviewedData.clientId) {
+        clientIdRequestId = null;
+        clientIdPending = false;
+        return persistWithClientLocks(database);
+      }
+
       const matchingActiveRequest =
         policyCustomerName && policyCustomerMobile
           ? await database.task.findFirst({
@@ -311,12 +317,6 @@ export async function PUT(request, { params }) {
             })
           : null;
       if (matchingActiveRequest && matchingActiveRequest.id !== clientIdRequestId) {
-        if (reviewedData.clientId) {
-          return {
-            error: "An active Client ID request already exists for this client and must be resolved first.",
-            status: 409,
-          };
-        }
         clientIdRequestId = matchingActiveRequest.id;
         clientIdPending = true;
       }
