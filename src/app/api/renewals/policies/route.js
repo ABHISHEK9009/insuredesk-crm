@@ -123,7 +123,8 @@ export async function GET(request) {
             COALESCE(reviewed_data->>'documentCategory', data->>'documentCategory', '') || ' ' ||
             COALESCE(reviewed_data->>'policyCoverType', data->>'policyCoverType', '') || ' ' ||
             COALESCE(reviewed_data->>'insuranceCompany', reviewed_data->>'Insurance Company', data->>'insuranceCompany', data->>'Insurance Company', '') || ' ' ||
-            COALESCE(reviewed_data->>'sourceFile', data->>'sourceFile', '') || ' ' ||
+            COALESCE(reviewed_data->>'insuredName', data->>'insuredName', '') || ' ' ||
+            COALESCE(reviewed_data->>'sourceFile', data->>'sourceFile', pdf_file_name, '') || ' ' ||
             COALESCE(reviewed_data->>'description', data->>'description', '') || ' ' ||
             COALESCE(reviewed_data->>'vehicleNumber', data->>'vehicleNumber', '') || ' ' ||
             COALESCE(reviewed_data->>'registrationNumber', data->>'registrationNumber', '') || ' ' ||
@@ -176,8 +177,7 @@ export async function GET(request) {
           (CASE
             WHEN policy_haystack ~ '\\m(motor|vehicle|private\\s+car|two\\s+wheeler|commercial\\s+vehicle|goods\\s+carrying|auto\\s+secure|registration|chassis|engine)\\M'
               OR policy_haystack ~ '\\m[a-z]{2}[-\\s]?\\d{1,2}[-\\s]?[a-z]{1,3}[-\\s]?\\d{4}\\M' THEN 'Motor Policy'
-            WHEN policy_haystack ~ '\\m(warehouse|mpwlc|godown|warehousing)\\M'
-              OR LOWER(COALESCE(reviewed_data->>'sourceFile', data->>'sourceFile', '')) LIKE '%warehouse%' THEN 'Warehouse Policy'
+            WHEN policy_haystack ~ '\\m(warehouse|mpwlc|godown|warehousing)\\M' THEN 'Warehouse Policy'
             WHEN policy_haystack ~ '\\m(health|mediclaim|medical|family\\s+floater|critical\\s+illness|hospital|personal\\s+accident|pa policy)\\M' THEN 'Health Policy'
             WHEN policy_haystack ~ '\\m(life|term\\s+life|endowment|ulip|whole\\s+life|annuity|pension)\\M' THEN 'Life Policy'
             WHEN policy_haystack ~ '\\m(travel|journey|overseas|student\\s+travel)\\M' THEN 'Travel Policy'
