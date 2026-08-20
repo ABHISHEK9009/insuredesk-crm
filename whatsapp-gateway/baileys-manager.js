@@ -371,8 +371,10 @@ export async function sendMedia(to, mediaBase64, filename, caption, type) {
   }
   const buffer = Buffer.from(rawBase64, "base64");
 
+  const isDocument = type === "document" || String(filename || "").toLowerCase().endsWith(".pdf");
+
   let messagePayload;
-  if (type === "image") {
+  if (!isDocument && type === "image") {
     messagePayload = {
       image: buffer,
       caption: caption || "",

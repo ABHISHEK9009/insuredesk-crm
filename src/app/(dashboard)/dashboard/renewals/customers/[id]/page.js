@@ -947,19 +947,35 @@ export default function CustomerProfilePage(props) {
     try {
       const groupPolicyIds = [...new Set(whatsappRecipientGroups.flatMap((group) => group.policyIds || []))];
       const selectedQuotes = renewalQuotes.filter((quote) => selectedRenewalQuoteIds.includes(quote.id));
-      let quoteAttachments = selectedQuotes.map((quote) => ({
-        attachmentData: quote.mediaBase64 || quote.attachmentData || "",
-        attachmentUrl: quote.attachmentUrl || "",
-        attachmentFileName: quote.attachmentFileName || quote.fileName || "quote_image.jpg",
-        attachmentType: quote.attachmentType || (quote.mediaBase64 || quote.attachmentData ? "image" : (String(quote.attachmentUrl || "").match(/\.(pdf)$/i) ? "document" : "image")),
-        messageBody: quote.messageBody || "",
-      }));
+      let quoteAttachments = selectedQuotes.map((quote) => {
+        const data = quote.mediaBase64 || quote.attachmentData || "";
+        const rawFilename = quote.attachmentFileName || quote.fileName || "";
+        const isPdf = quote.attachmentType === "document" ||
+          rawFilename.toLowerCase().endsWith(".pdf") ||
+          String(data).startsWith("data:application/pdf") ||
+          String(quote.attachmentUrl || "").toLowerCase().endsWith(".pdf");
+        const filename = rawFilename || (isPdf ? "quote.pdf" : "quote_image.jpg");
+
+        return {
+          attachmentData: data,
+          attachmentUrl: quote.attachmentUrl || "",
+          attachmentFileName: filename,
+          attachmentType: isPdf ? "document" : "image",
+          mediaType: isPdf ? "document" : "image",
+          messageBody: quote.messageBody || "",
+        };
+      });
 
       if (manualQuoteFileBase64 && quoteAttachments.length === 0) {
+        const isPdf = String(manualQuoteFileName || "").toLowerCase().endsWith(".pdf") ||
+          manualQuoteFileBase64.startsWith("data:application/pdf");
+        const filename = manualQuoteFileName || (isPdf ? "quote.pdf" : "quote_image.jpg");
+
         quoteAttachments.push({
           attachmentData: manualQuoteFileBase64,
-          attachmentFileName: manualQuoteFileName || "quote_image.jpg",
-          attachmentType: manualQuoteFileName?.endsWith(".pdf") ? "document" : "image",
+          attachmentFileName: filename,
+          attachmentType: isPdf ? "document" : "image",
+          mediaType: isPdf ? "document" : "image",
           messageBody: manualQuoteText || "",
         });
       }

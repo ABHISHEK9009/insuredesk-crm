@@ -54,8 +54,14 @@ async function requireSession(request) {
 async function resolveAttachmentPayload(attachment = {}) {
   const attachmentData = attachment.mediaBase64 || attachment.data || attachment.attachmentData || attachment.base64 || "";
   const attachmentUrl = attachment.attachmentUrl || attachment.url || attachment.mediaUrl || "";
-  const attachmentType = String(attachment.mediaType || attachment.type || "").toLowerCase() === "document" ? "document" : "image";
-  const filename = String(attachment.filename || attachment.attachmentFileName || attachment.name || "").trim() || (attachmentType === "document" ? "quote.pdf" : "quote.jpg");
+  const rawFilename = String(attachment.filename || attachment.attachmentFileName || attachment.fileName || attachment.name || "").trim();
+  const isPdf = String(attachment.mediaType || attachment.type || attachment.attachmentType || "").toLowerCase() === "document" ||
+    rawFilename.toLowerCase().endsWith(".pdf") ||
+    String(attachmentData).startsWith("data:application/pdf") ||
+    String(attachmentUrl).toLowerCase().endsWith(".pdf");
+
+  const attachmentType = isPdf ? "document" : "image";
+  const filename = rawFilename || (isPdf ? "quote.pdf" : "quote.jpg");
   const caption = attachment.caption || attachment.messageBody || "";
 
   if (attachmentData) {
