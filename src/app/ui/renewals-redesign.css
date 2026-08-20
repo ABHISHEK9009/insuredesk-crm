@@ -1859,16 +1859,22 @@
 }
 
 .rn-policy-register__table-shell {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  box-sizing: border-box;
 }
 
 .rn-policy-register__table {
-  min-width: 1680px;
+  width: 100% !important;
+  min-width: 100% !important;
   table-layout: auto;
 }
 
 .rn-policy-register__table th,
 .rn-policy-register__table td {
+  padding: 8px 10px;
+  font-size: 12.5px;
   white-space: nowrap;
 }
 
@@ -1876,7 +1882,6 @@
 .rn-policy-register__table td:nth-child(3),
 .rn-policy-register__table td:nth-child(4),
 .rn-policy-register__table td:nth-child(5) {
-  max-width: 220px;
   white-space: normal;
 }
 
