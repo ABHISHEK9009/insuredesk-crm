@@ -14,6 +14,22 @@ export const dynamic = "force-dynamic";
 const REPORT_TIME_ZONE = "Asia/Kolkata";
 const INDIA_TIME_OFFSET = "+05:30";
 
+const rawPremiumStr = (alias = "") => `COALESCE(
+  NULLIF(${alias}reviewed_data->>'netPremium', ''),
+  NULLIF(${alias}data->>'netPremium', ''),
+  NULLIF(${alias}reviewed_data->>'totalPremium', ''),
+  NULLIF(${alias}reviewed_data->>'premium', ''),
+  NULLIF(${alias}data->>'totalPremium', ''),
+  NULLIF(${alias}data->>'premium', '')
+)`;
+
+const cleanedPremiumStr = (alias = "") => `NULLIF(regexp_replace(${rawPremiumStr(alias)}, '[^0-9.]', '', 'g'), '')`;
+
+const premiumExpression = (alias = "") => `CASE
+  WHEN ${cleanedPremiumStr(alias)} ~ '^[0-9]+(\\.[0-9]+)?$' THEN CAST(${cleanedPremiumStr(alias)} AS NUMERIC)
+  ELSE 0
+END`;
+
 function formatRelativeTime(dateString) {
   const now = new Date();
   const diffMs = now - new Date(dateString);
@@ -151,8 +167,6 @@ export async function GET(request) {
     const startOfThisYear = makeIndiaDate(todayParts.year, 1, 1);
 
     const statsParams = [
-
-    const statsParams = [
       isSuperAdmin,
       orgId,
       todayStr,
@@ -161,12 +175,6 @@ export async function GET(request) {
       startOfThisYear.toISOString(),
       startOfNextMonth.toISOString(),
     ];
-      dated AS (
-        SELECT 
-          saved_at,
-          renewal_activity_at,
-          is_active_policy,
-          renewal_status,
 
     const statsQuery = `
       WITH parsed AS (
