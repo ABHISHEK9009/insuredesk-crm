@@ -83,7 +83,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${plusJakartaSans.variable} ${beVietnamPro.variable} ${manrope.variable}`}>
+      <body className={`${plusJakartaSans.variable} ${beVietnamPro.variable} ${manrope.variable}`} suppressHydrationWarning>
         {children}
         <SpeedInsights />
       </body>

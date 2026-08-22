@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import {
   Search,
@@ -22,9 +21,8 @@ import {
 } from "lucide-react";
 import { normalizeIndianPhone } from "@/lib/customer-profiles/utils";
 import BrandLogo from "@/app/components/brand/BrandLogo";
-
-const WhatsAppContactCard = dynamic(() => import("@/app/components/renewals/WhatsAppContactCard"));
-const WhatsAppRecipientPicker = dynamic(() => import("@/app/components/whatsapp/WhatsAppRecipientPicker"));
+import WhatsAppContactCard from "@/app/components/renewals/WhatsAppContactCard";
+import WhatsAppRecipientPicker from "@/app/components/whatsapp/WhatsAppRecipientPicker";
 
 const COL_HEADERS = [
   "Contact Person Name",

@@ -34,14 +34,16 @@ export function resolvePolicyCustomerName(...sources) {
     }
 
     for (const key of [
+      "insuredName",
+      "customerName",
+      "Insured Name",
+      "Customer Name",
+      "renewalRecipientName",
       "contactPerson",
       "contactPersonName",
-      "customerName",
-      "insuredName",
       "Contact person name",
       "Contact Person Name",
       "Contact Person",
-      "Insured Name",
     ]) {
       const name = normalizeCustomerName(source[key]);
       if (name) return name;

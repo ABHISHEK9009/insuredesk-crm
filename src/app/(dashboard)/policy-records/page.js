@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { normalizeRecord } from "@/lib/records";
 import Dashboard from "@/app/ui/dashboard";
-import { loadScopedPolicyRecords, getCurrentSessionFromCookies } from "@/lib/records/scoped-data";
+import { loadScopedPolicyRecords, getCurrentSessionFromCookies, getSavedAtDateFilter } from "@/lib/records/scoped-data";
 import { getTenantFilter } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db/prisma";
 import { MANUAL_RENEWAL_SQL_EXCLUSION, withoutManualRenewalSources } from "@/lib/records/manual-renewal-source";
@@ -21,9 +21,24 @@ function addHiddenPolicyRecordSources(where) {
   return where;
 }
 
-async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
+async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session, datePreset, startDate, endDate }) {
   try {
     void session;
+    const dateFilter = getSavedAtDateFilter({ datePreset, startDate, endDate });
+    let dateClause = "";
+    const params = [isSuperAdmin, orgId];
+
+    if (dateFilter?.gte && dateFilter?.lte) {
+      params.push(dateFilter.gte, dateFilter.lte);
+      dateClause = `AND saved_at >= $3 AND saved_at <= $4`;
+    } else if (dateFilter?.gte) {
+      params.push(dateFilter.gte);
+      dateClause = `AND saved_at >= $3`;
+    } else if (dateFilter?.lte) {
+      params.push(dateFilter.lte);
+      dateClause = `AND saved_at <= $3`;
+    }
+
     const categoryCountQuery = `
       SELECT 
         COUNT(*)::integer as total_all,
@@ -51,6 +66,7 @@ async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+        ${dateClause}
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
         AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
         AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx';
@@ -60,6 +76,7 @@ async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
       SELECT COUNT(*)::integer as count FROM pdf_records
       WHERE deleted_at IS NULL
         AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+        ${dateClause}
         ${MANUAL_RENEWAL_SQL_EXCLUSION}
         AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
         AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx'
@@ -68,6 +85,7 @@ async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
           FROM pdf_records
           WHERE deleted_at IS NULL
             AND ($1::boolean OR organization_id IS NOT DISTINCT FROM $2::uuid)
+            ${dateClause}
             ${MANUAL_RENEWAL_SQL_EXCLUSION}
             AND COALESCE(source_file, '') != 'generic_renewal_template.xlsx'
             AND COALESCE(pdf_file_name, '') != 'generic_renewal_template.xlsx'
@@ -78,8 +96,8 @@ async function loadPolicyRecordTabCounts({ isSuperAdmin, orgId, session }) {
     `;
 
     const [countsResult, totalDuplicatesResult] = await Promise.all([
-      prisma.$queryRawUnsafe(categoryCountQuery, isSuperAdmin, orgId),
-      prisma.$queryRawUnsafe(duplicateCountQuery, isSuperAdmin, orgId),
+      prisma.$queryRawUnsafe(categoryCountQuery, ...params),
+      prisma.$queryRawUnsafe(duplicateCountQuery, ...params),
     ]);
 
     const counts = countsResult[0] || {};
@@ -164,13 +182,16 @@ export default async function PolicyRecordsPage(props) {
     lifecycle,
   });
 
-  const cacheKey = `${orgId || "global"}_${isSuperAdmin}`;
+  const cacheKey = `${orgId || "global"}_${isSuperAdmin}_${datePreset}_${startDate}_${endDate}`;
   const countsPayload = await getCachedTabCounts({
     key: cacheKey,
     fetcher: () => loadPolicyRecordTabCounts({
       isSuperAdmin,
       orgId,
       session,
+      datePreset,
+      startDate,
+      endDate,
     })
   });
   const {

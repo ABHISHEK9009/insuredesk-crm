@@ -727,8 +727,22 @@
 .rn-company-badge {
   border: 1px solid #e2e8f0;
   background: #f8fafc;
-  box-shadow: inset 3px 0 0 #2563eb;
-  color: #0f172a;
+  color: #1e293b;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.rn-company-badge:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
 }
 
 /* Pagination container */
@@ -1655,41 +1669,41 @@
 
 /* Premium Sidebar Section Cards */
 .sidebar-section-card {
-  border: 1px solid rgba(25, 28, 29, 0.1);
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
-  margin-bottom: 16px;
-  box-shadow: var(--rn-shadow);
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 .sidebar-section-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(25, 28, 29, 0.1);
-  background: #fdfdfd;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .sidebar-section-header svg {
-  color: #0f172a;
-  width: 15px;
-  height: 15px;
+  color: #2563eb;
+  width: 14px;
+  height: 14px;
 }
 
 .sidebar-section-header span {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
   color: #475569;
 }
 
 .sidebar-grid-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-bottom: 1px solid rgba(25, 28, 29, 0.06);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .sidebar-grid-row:last-child {
@@ -1700,24 +1714,24 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 16px;
+  gap: 3px;
+  padding: 10px 14px;
   font-size: 13px;
   color: #0f172a;
 }
 
 .sidebar-grid-cell:first-child:not(:last-child) {
-  border-right: 1px solid rgba(25, 28, 29, 0.06);
+  border-right: 1px solid #f1f5f9;
 }
 
 .sidebar-full-cell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 16px;
+  gap: 3px;
+  padding: 10px 14px;
   font-size: 13px;
   color: #0f172a;
-  border-bottom: 1px solid rgba(25, 28, 29, 0.06);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .sidebar-full-cell:last-child {
@@ -1726,16 +1740,16 @@
 
 .sidebar-cell-label {
   color: #64748b;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
 }
 
 .sidebar-cell-value {
   font-weight: 600;
   color: #0f172a;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .sidebar-action-btn {
@@ -1744,20 +1758,32 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  border: 1px solid rgba(25, 28, 29, 0.1);
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: #ffffff;
   color: #0f172a;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .sidebar-action-btn:hover {
   background: #f8fafc;
-  border-color: rgba(25, 28, 29, 0.15);
+  border-color: #94a3b8;
+}
+
+.sidebar-action-btn.whatsapp-btn {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.sidebar-action-btn.whatsapp-btn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
 }
 .rn-policy-register {
   display: grid;

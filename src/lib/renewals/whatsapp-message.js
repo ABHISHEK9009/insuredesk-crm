@@ -56,7 +56,7 @@ export function groupRenewalPoliciesByRecipient(policies = []) {
     if (!mobile) return;
     const current = groups.get(mobile) || {
       mobile,
-      name: resolvePolicyCustomerName(policy.renewalRecipientName, policy.contactPerson, policy.insuredName) || "Valued Customer",
+      name: resolvePolicyCustomerName(policy.insuredName, policy.customerName, policy.renewalRecipientName, policy.contactPerson) || "Valued Customer",
       policies: [],
     };
     current.policies.push(policy);
@@ -179,9 +179,11 @@ export function resolveNonMotorProduct(policy = {}) {
 }
 
 export function buildRenewalWhatsAppMessage({ recipientName, agentName, customerName, policies = [], referenceDate } = {}) {
-  const name = normalizeCustomerName(customerName) || "Valued Customer";
+  const policyInsured = policies.find((p) => p.insuredName || p.customerName);
+  const primaryInsured = policyInsured?.insuredName || policyInsured?.customerName || customerName;
+  const name = normalizeCustomerName(primaryInsured) || normalizeCustomerName(recipientName) || "Valued Customer";
   const recipient = normalizeRenewalContactName(
-    recipientName || agentName,
+    primaryInsured || recipientName || agentName,
     normalizeRenewalContactName(name),
   );
   const reminders = policies

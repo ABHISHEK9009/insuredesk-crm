@@ -170,6 +170,7 @@ export default function PublicHeader() {
         role="dialog"
         aria-modal="true"
         inert={!mobileMenuOpen ? true : undefined}
+        suppressHydrationWarning
       >
         <div className="landing-mobile-menu-head">
           <div>

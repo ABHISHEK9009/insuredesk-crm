@@ -21,6 +21,7 @@ import AlertCard from "@/app/components/shared/AlertCard";
 import EmptyState from "@/app/components/shared/EmptyState";
 import SearchBox from "@/app/components/shared/SearchBox";
 import {
+  Calendar,
   Check,
   CheckCircle,
   ChevronDown,
@@ -432,7 +433,7 @@ export default function Dashboard({
     else params.delete("startDate");
     if (endVal) params.set("endDate", endVal);
     else params.delete("endDate");
-    if (presetVal) params.set("datePreset", presetVal);
+    if (presetVal && presetVal !== "this-month") params.set("datePreset", presetVal);
     else params.delete("datePreset");
     if (lifecycleVal && lifecycleVal !== "all") params.set("lifecycle", lifecycleVal);
     else params.delete("lifecycle");
@@ -641,6 +642,62 @@ export default function Dashboard({
     });
     return ids;
   }, [policyRecordResults]);
+
+  const dateRangeLabel = useMemo(() => {
+    if (recordDatePreset === "custom" || (!recordDatePreset && (recordStartDate || recordEndDate))) {
+      const formatStrDate = (str) => {
+        if (!str) return "";
+        const parts = String(str).split("-");
+        if (parts.length === 3) {
+          const [y, m, d] = parts;
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return `${d} ${monthNames[parseInt(m, 10) - 1] || m} ${y}`;
+        }
+        return str;
+      };
+      if (recordStartDate && recordEndDate) {
+        return `${formatStrDate(recordStartDate)} – ${formatStrDate(recordEndDate)}`;
+      }
+      if (recordStartDate) return `From ${formatStrDate(recordStartDate)}`;
+      if (recordEndDate) return `Up to ${formatStrDate(recordEndDate)}`;
+      return "Custom Range";
+    }
+
+    const now = new Date();
+    const currentMonthName = now.toLocaleString("en-IN", { month: "long", year: "numeric" });
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthName = prevMonthDate.toLocaleString("en-IN", { month: "long", year: "numeric" });
+
+    switch (recordDatePreset) {
+      case "this-month":
+        return currentMonthName;
+      case "last-month":
+        return prevMonthName;
+      case "today":
+        return "Today";
+      case "yesterday":
+        return "Yesterday";
+      case "last-3-days":
+        return "Last 3 Days";
+      case "this-week":
+        return "This Week";
+      case "last-week":
+        return "Last Week";
+      case "last-3-months":
+        return "Last 3 Months";
+      case "last-6-months":
+        return "Last 6 Months";
+      case "this-year":
+        return `Year ${now.getFullYear()}`;
+      case "last-year":
+        return `Year ${now.getFullYear() - 1}`;
+      case "all":
+        return "All Time";
+      default:
+        return currentMonthName;
+    }
+  }, [recordDatePreset, recordStartDate, recordEndDate]);
+
   const recordViewOptions = useMemo(() => {
     const countsSource = localTabCounts || tabCounts;
     if (activePage === "records" && countsSource) {
@@ -2170,7 +2227,28 @@ export default function Dashboard({
           <div className="panel-head">
             <div>
               <p className="eyebrow">Admin Database</p>
-              <h2>Saved policy records</h2>
+              <h2 style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <span>Saved policy records</span>
+                {dateRangeLabel ? (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "2px 10px",
+                      fontSize: "12.5px",
+                      fontWeight: "600",
+                      borderRadius: "9999px",
+                      background: "rgba(37, 99, 235, 0.08)",
+                      color: "#1d4ed8",
+                      border: "1px solid rgba(37, 99, 235, 0.22)",
+                    }}
+                  >
+                    <Calendar size={13} style={{ strokeWidth: 2.2 }} />
+                    {dateRangeLabel}
+                  </span>
+                ) : null}
+              </h2>
             </div>
             <div className="actions">
               {canExportRecords ? (
@@ -2208,157 +2286,161 @@ export default function Dashboard({
           </div>
           {isRecordFilterOpen ? (
             <div className="record-filter-panel">
-              <label>
-                <span>Filter Field</span>
-                <select
-                  value={recordFilterField}
-                  onChange={(event) => {
-                    setRecordFilterField(event.target.value);
-                    updateRecordQueryParams({ filterField: event.target.value, page: 1 });
-                  }}
-                >
-                  <option value="">Any field</option>
-                  {FIELD_SETUP.map(([label, key]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Custom Data</span>
-                <input
-                  value={recordFilterValue}
-                  placeholder="Type value to find..."
-                  onChange={(event) => setRecordFilterValue(event.target.value)}
-                  onBlur={() => updateRecordQueryParams({ filterValue: recordFilterValue, page: 1 })}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      updateRecordQueryParams({ filterValue: recordFilterValue, page: 1 });
-                    }
-                  }}
-                />
-              </label>
-              <label>
-                <span>Policy Status</span>
-                <select
-                  value={recordLifecycle}
-                  onChange={(event) => {
-                    setRecordLifecycle(event.target.value);
-                    updateRecordQueryParams({ lifecycle: event.target.value, page: 1 });
-                  }}
-                >
-                  <option value="all">All policies</option>
-                  <option value="active">Active policies</option>
-                  <option value="inactive">Inactive policies</option>
-                </select>
-              </label>
-              <label>
-                <span>PDF Status</span>
-                <select
-                  value={recordPdfFilter}
-                  onChange={(event) => {
-                    setRecordPdfFilter(event.target.value);
-                    updateRecordQueryParams({ pdfFilter: event.target.value, page: 1 });
-                  }}
-                >
-                  <option value="all">All records</option>
-                  <option value="with">With PDF</option>
-                  <option value="missing">Missing PDF</option>
-                </select>
-              </label>
-              <label>
-                <span>Date Filter</span>
-                <select
-                  value={recordDatePreset}
-                  onChange={(event) => {
-                    setRecordDatePreset(event.target.value);
-                    const isCustom = event.target.value === "custom";
-                    if (!isCustom) {
-                      setRecordStartDate("");
-                      setRecordEndDate("");
-                    }
+              <div className="record-filter-grid">
+                <label>
+                  <span>Filter Field</span>
+                  <select
+                    value={recordFilterField}
+                    onChange={(event) => {
+                      setRecordFilterField(event.target.value);
+                      updateRecordQueryParams({ filterField: event.target.value, page: 1 });
+                    }}
+                  >
+                    <option value="">Any field</option>
+                    {FIELD_SETUP.map(([label, key]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Search Value</span>
+                  <input
+                    value={recordFilterValue}
+                    placeholder="Type value to find..."
+                    onChange={(event) => setRecordFilterValue(event.target.value)}
+                    onBlur={() => updateRecordQueryParams({ filterValue: recordFilterValue, page: 1 })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        updateRecordQueryParams({ filterValue: recordFilterValue, page: 1 });
+                      }
+                    }}
+                  />
+                </label>
+                <label>
+                  <span>Policy Status</span>
+                  <select
+                    value={recordLifecycle}
+                    onChange={(event) => {
+                      setRecordLifecycle(event.target.value);
+                      updateRecordQueryParams({ lifecycle: event.target.value, page: 1 });
+                    }}
+                  >
+                    <option value="all">All policies</option>
+                    <option value="active">Active policies</option>
+                    <option value="inactive">Inactive policies</option>
+                  </select>
+                </label>
+                <label>
+                  <span>PDF Status</span>
+                  <select
+                    value={recordPdfFilter}
+                    onChange={(event) => {
+                      setRecordPdfFilter(event.target.value);
+                      updateRecordQueryParams({ pdfFilter: event.target.value, page: 1 });
+                    }}
+                  >
+                    <option value="all">All records</option>
+                    <option value="with">With PDF</option>
+                    <option value="missing">Missing PDF</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Date Filter</span>
+                  <select
+                    value={recordDatePreset}
+                    onChange={(event) => {
+                      setRecordDatePreset(event.target.value);
+                      const isCustom = event.target.value === "custom";
+                      if (!isCustom) {
+                        setRecordStartDate("");
+                        setRecordEndDate("");
+                      }
+                      updateRecordQueryParams({
+                        datePreset: event.target.value,
+                        startDate: isCustom ? recordStartDate : "",
+                        endDate: isCustom ? recordEndDate : "",
+                        page: 1,
+                      });
+                    }}
+                  >
+                    <option value="this-month">This Month (Default)</option>
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="last-3-days">Last 3 Days</option>
+                    <option value="this-week">This Week</option>
+                    <option value="last-week">Last Week</option>
+                    <option value="last-month">Last Month</option>
+                    <option value="last-3-months">Last 3 Months</option>
+                    <option value="last-6-months">Last 6 Months</option>
+                    <option value="this-year">This Year</option>
+                    <option value="last-year">Last Year</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+                </label>
+                {recordDatePreset === "custom" && (
+                  <>
+                    <label>
+                      <span>Start Date</span>
+                      <input
+                        type="date"
+                        value={recordStartDate}
+                        onChange={(event) => {
+                          setRecordStartDate(event.target.value);
+                          updateRecordQueryParams({ startDate: event.target.value, page: 1 });
+                        }}
+                      />
+                    </label>
+                    <label>
+                      <span>End Date</span>
+                      <input
+                        type="date"
+                        value={recordEndDate}
+                        onChange={(event) => {
+                          setRecordEndDate(event.target.value);
+                          updateRecordQueryParams({ endDate: event.target.value, page: 1 });
+                        }}
+                      />
+                    </label>
+                  </>
+                )}
+              </div>
+              <div className="record-filter-actions-row">
+                <button
+                  type="button"
+                  className="filter-clear-btn"
+                  onClick={() => {
+                    setRecordFilterField("");
+                    setRecordFilterValue("");
+                    setRecordPdfFilter("all");
+                    setRecordLifecycle("all");
+                    setRecordStartDate("");
+                    setRecordEndDate("");
+                    setRecordDatePreset("this-month");
                     updateRecordQueryParams({
-                      datePreset: event.target.value,
-                      startDate: isCustom ? recordStartDate : "",
-                      endDate: isCustom ? recordEndDate : "",
+                      filterField: "",
+                      filterValue: "",
+                      pdfFilter: "all",
+                      lifecycle: "all",
+                      startDate: "",
+                      endDate: "",
+                      datePreset: "this-month",
                       page: 1,
                     });
                   }}
                 >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="yesterday">Yesterday</option>
-                  <option value="last-3-days">Last 3 Days</option>
-                  <option value="this-week">This Week</option>
-                  <option value="last-week">Last Week</option>
-                  <option value="this-month">This Month</option>
-                  <option value="last-month">Last Month</option>
-                  <option value="last-3-months">Last 3 Months</option>
-                  <option value="last-6-months">Last 6 Months</option>
-                  <option value="this-year">This Year</option>
-                  <option value="last-year">Last Year</option>
-                  <option value="custom">Custom Range</option>
-                </select>
-              </label>
-              {recordDatePreset === "custom" && (
-                <>
-                  <label>
-                    <span>Start Date</span>
-                    <input
-                      type="date"
-                      value={recordStartDate}
-                      onChange={(event) => {
-                        setRecordStartDate(event.target.value);
-                        updateRecordQueryParams({ startDate: event.target.value, page: 1 });
-                      }}
-                    />
-                  </label>
-                  <label>
-                    <span>End Date</span>
-                    <input
-                      type="date"
-                      value={recordEndDate}
-                      onChange={(event) => {
-                        setRecordEndDate(event.target.value);
-                        updateRecordQueryParams({ endDate: event.target.value, page: 1 });
-                      }}
-                    />
-                  </label>
-                </>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setRecordFilterField("");
-                  setRecordFilterValue("");
-                  setRecordPdfFilter("all");
-                  setRecordLifecycle("all");
-                  setRecordStartDate("");
-                  setRecordEndDate("");
-                  setRecordDatePreset("all");
-                  updateRecordQueryParams({
-                    filterField: "",
-                    filterValue: "",
-                    pdfFilter: "all",
-                    lifecycle: "all",
-                    startDate: "",
-                    endDate: "",
-                    datePreset: "all",
-                    page: 1,
-                  });
-                }}
-              >
-                Clear
-              </button>
-              <button
-                aria-label="Close filter panel"
-                className="record-filter-close"
-                type="button"
-                onClick={() => setIsRecordFilterOpen(false)}
-              >
-                <X size={18} />
-              </button>
+                  Clear Filters
+                </button>
+                <button
+                  type="button"
+                  className="filter-close-btn"
+                  onClick={() => setIsRecordFilterOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           ) : null}
           <div className="record-view-tabs" aria-label="Policy record views">
@@ -2377,51 +2459,29 @@ export default function Dashboard({
               </button>
             ))}
           </div>
-          <div style={{ position: "relative" }}>
+          <div className="table-nav-container">
             {isNavigating && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "rgba(255, 255, 255, 0.4)",
-                  backdropFilter: "blur(4px)",
-                  zIndex: 10,
-                  borderRadius: "12px",
-                  transition: "all 0.2s ease-in-out",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "24px 36px",
-                    borderRadius: "16px",
-                    background: "var(--surface)",
-                    boxShadow: "var(--shadow-soft)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  <LoaderCircle className="spin" size={36} style={{ color: "var(--accent)" }} />
-                  <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
-                    Loading policies...
-                  </span>
+              <>
+                <div className="table-navigating-bar">
+                  <div className="table-navigating-progress" />
                 </div>
-              </div>
+                <div className="table-updating-pill">
+                  <LoaderCircle className="spin" size={13} />
+                  <span>Updating records...</span>
+                </div>
+              </>
             )}
-            <RecordsTable
-              records={visiblePolicyRecordResults}
-              columns={recordViewColumns}
-              canEdit={canEditPolicyRecords}
-              onEdit={startEditRecord}
-              canDelete={canDeletePolicyRecords}
-              onDelete={deletePolicyRecord}
-              paginate={false}
-            />
+            <div style={{ opacity: isNavigating ? 0.45 : 1, transition: "opacity 0.2s ease" }}>
+              <RecordsTable
+                records={visiblePolicyRecordResults}
+                columns={recordViewColumns}
+                canEdit={canEditPolicyRecords}
+                onEdit={startEditRecord}
+                canDelete={canDeletePolicyRecords}
+                onDelete={deletePolicyRecord}
+                paginate={false}
+              />
+            </div>
           </div>
 
           {/* Pagination Controls */}

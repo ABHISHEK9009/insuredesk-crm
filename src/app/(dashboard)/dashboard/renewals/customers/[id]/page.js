@@ -2,7 +2,6 @@
 
 import { useEffect, useState, use, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import ModalPortal from "@/app/components/shared/ModalPortal";
 import {
@@ -19,6 +18,9 @@ import {
   Send,
   Clipboard,
   User,
+  Building2,
+  ChevronDown,
+  ChevronUp,
   LayoutGrid,
   MapPin,
   Shield,
@@ -30,9 +32,8 @@ import {
   FileText,
 } from "lucide-react";
 import BrandLogo from "@/app/components/brand/BrandLogo";
-
-const WhatsAppContactCard = dynamic(() => import("@/app/components/renewals/WhatsAppContactCard"));
-const WhatsAppRecipientPicker = dynamic(() => import("@/app/components/whatsapp/WhatsAppRecipientPicker"));
+import WhatsAppContactCard from "@/app/components/renewals/WhatsAppContactCard";
+import WhatsAppRecipientPicker from "@/app/components/whatsapp/WhatsAppRecipientPicker";
 
 const COL_HEADERS = [
   "Policy Number",
@@ -132,6 +133,7 @@ export default function CustomerProfilePage(props) {
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timelineFilters, setTimelineFilters] = useState({ q: "", status: "", policy: "", date: "" });
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
 
   // Single vs Multi Policy toggle mode
   const [policyViewMode, setPolicyViewMode] = useState(() => (requestedPolicyId ? "single" : "all"));
@@ -1376,7 +1378,20 @@ export default function CustomerProfilePage(props) {
         <button
           className="rn-btn"
           onClick={goBackToPortfolios}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
+            borderRadius: "8px",
+            padding: "6px 14px",
+            fontWeight: "600",
+            fontSize: "13px",
+            color: "#334155",
+            cursor: "pointer",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+          }}
         >
           <ArrowLeft size={14} /> Back to Portfolios
         </button>
@@ -1384,32 +1399,32 @@ export default function CustomerProfilePage(props) {
 
       <div className="customer-profile-layout">
         {/* Left Panel: Customer summary & KPIs */}
-        {/* Left Panel: Customer summary & KPIs */}
         <div
           className="customer-summary-panel"
           style={{ border: "none", background: "transparent", boxShadow: "none", padding: 0 }}
         >
           {/* Header section with avatar, name, and badge */}
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "8px" }}>
+          <div style={{ display: "flex", gap: "14px", alignItems: "center", marginBottom: "8px" }}>
             <div
               style={{
-                width: "56px",
-                height: "56px",
+                width: "52px",
+                height: "52px",
                 borderRadius: "50%",
-                background: "#f1f5f9",
-                border: "1px solid rgba(25, 28, 29, 0.08)",
+                background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+                border: "1.5px solid #bfdbfe",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#64748b",
+                color: "#2563eb",
+                boxShadow: "0 2px 6px rgba(37, 99, 235, 0.1)",
               }}
             >
-              <User size={28} />
+              <User size={26} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <h1
                 style={{
-                  fontSize: "20px",
+                  fontSize: "19px",
                   fontWeight: "700",
                   color: "#0f172a",
                   margin: 0,
@@ -1444,19 +1459,19 @@ export default function CustomerProfilePage(props) {
           </div>
 
           {/* Action buttons Call & WhatsApp */}
-          <div style={{ display: "flex", gap: "12px", marginBottom: "8px", marginTop: "8px" }}>
+          <div style={{ display: "flex", gap: "10px", marginBottom: "6px", marginTop: "6px" }}>
             <button className="sidebar-action-btn" onClick={handleCall} disabled={isNoMobile}>
-              <Phone size={16} /> Call
+              <Phone size={15} /> Call
             </button>
-            <button className="sidebar-action-btn" onClick={() => handleWhatsApp()} disabled={isNoMobile}>
-              <MessageSquare size={16} /> WhatsApp
+            <button className="sidebar-action-btn whatsapp-btn" onClick={() => handleWhatsApp()} disabled={isNoMobile}>
+              <MessageSquare size={15} /> WhatsApp
             </button>
           </div>
 
           {/* 1. CATEGORY */}
           <div className="sidebar-section-card">
             <div className="sidebar-section-header">
-              <LayoutGrid size={15} />
+              <LayoutGrid size={14} />
               <span>Category</span>
             </div>
             <div className="sidebar-full-cell">
@@ -1465,10 +1480,89 @@ export default function CustomerProfilePage(props) {
             </div>
           </div>
 
-          {/* 2. CONTACT INFORMATION */}
+          {/* 2. ASSOCIATED COMPANIES */}
+          <div className="sidebar-section-card">
+            <div className="sidebar-section-header" style={{ justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Building2 size={14} />
+                <span>Associated Companies</span>
+              </div>
+              <span
+                style={{
+                  fontSize: "10.5px",
+                  fontWeight: "700",
+                  color: "#2563eb",
+                  background: "#eff6ff",
+                  padding: "1px 6px",
+                  borderRadius: "10px",
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                {companies.length}
+              </span>
+            </div>
+            <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              {companies.length === 0 ? (
+                <span style={{ fontSize: "12px", color: "#64748b" }}>No company linked</span>
+              ) : (
+                <>
+                  {(showAllCompanies ? companies : companies.slice(0, 3)).map((company) => (
+                    <div
+                      key={company}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "8px",
+                        padding: "6px 8px",
+                        borderRadius: "6px",
+                        background: "#f8fafc",
+                        border: "1px solid #f1f5f9",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#1e293b",
+                        lineHeight: "1.3",
+                      }}
+                      title={company}
+                    >
+                      <Building2 size={13} style={{ color: "#64748b", marginTop: "2px", flexShrink: 0 }} />
+                      <span style={{ wordBreak: "break-word" }}>{company}</span>
+                    </div>
+                  ))}
+                  {companies.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCompanies(!showAllCompanies)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "4px",
+                        fontSize: "11.5px",
+                        fontWeight: "600",
+                        color: "#2563eb",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px 0",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {showAllCompanies ? (
+                        <>Show Less <ChevronUp size={13} /></>
+                      ) : (
+                        <>+ {companies.length - 3} more companies <ChevronDown size={13} /></>
+                      )}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* 3. CONTACT INFORMATION */}
           <div className="sidebar-section-card">
             <div className="sidebar-section-header">
-              <User size={15} />
+              <User size={14} />
               <span>Contact Information</span>
             </div>
             <div className="sidebar-full-cell">
@@ -1485,10 +1579,10 @@ export default function CustomerProfilePage(props) {
             </div>
           </div>
 
-          {/* 3. ADDRESS */}
+          {/* 4. ADDRESS */}
           <div className="sidebar-section-card">
             <div className="sidebar-section-header">
-              <MapPin size={15} />
+              <MapPin size={14} />
               <span>Address</span>
             </div>
             <div className="sidebar-full-cell">
@@ -1497,10 +1591,10 @@ export default function CustomerProfilePage(props) {
             </div>
           </div>
 
-          {/* 4. POLICY */}
+          {/* 5. POLICY */}
           <div className="sidebar-section-card">
             <div className="sidebar-section-header">
-              <Shield size={15} />
+              <Shield size={14} />
               <span>Policy</span>
             </div>
             <div className="sidebar-grid-row">
@@ -1529,10 +1623,10 @@ export default function CustomerProfilePage(props) {
             </div>
           </div>
 
-          {/* 5. ASSIGNMENT */}
+          {/* 6. ASSIGNMENT */}
           <div className="sidebar-section-card">
             <div className="sidebar-section-header">
-              <User size={15} />
+              <User size={14} />
               <span>Assignment</span>
             </div>
             <div className="sidebar-full-cell">
@@ -1543,33 +1637,13 @@ export default function CustomerProfilePage(props) {
         </div>
 
         {/* Right Panel: Associated Policies list and timeline */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-          {/* Associated Companies */}
-          <div className="rn-table-container">
-            <div style={{ padding: "16px", borderBottom: "1px solid var(--rn-border)" }}>
-              <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--rn-text-primary)", margin: 0 }}>
-                Associated Companies
-              </h3>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "16px" }}>
-              {(companies.length ? companies : ["No company linked"]).map((company) => (
-                <span
-                  key={company}
-                  className="rn-badge rn-company-badge"
-                  style={{ whiteSpace: "normal", textAlign: "left" }}
-                >
-                  {company}
-                </span>
-              ))}
-            </div>
-          </div>
-
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Associated Policies Table */}
-          <div className="rn-card-shell">
+          <div className="rn-card-shell" style={{ borderRadius: "12px", border: "1px solid #e2e8f0", background: "#ffffff", boxShadow: "0 2px 6px rgba(15, 23, 42, 0.02)", overflow: "hidden" }}>
             <div
               style={{
-                padding: "16px 20px",
-                borderBottom: "1px solid var(--rn-border)",
+                padding: "14px 18px",
+                borderBottom: "1px solid #e2e8f0",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -1579,18 +1653,19 @@ export default function CustomerProfilePage(props) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "var(--rn-text-primary)", margin: 0 }}>
+                <Shield size={16} style={{ color: "#2563eb" }} />
+                <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#0f172a", margin: 0 }}>
                   Associated Policies
                 </h3>
                 <span
                   style={{
                     backgroundColor: "#f1f5f9",
-                    color: "#475569",
+                    color: "#334155",
                     fontWeight: "600",
-                    fontSize: "12px",
+                    fontSize: "11.5px",
                     padding: "3px 10px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
+                    borderRadius: "20px",
+                    border: "1px solid #cbd5e1",
                   }}
                 >
                   {displayedPolicies.length} of {policies.length} {policies.length === 1 ? "Policy" : "Policies"}
@@ -1662,33 +1737,46 @@ export default function CustomerProfilePage(props) {
             {policies.length > 1 && policyViewMode === "single" && (
               <div
                 style={{
-                  padding: "12px 20px",
-                  background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-                  borderBottom: "1px solid #bae6fd",
+                  padding: "10px 18px",
+                  background: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  fontSize: "13px",
-                  color: "#0369a1",
+                  fontSize: "12.5px",
+                  color: "#334155",
                   flexWrap: "wrap",
                   gap: "12px",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span className="rn-pill-single-view">
-                    <Shield size={13} /> Single Policy View
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      background: "#eff6ff",
+                      color: "#1d4ed8",
+                      border: "1px solid #bfdbfe",
+                      fontSize: "11.5px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    <Shield size={12} /> Single Policy View
                   </span>
-                  <span style={{ color: "#334155" }}>
+                  <span>
                     Showing target policy{" "}
                     <strong
                       style={{
                         fontFamily: "monospace",
-                        color: "#0369a1",
+                        color: "#0f172a",
                         backgroundColor: "#ffffff",
                         padding: "2px 8px",
                         borderRadius: "4px",
-                        border: "1px solid #7dd3fc",
-                        fontSize: "13px",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "12px",
                         fontWeight: "700",
                       }}
                     >
@@ -1697,8 +1785,8 @@ export default function CustomerProfilePage(props) {
                     <span style={{ color: "#64748b", fontWeight: "500" }}>({displayedPolicies[0]?.insuranceCompany || ""})</span>
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#0369a1", fontSize: "12.5px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <label htmlFor="single-policy-select" style={{ fontWeight: "600", color: "#475569", fontSize: "12px" }}>
                     Switch Target Policy:
                   </label>
                   <select
@@ -1707,15 +1795,15 @@ export default function CustomerProfilePage(props) {
                     value={displayedPolicies[0]?.id || ""}
                     onChange={(e) => setSelectedSinglePolicyId(e.target.value)}
                     style={{
-                      fontSize: "12.5px",
-                      padding: "6px 12px",
+                      fontSize: "12px",
+                      padding: "5px 10px",
                       borderRadius: "6px",
-                      border: "1px solid #7dd3fc",
+                      border: "1px solid #cbd5e1",
                       backgroundColor: "#ffffff",
                       color: "#0f172a",
                       fontWeight: "600",
                       cursor: "pointer",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                      outline: "none",
                     }}
                   >
                     {policies.map((p) => (
@@ -2009,26 +2097,23 @@ export default function CustomerProfilePage(props) {
         </div>
 
           {/* Timeline Feed Panel */}
-          <div className="rn-table-container" style={{ padding: "24px" }}>
-            <h3
-              style={{
-                fontSize: "15px",
-                fontWeight: "600",
-                color: "var(--rn-text-primary)",
-                margin: "0 0 20px 0",
-              }}
-            >
-              Renewal Timeline & Remarks
-            </h3>
-
-            {timeline.length === 0 ? (
-              <p style={{ color: "var(--rn-text-secondary)", fontSize: "14px", margin: 0 }}>
-                No comments or timeline logs recorded.
-              </p>
-            ) : (
-              <>
-                <div className="rn-timeline-filters">
-                  <input
+          <div className="rn-table-container" style={{ borderRadius: "12px", border: "1px solid #e2e8f0", background: "#ffffff", boxShadow: "0 2px 6px rgba(15, 23, 42, 0.02)", overflow: "hidden" }}>
+            <div style={{ padding: "12px 18px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", gap: "8px" }}>
+              <MessageSquare size={15} style={{ color: "#2563eb" }} />
+              <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a", margin: 0 }}>
+                Renewal Timeline & Remarks
+              </h3>
+            </div>
+            <div style={{ padding: "18px" }}>
+              {timeline.length === 0 ? (
+                <div style={{ padding: "24px 16px", textAlign: "center", color: "#64748b", fontSize: "13.5px" }}>
+                  <MessageSquare size={28} style={{ color: "#cbd5e1", margin: "0 auto 8px auto", display: "block" }} />
+                  No comments or timeline logs recorded.
+                </div>
+              ) : (
+                <>
+                  <div className="rn-timeline-filters">
+                    <input
                     type="text"
                     className="rn-input"
                     placeholder="Search remarks"
@@ -2140,6 +2225,7 @@ export default function CustomerProfilePage(props) {
                 )}
               </>
             )}
+            </div>
           </div>
         </div>
       </div>
