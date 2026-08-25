@@ -170,6 +170,9 @@ function extractEnergyMembers(text = "", policyStartDate = "") {
     const isFemale = /\b(?:MRS|MS|MISS)\b/i.test(nm[0]);
     const isMale = /\bMR\b/i.test(nm[0]);
     const gender = isFemale ? "Female" : isMale ? "Male" : "";
+    const dobMatch = section.slice(nm.index).match(/(\d{2}\/\d{2}\/\d{4})/);
+    const dob = dobMatch ? dobMatch[1] : "";
+    const ageMatch = section.slice(nm.index).match(/\((\d{1,3})\s*\)/);
 
     members.push({
       name,

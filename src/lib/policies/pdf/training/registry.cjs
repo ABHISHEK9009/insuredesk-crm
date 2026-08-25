@@ -104,7 +104,7 @@ function isHdfcErgoHealth(result = {}, context = {}) {
 
   const text = String(context.text || result.sourceText || "");
   if (!/HDFC\s*ERGO/i.test(text)) return false;
-  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV|CSC\s+Name/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV|Cubic\s+Capacity|Engine\s+No/i.test(text)) return false;
 
   return (
     /\bOptima\s+Secure\b/i.test(text) ||
