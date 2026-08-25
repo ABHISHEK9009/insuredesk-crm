@@ -48,7 +48,7 @@ function normalizeInsurer(value = "") {
     [/ICICI\s+Lombard/i, "icici-lombard"],
     [/TATA\s*AIG/i, "tata-aig"],
     [/IFFCO\s*[- ]?\s*Tokio/i, "iffco-tokio"],
-    [/Bajaj\s*Allianz/i, "bajaj-allianz"],
+    [/Bajaj\s*(?:Allianz|General)/i, "bajaj-allianz"],
     [/United\s+India/i, "united-india"],
     [/New\s+India/i, "new-india"],
     [/HDFC\s*ERGO/i, "hdfc-ergo"],
@@ -194,6 +194,17 @@ function isHdfcErgoMotor(result = {}, context = {}) {
   );
 }
 
+function isBajajAllianzMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  if (!/Bajaj\s*(?:Allianz|General)/i.test(text)) return false;
+  if (/Health\s*Guard|Extra\s*Care|Global\s*Health/i.test(text)) return false;
+  return (
+    /STANDALONE\s*OWN\s*DAMAGE|Two-Wheeler|Two\s+Wheeler|Private\s+Car|Commercial\s+Vehicle|Vehicle\s+Details|Drive\s+Assure|Certificate\s+of\s+Insurance|OG-\d{2}-\d{4}|Liability\s+Only\s+Policy\s+for\s+Commercial/i.test(text)
+  );
+}
+
 function deriveTrainingScope(result = {}, context = {}) {
   if (isIciciLombardHealth(result, context)) {
     return { insurer: "icici-lombard", category: "health" };
@@ -203,6 +214,9 @@ function deriveTrainingScope(result = {}, context = {}) {
   }
   if (isHdfcErgoMotor(result, context)) {
     return { insurer: "hdfc-ergo", category: "motor" };
+  }
+  if (isBajajAllianzMotor(result, context)) {
+    return { insurer: "bajaj-allianz", category: "motor" };
   }
   if (isUnitedIndiaHealth(result, context)) {
     return { insurer: "united-india", category: "health" };
@@ -309,6 +323,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       documentCategory: "Motor Insurance",
       documentFormat: "HDFC_ERGO_MOTOR_V1",
       sourceDocumentType: "HDFC_ERGO_MOTOR_V1",
+    };
+  }
+  if (isBajajAllianzMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Bajaj Allianz General Insurance Company Limited",
+      companyName: "Bajaj Allianz General Insurance Company Limited",
+      documentCategory: "Motor Insurance",
+      documentFormat: "BAJAJ_ALLIANZ_MOTOR_V1",
+      sourceDocumentType: "BAJAJ_ALLIANZ_MOTOR_V1",
     };
   }
   return result;

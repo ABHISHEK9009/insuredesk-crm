@@ -1,7 +1,11 @@
+/* @vitest-environment node */
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
+import path from "node:path";
+import fs from "node:fs";
 
 const require = createRequire(import.meta.url);
+const pdf = require("pdf-parse");
 const trainer = require("../src/lib/policies/pdf/training/bajaj-allianz/motor.cjs");
 const { applyScopedTraining, selectScopedTraining } = require("../src/lib/policies/pdf/training/registry.cjs");
 
@@ -99,6 +103,50 @@ describe("Bajaj Allianz motor scoped training", () => {
       imtEndorsements: "IMT-28",
       extractionTrainingVersion: "BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_LIABILITY_V1",
     });
+  });
+
+  it("extracts RAKESH TIWARI Standalone Own Damage Two-Wheeler policy correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "NEW HEALTH", "RAKESHTIWARI_MP05ZB6573_2026-27.pdf");
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("Bajaj Allianz General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Standalone Own Damage Cover for Two-Wheeler");
+    expect(result.policyNumber).toBe("OG-27-2301-1871-00000222");
+    expect(result.customerName).toBe("RAKESH TIWARI");
+    expect(result.vehicleNumber).toBe("MP05ZB6573");
+    expect(result.registrationNumber).toBe("MP05ZB6573");
+    expect(result.engineNumber).toBe("JEXCNH10650");
+    expect(result.chassisNumber).toBe("MD2B72BX1NCH33476");
+    expect(result.vehicleMake).toBe("BAJAJ");
+    expect(result.vehicleModel).toBe("PULSAR 125");
+    expect(result.variant).toBe("NS DISC");
+    expect(result.cubicCapacity).toBe("125");
+    expect(result.manufacturingYear).toBe("2022");
+    expect(result.fuelType).toBe("Petrol");
+    expect(result.rtoLocation).toBe("MP05-HOSHANGABAD");
+    expect(result.idv).toBe("68000.00");
+    expect(result.startDate).toBe("22/08/2026");
+    expect(result.expiryDate).toBe("21/08/2027");
+    expect(result.odPremium).toBe("1746.00");
+    expect(result.netPremium).toBe("1746.00");
+    expect(result.cgst).toBe("157.00");
+    expect(result.sgst).toBe("157.00");
+    expect(result.gstAmount).toBe("314.00");
+    expect(result.totalPremium).toBe("2060.00");
+    expect(result.agentName).toBe("PRAGATI PANDEY");
+    expect(result.agentCode).toBe("BAG10107590");
+    expect(result.agentMobile).toBe("08818889660");
+    expect(result.agentEmail).toBe("ANAND.SONI10@GMAIL.COM");
+    expect(result.activeTpInsurer).toBe("IFFCO Tokio General Insurance Company Limited");
+    expect(result.activeTpPolicyNumber).toBe("MU271953");
+    expect(result.activeTpStartDate).toBe("28/04/2023");
+    expect(result.activeTpExpiryDate).toBe("27/04/2028");
+    expect(result.addOnCovers).toBe("Drive Assure Basic (depreciation shield)");
+    expect(result.depreciationShieldCover).toBe("Yes");
   });
 
   it("is isolated from Bajaj non-motor and other motor insurers", () => {
