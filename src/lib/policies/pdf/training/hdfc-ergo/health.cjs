@@ -174,6 +174,9 @@ function extractEnergyMembers(text = "", policyStartDate = "") {
     const dob = dobMatch ? dobMatch[1] : "";
     const ageMatch = section.slice(nm.index).match(/\((\d{1,3})\s*\)/);
 
+    const firstInceptionMatch = text.match(/First\s+policy\s+inception\s+date\s*[:\s]*(\d{2}[-/]\d{2}[-/]\d{4})/i);
+    const firstPolicyInceptionDate = firstInceptionMatch ? normalizeDate(firstInceptionMatch[1]) : "";
+
     members.push({
       name,
       relationship: "Self",
@@ -182,7 +185,7 @@ function extractEnergyMembers(text = "", policyStartDate = "") {
       age: dob ? (calculateAge(dob, policyStartDate) || (ageMatch ? ageMatch[1] : "")) : (ageMatch ? ageMatch[1] : ""),
       abhaId: "",
       preExistingDiseases: "",
-      firstPolicyInceptionDate: "",
+      firstPolicyInceptionDate,
       specificConditions: "",
     });
   }
@@ -479,6 +482,10 @@ function train({ text = "", result = {} }) {
     policyholderEmailMasked: matchGroup(text, /Email\s+ID\s*:\s*([^\n]+)/i),
     policyholderMobileMasked: matchGroup(text, /Contact\s+No\s*:\s*([0-9Xx*]+)/i),
     invoiceNumber: matchGroup(text, /Invoice\s+No\.\s*:\s*([0-9]+)/i),
+    issuanceDate: matchGroup(text, /Policy\s+Issuance\s+Date\s*[:\s]*(\d{2}[-/]\d{2}[-/]\d{4})/i) || result.issuanceDate,
+    firstPolicyInceptionDate: matchGroup(text, /First\s+policy\s+inception\s+date\s*[:\s]*(\d{2}[-/]\d{2}[-/]\d{4})/i) || finalMembers[0]?.firstPolicyInceptionDate || "",
+    firstInceptionDate: matchGroup(text, /First\s+policy\s+inception\s+date\s*[:\s]*(\d{2}[-/]\d{2}[-/]\d{4})/i) || finalMembers[0]?.firstPolicyInceptionDate || "",
+    inceptionDate: matchGroup(text, /First\s+policy\s+inception\s+date\s*[:\s]*(\d{2}[-/]\d{2}[-/]\d{4})/i) || finalMembers[0]?.firstPolicyInceptionDate || "",
     customerId: customerId || result.customerId,
     sumInsured: sumInsured ? formatAmount(sumInsured) : result.sumInsured,
     totalSumInsured: sumInsured ? formatAmount(sumInsured) : result.totalSumInsured,

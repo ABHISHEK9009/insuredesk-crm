@@ -27,12 +27,14 @@ describe("New Health Policies Training Verification", () => {
       expect(result.policyEndDate).toBe("29/07/2027");
       expect(result.totalPremium).toBe("29,588.00");
       expect(result.sumInsured).toBe("3,00,000.00");
+      expect(result.firstPolicyInceptionDate).toBe("28/06/2016");
       expect(result.nomineeName).toBe("K K Tiwari");
       expect(result.nomineeRelationship).toBe("Husband");
       expect(result.numberOfInsuredMembers).toBe(1);
       expect(result.insuredMembers[0]).toMatchObject({
         name: "GEETA TIWARI",
         dateOfBirth: "10/09/1964",
+        firstPolicyInceptionDate: "28/06/2016",
       });
       expect(result.agentName).toBe("INSUREDESK IMF PRIVATE LIMITED");
       expect(result.agentCode).toBe("200427207967");
