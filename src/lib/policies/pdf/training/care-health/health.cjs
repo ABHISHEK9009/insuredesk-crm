@@ -59,7 +59,10 @@ function extractInsuredMembers(text = "") {
   if (!s) return [];
 
   const RELS = "MEMBER|SELF|SPOUSE|WIFE|HUSBAND|SON|DAUGHTER|FATHER|MOTHER|BROTHER|SISTER|OTHER";
-  const pattern = /(?:^|\n)\s*([A-Za-z\s.'-]+?)\s*([A-Z]\d{6,8})\s*(MEMBER|SELF|SPOUSE|WIFE|HUSBAND|SON|DAUGHTER|FATHER|MOTHER|BROTHER|SISTER|OTHER)\s*(\d{2}-[A-Za-z]{3}-\d{4})\s*(\d{1,2})/gi;
+  const pattern = new RegExp(
+    `(?:^|\\n)\\s*([A-Za-z\\s.'-]+?)\\s*([A-Z]\\d{6,8})\\s*(${RELS})\\s*(\\d{2}-[A-Za-z]{3}-\\d{4})\\s*(\\d{1,2})`,
+    "gi",
+  );
   const members = [];
   let m;
   while ((m = pattern.exec(s)) !== null) {

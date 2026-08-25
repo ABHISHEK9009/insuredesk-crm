@@ -41,7 +41,7 @@ describe("modal layout contract", () => {
     const directModalFiles = [
       "src/app/components/operations/BirthdayManagementPage.js",
       "src/app/components/operations/WhatsAppSetupPage.js",
-      "src/app/components/operations/WorkCenterPage.js",
+      "src/app/components/operations/WorkCenterControlTower.js",
       "src/app/client/portal/ClientExperienceCenter.js",
     ];
 
@@ -66,7 +66,7 @@ describe("modal layout contract", () => {
       "src/app/components/operations/ClaimsManagementPage.js",
       "src/app/components/operations/ClientManagementPage.js",
       "src/app/components/operations/WhatsAppSetupPage.js",
-      "src/app/components/operations/WorkCenterPage.js",
+      "src/app/components/operations/WorkCenterControlTower.js",
       "src/app/components/operations/claims/modals.js",
       "src/app/components/shared/PolicyDetailCard.js",
       "src/app/components/users/UserManagement.js",
