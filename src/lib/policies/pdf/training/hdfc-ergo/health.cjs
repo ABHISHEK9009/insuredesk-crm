@@ -167,13 +167,20 @@ function extractEnergyMembers(text = "", policyStartDate = "") {
   while ((nm = namePattern.exec(section)) !== null) {
     const name = cleanPersonName(nm[0]);
     if (!name || name.length < 2) continue;
-    const dobMatch = section.slice(nm.index).match(/(\d{2}\/\d{2}\/\d{4})/);
-    const dob = dobMatch ? dobMatch[1] : "";
-    const ageMatch = section.slice(nm.index).match(/\((\d{1,3})\s*\)/);
+    const isFemale = /\b(?:MRS|MS|MISS)\b/i.test(nm[0]);
+    const isMale = /\bMR\b/i.test(nm[0]);
+    const gender = isFemale ? "Female" : isMale ? "Male" : "";
+
     members.push({
       name,
+      relationship: "Self",
+      gender,
       dateOfBirth: dob,
       age: dob ? (calculateAge(dob, policyStartDate) || (ageMatch ? ageMatch[1] : "")) : (ageMatch ? ageMatch[1] : ""),
+      abhaId: "",
+      preExistingDiseases: "",
+      firstPolicyInceptionDate: "",
+      specificConditions: "",
     });
   }
   return members;
