@@ -30,6 +30,7 @@ function matches({ text = "" }) {
     /\bOptima\s+Restore\b/i.test(text) ||
     /\bmy\s*:\s*health\b/i.test(text) ||
     /\bHealth\s*Suraksha\b/i.test(text) ||
+    /\bEnergy\s*\(/i.test(text) ||
     /\bHDFHLIP\d{5}[A-Z]\d{6}\b/i.test(text) ||
     /Health\s+insurance\s+policy\s+reference\s+no/i.test(text) ||
     (/Policy\s+Schedule/i.test(text) && /Health/i.test(text) && /Sum\s+Insured/i.test(text))
@@ -38,12 +39,13 @@ function matches({ text = "" }) {
 
 function cleanPersonName(value = "") {
   let cleaned = cleanHdfcValue(value)
-    .replace(/^(?:Mr|Mrs|Ms|Miss|Dr|MR|MRS|MS|MISS|DR)\.?\s+/i, "")
+    .replace(/^(?:Mrs|Miss|Mr|Ms|Dr|Shri|Smt|MRS|MISS|MR|MS|DR|SHRI|SMT)\.?\s+/i, "")
     .replace(/Policy\s+Type.*$/i, "")
     .replace(/Member\s+ID.*$/i, "")
     .replace(/Communication Address.*$/i, "")
     .replace(/\s+for\s+(?:the\s+)?period.*$/i, "")
     .replace(/MI$/i, "")
+    .replace(/\s{2,}/g, " ")
     .trim();
 
   if (/^(?:Gender|Member\s*ID|Date\s*of\s*Birth|Self|Spouse|Son|Daughter)$/i.test(cleaned)) {
@@ -83,22 +85,116 @@ function calculateAge(dateOfBirth = "", effectiveDate = "") {
 }
 
 function extractMemberRows(text = "") {
-  const premiumSection = sliceText(text, /Insured\s+Person[’']s\s+Premium\s+Details/i, /\bNote\s*:/i);
+  const premiumSection = sliceText(text, /Insured\s+Person['\u2018\u2019]s\s+Premium\s+Details/i, /\bNote\s*:/i);
   const pattern = new RegExp(
     `^([A-Za-z][A-Za-z .'-]+?)(${RELATIONSHIPS})(Male|Female|Other)(${DATE})\\d+(?:\\.\\d+)?$`,
     "gim",
   );
-  return [...premiumSection.matchAll(pattern)].map((match) => ({
+  const results = [...premiumSection.matchAll(pattern)].map((match) => ({
     name: cleanPersonName(match[1]),
     relationship: cleanHdfcValue(match[2]),
     gender: cleanHdfcValue(match[3]),
     dateOfBirth: normalizeDate(match[4]),
   }));
+  if (results.length > 0) return results;
+
+  // Multiline receipt block pattern (Optima Secure+ format)
+  const blockPattern = new RegExp(
+    `(?:\\d{2}-\\d{2}-\\d{4})\\s*([A-Za-z][A-Za-z\\s.'-]+?)\\s*(${RELATIONSHIPS})\\s*(Male|Female|Other)\\s*(\\d{2}-\\d{2}-\\d{4})`,
+    "gi",
+  );
+  const blockResults = [];
+  let bm;
+  while ((bm = blockPattern.exec(premiumSection)) !== null) {
+    const name = cleanPersonName(bm[1].replace(/\s+/g, " "));
+    const dob = normalizeDate(bm[4]);
+    if (name && !blockResults.some((x) => x.name.toLowerCase() === name.toLowerCase())) {
+      blockResults.push({
+        name,
+        relationship: cleanHdfcValue(bm[2]),
+        gender: cleanHdfcValue(bm[3]),
+        dateOfBirth: dob,
+      });
+    }
+  }
+  return blockResults;
+}
+
+function extractOptimaSecurePlusMembers(text = "", policyStartDate = "") {
+  const section = sliceText(
+    text,
+    /Insured\s+Person.?s\s+Details\s+and\s+Sum\s+Insured\s*.{0,5}\s*Optima\s+Secure/i,
+    /Where\s+Nominee\s+is\s+a\s+minor|1st\s+inception\s+date/i,
+  );
+  if (!section || section.length < 50) return { members: [], nominee: {} };
+
+  const premiumMembers = extractMemberRows(text);
+  const members = premiumMembers.map((m) => ({
+    ...m,
+    age: calculateAge(m.dateOfBirth, policyStartDate),
+  }));
+
+  // Extract nominee from section
+  let nominee = {};
+  const nomineePattern = new RegExp(
+    `(?:${RELATIONSHIPS})(?:Male|Female|Other)\\s*\\d{1,2}\\s*(?:\\d{2}[-/]\\d{2}[-/]\\d{4})\\s*([\\s\\S]+?)\\s*(${RELATIONSHIPS})\\s*(?:\\d{2}[-/]\\d{2}[-/]\\d{4})`,
+    "i",
+  );
+  const nomineeMatch = section.match(nomineePattern);
+  if (nomineeMatch) {
+    let rawNomineeName = nomineeMatch[1].replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+    rawNomineeName = rawNomineeName.replace(/([A-Z]{3,})\s+([A-Z]{1,3})\b/g, "$1$2");
+    nominee = {
+      name: cleanPersonName(rawNomineeName),
+      relationship: cleanHdfcValue(nomineeMatch[2]),
+    };
+  }
+
+  return { members, nominee };
+}
+
+function extractEnergyMembers(text = "", policyStartDate = "") {
+  const section = sliceText(
+    text,
+    /Insured\s+Persons\s+Details/i,
+    /Nominee\s+Details/i,
+  );
+  if (!section || section.length < 30) return [];
+
+  const members = [];
+  const namePattern = /(?:MR|MRS|MS|MISS|DR)\.?\s+([A-Z][A-Z .'-]+?)\n/gi;
+  let nm;
+  while ((nm = namePattern.exec(section)) !== null) {
+    const name = cleanPersonName(nm[0]);
+    if (!name || name.length < 2) continue;
+    const dobMatch = section.slice(nm.index).match(/(\d{2}\/\d{2}\/\d{4})/);
+    const dob = dobMatch ? dobMatch[1] : "";
+    const ageMatch = section.slice(nm.index).match(/\((\d{1,3})\s*\)/);
+    members.push({
+      name,
+      dateOfBirth: dob,
+      age: dob ? (calculateAge(dob, policyStartDate) || (ageMatch ? ageMatch[1] : "")) : (ageMatch ? ageMatch[1] : ""),
+    });
+  }
+  return members;
+}
+
+function extractStandardNominee(text = "") {
+  const section = sliceText(text, /Nominee\s+Details/i, /Premium\s+Calculation|The\s+nominee\s+must|Schedule\s+of\s+Benefits/i);
+  const nameMatch = section.match(/Nominee\s+Name\s*:\s*(?:Mrs|Miss|Mr|Ms|Dr)?\.?\s*([A-Za-z][A-Za-z .'-]+?)(?=Relationship|\n)/i);
+  const relMatch = section.match(/Relationship\s*(?:to\s+Policyholder)?\s*:\s*([A-Za-z]+)/i);
+  return {
+    name: nameMatch ? cleanPersonName(nameMatch[1]) : "",
+    relationship: relMatch ? cleanHdfcValue(relMatch[1]) : "",
+  };
 }
 
 function extractInsuredMembers(text = "", policyStartDate = "", fallbackName = "") {
   const members = extractMemberRows(text);
   if (members.length === 0) {
+    const energy = extractEnergyMembers(text, policyStartDate);
+    if (energy.length > 0) return energy;
+
     const list = [];
     const cardMatch = text.match(/Insured\s+Name\s*Member\s*ID[^\n]*\n\s*([A-Za-z\s]+?)(?=\d{10,20}|\n)/i);
     if (cardMatch) {
@@ -195,20 +291,62 @@ function extractNominee(text = "", members = []) {
 }
 
 function extractIntermediary(text = "") {
-  const row = matchGroup(
+  // Case 1: Intermediary NameIntermediary CodeIntermediary Contact Number
+  const row1 = matchGroup(
     text,
     /Intermediary\s+NameIntermediary\s+CodeIntermediary\s+Contact\s+Number\s*\n([^\n]+)/i,
   );
-  const mobile = matchGroup(row, /([6-9]\d{9})$/);
-  const withoutMobile = mobile ? row.slice(0, -mobile.length).replace(/(?:\+?91[-\s]?)$/, "") : row;
-  const code = matchGroup(withoutMobile, /(\d{8,})$/);
-  const name = cleanHdfcValue(code ? withoutMobile.slice(0, -code.length) : withoutMobile);
-  return { name, code, mobile };
+  if (row1) {
+    const mobile = matchGroup(row1, /([6-9]\d{9})$/);
+    const withoutMobile = mobile ? row1.slice(0, -mobile.length).replace(/(?:\+?91[-\s]?)$/, "") : row1;
+    const code = matchGroup(withoutMobile, /(\d{8,})$/);
+    const name = cleanHdfcValue(code ? withoutMobile.slice(0, -code.length) : withoutMobile);
+    return { name, code, mobile };
+  }
+
+  // Case 2: Intermediary CodeIntermediary Name Intermediary Contact Number
+  const block2 = sliceText(
+    text,
+    /Intermediary\s+CodeIntermediary\s+Name\s*Intermediary\s+Contact\s+Number/i,
+    /Renewal|Dear|Policy\s+Holder|\n\n/i,
+  );
+  if (block2) {
+    const lines = block2.split("\n").map((l) => l.trim()).filter(Boolean).slice(1);
+    const full = lines.join(" ");
+    const codeMatch = full.match(/^(\d{8,12})/);
+    const code = codeMatch ? codeMatch[1] : "";
+    const rem = code ? full.slice(code.length).trim() : full;
+    const mobileMatch = rem.match(/((?:91[- ]?)?[6-9]\d{9})$/);
+    const mobile = mobileMatch ? mobileMatch[1].replace(/^91-?/, "") : "";
+    const nameRaw = mobileMatch ? rem.slice(0, -mobileMatch[0].length) : rem;
+    const name = cleanHdfcValue(nameRaw.replace(/^INSURANCE\s+MARKETING\s+FIRM\s*:\s*/i, ""));
+    if (name) return { name, code, mobile };
+  }
+
+  const name = matchGroup(text, /Intermediary\s+Name\s*[:\n]\s*([^\n]+)/i);
+  const code = matchGroup(text, /Intermediary\s+Code\s*[:\n]\s*([A-Z0-9]+)/i);
+  const mobile = matchGroup(text, /Intermediary\s+Contact\s*(?:Number|No)\.?\s*[:\n]\s*([0-9-]+)/i);
+  return { name: cleanHdfcValue(name), code, mobile };
 }
 
 function extractMailingAddress(text = "") {
+  const comm = matchGroup(
+    text,
+    /Communication\s+Address\s*:\s*\n([\s\S]+?)(?=\n(?:Contact\s+No|XXX|Policy\s+No|Dear|\n\n))/i,
+  );
+  if (comm) return cleanHdfcValue(comm.replace(/\s*\n\s*/g, " "));
+
+  const holderAddr = matchGroup(
+    text,
+    /Policy\s*Holder[’']?s\s+Address\s*([^\n]+)/i,
+  );
+  if (holderAddr) return cleanHdfcValue(holderAddr);
+
   const block = matchGroup(text, /Email\s+ID\s*:[^\n]*\n[^\n]*\n([\s\S]+?)\nContact\s+No\s*:/i);
-  return cleanHdfcValue(block.replace(/\s*\n\s*/g, " "));
+  if (block) return cleanHdfcValue(block.replace(/\s*\n\s*/g, " "));
+
+  const corr = matchGroup(text, /Correspondence\s+Address\s*\n([\s\S]+?)(?=GSTIN|Renewal|Contact\s+Number|Email\s+ID)/i);
+  return corr ? cleanHdfcValue(corr.replace(/\s*\n\s*/g, " ")) : "";
 }
 
 function train({ text = "", result = {} }) {
@@ -225,10 +363,10 @@ function train({ text = "", result = {} }) {
   const startDate = normalizeDate(policyPeriod?.[1] || "");
   const expiryDate = normalizeDate(policyPeriod?.[2] || "");
 
-  const holderMatch = text.match(/Policy\s+Holder[’']?s\s+Name\s*([^\n]+)/i) ||
+  const holderMatch = text.match(/Policy\s+Holder['']?s\s+Name\s*([^\n]+)/i) ||
+    text.match(/Policyholder\s+Name\s*\n?\s*([A-Za-z\s.'-]+?)(?=Policy\s+Number|Customer)/i) ||
     text.match(/issued\s+to\s+((?:MR|MRS|MS|Mr|Mrs|Ms|Miss|Dr)\.?\s+[A-Za-z .'-]+?)(?=\s+for\s+period|\s+for\s+the\s+period|\n)/i) ||
-    text.match(/towards\s+premium\s+from\s+([A-Za-z .'-]+?)(?=\s+for\s+my:|\s+for\s+Optima|\n)/i) ||
-    text.match(/Policyholder\s+Name\s*:\s*([A-Za-z .'-]+?)(?=Policy\s+Type|\n|Customer)/i) ||
+    text.match(/towards\s+premium\s+from\s+([A-Za-z .'-]+?)(?=\s+for\s+my:|\s+for\s+Optima|\s+for\s+Energy|\n)/i) ||
     text.match(/Dear\s+((?:MR|MRS|MS|Mr|Mrs|Ms|Miss|Dr)\.?\s+[A-Za-z\s]+?)(?:,|\n|Thank|!)/i) ||
     text.match(/\*28\d{17}\*\s*\n\s*28\d{17}\s*\n\s*([A-Za-z\s]+?)\n/i) ||
     text.match(/2856\s*\n\s*((?:MR|MRS|MS|Mr|Mrs|Ms|Miss|Dr)\.?\s+[A-Za-z\s]+?)\n/i) ||
@@ -237,12 +375,29 @@ function train({ text = "", result = {} }) {
   const rawHolder = holderMatch ? holderMatch[1].trim() : "";
   const policyholderName = rawHolder ? cleanPersonName(rawHolder) : result.customerName || result.insuredName;
 
-  const insuredMembers = extractInsuredMembers(text, startDate, policyholderName);
-  const primaryInsured = insuredMembers[0]?.name && !/Member\s+ID|Date\s+Of\s+Birth/i.test(insuredMembers[0].name)
-    ? insuredMembers[0].name
+  // Extract members using standard extractor first
+  const stdMembers = extractInsuredMembers(text, startDate, policyholderName);
+  const securePlus = extractOptimaSecurePlusMembers(text, startDate);
+  const energyMembers = stdMembers.length === 0 ? extractEnergyMembers(text, startDate) : [];
+  const insuredMembers = stdMembers.length > 0
+    ? stdMembers
+    : energyMembers.length > 0
+      ? energyMembers
+      : securePlus.members;
+
+  const finalMembers = insuredMembers.length > 0 ? insuredMembers : (policyholderName ? [{ name: policyholderName }] : result.insuredMembers || []);
+
+  const primaryInsured = finalMembers[0]?.name && !/Member\s+ID|Date\s+Of\s+Birth/i.test(finalMembers[0].name)
+    ? finalMembers[0].name
     : policyholderName;
 
-  const nominee = extractNominee(text, insuredMembers);
+  // Nominee: try Optima Secure+ inline nominee, then standard nominee, then existing extractor
+  const standardNominee = extractStandardNominee(text);
+  const nominee = securePlus.nominee?.name
+    ? securePlus.nominee
+    : standardNominee.name
+      ? standardNominee
+      : extractNominee(text, insuredMembers);
   const intermediary = extractIntermediary(text);
 
   const totalPremiumMatch = text.match(/(?:have\s*)?received\s*an?\s*amount\s*of\s*[^0-9\n]{0,5}\s*([0-9,.]+)/i) ||
@@ -272,6 +427,10 @@ function train({ text = "", result = {} }) {
   else if (/Optima\s+Restore/i.test(text)) productName = "Optima Restore";
   else if (/Health\s+Suraksha/i.test(text)) productName = "Health Suraksha";
   else if (/my\s*:\s*health/i.test(text)) productName = "my:health";
+  else if (/Energy\s*\(/i.test(text)) {
+    const variant = text.match(/Energy\s*\(([^)]+)\)/i);
+    productName = variant ? `Energy (${cleanHdfcValue(variant[1])})` : "Energy";
+  }
 
   const policyNumMatch = text.match(/Health\s+insurance\s+policy\s+reference\s+no\s*([0-9]{15,25})/i) ||
     text.match(/Policy\s+Number\s*:\s*([0-9 ]{15,25})/i) ||
@@ -325,8 +484,8 @@ function train({ text = "", result = {} }) {
       matchGroup(text, /Previous\s+Policy\s*:\s*([0-9]+)/i) || result.previousPolicyNumber,
     nomineeName: nominee.name || result.nomineeName,
     nomineeRelationship: nominee.relationship || result.nomineeRelationship,
-    insuredMembers: insuredMembers.length > 0 ? insuredMembers : result.insuredMembers || [],
-    numberOfInsuredMembers: insuredMembers.length,
+    insuredMembers: finalMembers,
+    numberOfInsuredMembers: finalMembers.length,
     agentName: intermediary.name || result.agentName,
     agentCode: intermediary.code || result.agentCode,
     agentMobile: intermediary.mobile || result.agentMobile,

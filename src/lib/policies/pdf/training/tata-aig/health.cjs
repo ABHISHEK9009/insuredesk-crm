@@ -22,24 +22,87 @@ function formatAmount(value = "") {
 }
 
 function cleanPersonName(value = "") {
-  return cleanHdfcValue(value).replace(/^(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+/i, "");
+  return cleanHdfcValue(value)
+    .replace(/^(?:Mrs|Miss|Mr|Ms|Dr|Shri|Smt)\.?\s+/i, "")
+    .replace(/\s*\.\s*$/, "")
+    .trim();
 }
 
-function extractInsuredMembers(text = "") {
+function calculateAge(dateOfBirth = "", effectiveDate = "") {
+  const [birthDay, birthMonth, birthYear] = dateOfBirth.split("/").map(Number);
+  const [effectiveDay, effectiveMonth, effectiveYear] = (effectiveDate || "").split("/").map(Number);
+  if (!birthYear || !effectiveYear) return "";
+  const beforeBirthday =
+    effectiveMonth < birthMonth || (effectiveMonth === birthMonth && effectiveDay < birthDay);
+  return String(effectiveYear - birthYear - (beforeBirthday ? 1 : 0));
+}
+
+function extractInsuredMembers(text = "", policyStartDate = "") {
   const section = sliceText(text, /Insured\s+Person\s+Details:/i, /Sum\s+Insured/i);
+  if (!section) return [];
+
   const nameBlock = matchGroup(section, /Insured\s+Person['’]?s\s+Name\s*\n([^\n]+)/i);
-  const members = [];
+  const dobBlock = matchGroup(section, /Date\s+of\s+Birth\s*\n?([0-9/]+)/i);
+  const relBlock = matchGroup(section, /Relationship\s+to\s+Proposer\s*\n([^\n]+)/i);
+  const memberIdBlock = matchGroup(section, /Member\s+ID\s*\n?([A-Z0-9]+)/i);
 
-  if (nameBlock) {
-    const names = nameBlock.replace(/([a-z])([A-Z])/g, "$1|$2").split("|").map(cleanPersonName).filter(Boolean);
-    names.forEach(name => {
-      if (name && !members.some(m => m.name === name)) {
-        members.push({ name });
-      }
-    });
+  const splitRegex = /([a-z])([A-Z])/g;
+  const names = nameBlock
+    ? nameBlock.replace(splitRegex, (m, p1, p2) => `${p1}|${p2}`).split("|").map(cleanPersonName).filter(Boolean)
+    : [];
+  const dobs = dobBlock ? (dobBlock.match(/\d{2}\/\d{2}\/\d{4}/g) || []).map(normalizeDate) : [];
+  const rels = relBlock
+    ? relBlock.replace(splitRegex, (m, p1, p2) => `${p1}|${p2}`).split("|").map((r) => r.replace(/\s*\d+$/, "").trim())
+    : [];
+  const memberIds = memberIdBlock ? (memberIdBlock.match(/ZZZZ\d+/g) || []) : [];
+
+  if (names.length === 0) return [];
+
+  return names.map((name, idx) => {
+    const dob = dobs[idx] || "";
+    return {
+      name,
+      dateOfBirth: dob,
+      age: dob ? calculateAge(dob, policyStartDate) : "",
+      memberId: memberIds[idx] || "",
+      relationship: rels[idx] || (idx === 0 ? "Self" : "Member"),
+    };
+  });
+}
+
+function extractNominee(text = "") {
+  const m = text.match(
+    /Nominee\s+Details\s+for\s+Proposer:\s*\n+Nominee\s+Name\s*Relationship\s*To\s*Policyholder\s*\n+([A-Za-z\s.'-]+?)(Wife|Husband|Spouse|Son|Daughter|Father|Mother|Brother|Sister|Other)/i,
+  );
+  if (m) {
+    return {
+      name: cleanPersonName(m[1]),
+      relationship: cleanHdfcValue(m[2]),
+    };
   }
+  return {};
+}
 
-  return members;
+function extractIntermediary(text = "") {
+  const m = text.match(
+    /Intermediary\s+Name\s*Intermediary\s+Code\s*Intermediary\s+Contact\s*No\.?\s*\n+([A-Za-z\s.'-]+?)(\d{8})([0-9-]+)/i,
+  );
+  if (m) {
+    return {
+      name: cleanHdfcValue(m[1]),
+      code: m[2],
+      mobile: m[3],
+    };
+  }
+  return {};
+}
+
+function extractMailingAddress(text = "") {
+  const m1 = text.match(/Address:\s*\n+([\s\S]+?)(?=\nContact\s+No)/i);
+  if (m1) return cleanHdfcValue(m1[1].replace(/\n/g, " "));
+
+  const m2 = text.match(/Policy\s*Holder['’]?s\s*Permanent\s+Address\s*\n+([\s\S]+?)(?=\nPolicy\s*Holder)/i);
+  return m2 ? cleanHdfcValue(m2[1].replace(/\n/g, " ")) : "";
 }
 
 function train({ text = "", result = {} }) {
@@ -87,13 +150,25 @@ function train({ text = "", result = {} }) {
 
   const productName = prodMatch ? prodMatch[1] ? prodMatch[1].trim() : prodMatch[0].trim() : "TATA AIG Medicare";
 
-  const members = extractInsuredMembers(text);
+  const planType = matchGroup(text, /Plan\s+Type\s*([A-Za-z]+)/i);
+  const businessType = matchGroup(text, /Business\s+Type\s*([A-Za-z]+)/i);
+  const clientId = matchGroup(text, /Client\s+ID\s*([A-Z0-9]+)/i);
+  const proposalNumber = matchGroup(text, /Proposal\s+No\.?\s*([^\n]+)/i);
+  const contactNumber = matchGroup(text, /Contact\s+No\.?\s*:\s*\n?([0-9]{10})/i);
+
+  const members = extractInsuredMembers(text, policyStartDate);
+  const nominee = extractNominee(text);
+  const intermediary = extractIntermediary(text);
+  const address = extractMailingAddress(text);
+
+  const primaryInsured = members[0]?.name || cleanHolder;
 
   return {
     productName,
     policyNumber: policyNumber || result.policyNumber,
-    policyType: "Health Insurance",
-    insuredName: cleanHolder || result.insuredName,
+    policyType: planType ? `Health Insurance (${planType})` : "Health Insurance",
+    policyCoverType: planType || result.policyCoverType,
+    insuredName: primaryInsured || result.insuredName,
     customerName: cleanHolder || result.customerName,
     proposerName: cleanHolder || result.proposerName,
     contactPerson: cleanHolder || result.contactPerson,
@@ -111,6 +186,19 @@ function train({ text = "", result = {} }) {
     totalSumInsured: sumInsured ? formatAmount(sumInsured) : result.totalSumInsured,
     insuredMembers: members.length > 0 ? members : (cleanHolder ? [{ name: cleanHolder }] : result.insuredMembers || []),
     numberOfInsuredMembers: members.length || 1,
+    nomineeName: nominee.name || result.nomineeName,
+    nomineeRelationship: nominee.relationship || result.nomineeRelationship,
+    agentName: intermediary.name || result.agentName,
+    agentCode: intermediary.code || result.agentCode,
+    agentMobile: intermediary.mobile || result.agentMobile,
+    mailingAddress: address || result.mailingAddress,
+    communicationAddress: address || result.communicationAddress,
+    newOrRenewal: /Renewal/i.test(businessType) ? "Renewal" : "New",
+    customerId: clientId || result.customerId,
+    proposalNumber: proposalNumber || result.proposalNumber,
+    contactNumber: contactNumber || result.contactNumber,
+    customerMobile: contactNumber || result.customerMobile,
+    mobileNumber: contactNumber || result.mobileNumber,
     extractionTrainingVersion: "TATA_AIG_HEALTH_V1",
   };
 }

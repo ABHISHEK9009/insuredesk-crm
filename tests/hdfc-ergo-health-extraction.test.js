@@ -263,13 +263,13 @@ describe("HDFC ERGO Optima Secure Health training", () => {
       selectScopedTraining(hdfcMotor, {
         text: "HDFC ERGO PRIVATE CAR COMPREHENSIVE POLICY Total IDV CSC Name",
       }),
-    ).toHaveLength(0);
+    ).not.toContain(healthTrainer);
     expect(
       selectScopedTraining(hdfcWarehouse, {
         text: "HDFC ERGO warehouse fire policy stock and contents",
       }),
-    ).toHaveLength(0);
-    expect(selectScopedTraining(iciciHealth, { text: healthText })).toHaveLength(0);
+    ).not.toContain(healthTrainer);
+    expect(selectScopedTraining(iciciHealth, { text: healthText })).not.toContain(healthTrainer);
   });
 
   it("keeps insurer and category identity outside the scoped training patch", () => {

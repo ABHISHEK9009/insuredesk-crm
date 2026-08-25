@@ -111,6 +111,7 @@ function isHdfcErgoHealth(result = {}, context = {}) {
     /\bOptima\s+Restore\b/i.test(text) ||
     /\bmy\s*:\s*health\b/i.test(text) ||
     /\bHealth\s*Suraksha\b/i.test(text) ||
+    /\bEnergy\s*\(/i.test(text) ||
     /\bHDFHLIP\d{5}[A-Z]\d{6}\b/i.test(text) ||
     /Health\s+insurance\s+policy\s+reference\s+no/i.test(text) ||
     (/Policy\s+Schedule/i.test(text) && /Health/i.test(text) && /Sum\s+Insured/i.test(text))
