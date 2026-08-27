@@ -168,6 +168,23 @@ export async function sendWhatsAppFile(to, fileData, filename, caption) {
   };
 }
 
+export async function sendWhatsAppBirthdayWish(to, name, caption) {
+  const recipient = formatRecipient(to);
+  const res = await callGateway("POST", "send-birthday-wish", {
+    to: recipient,
+    name: name || "Valued Client",
+    caption: caption || "",
+  });
+  if (res.success === false) {
+    throw new Error(res.error || res.message || "WhatsApp gateway could not send the birthday wish.");
+  }
+  return {
+    id: res.id || null,
+    success: res.success || false,
+    timestamp: res.timestamp || null,
+  };
+}
+
 // ── Backward-compatible aliases (old OpenWA names) ──────────────────
 // These allow any file still importing the old names to work without changes.
 

@@ -180,6 +180,34 @@ app.post("/send-media", async (req, res) => {
   }
 });
 
+// ---- POST /send-birthday-wish ----
+app.post("/send-birthday-wish", async (req, res) => {
+  try {
+    const { to, name, caption } = req.body;
+    if (!to) {
+      return res.status(400).json({ success: false, error: "Field 'to' is required" });
+    }
+    const { renderBirthdayCardBuffer } = await import("./card-engine.js");
+    const imageBuffer = await renderBirthdayCardBuffer(name || "Valued Client");
+    const base64 = imageBuffer.toString("base64");
+    
+    const result = await sendMedia(
+      to,
+      base64,
+      "birthday_greeting.png",
+      caption || "",
+      "image"
+    );
+    res.json(result);
+  } catch (err) {
+    console.error("[Gateway] send-birthday-wish error:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Failed to send birthday wish",
+    });
+  }
+});
+
 // ---- POST /logout ----
 app.post("/logout", async (_req, res) => {
   try {

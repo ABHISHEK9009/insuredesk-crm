@@ -117,24 +117,21 @@ export async function POST(request) {
       : withAgentSignature(message, body.signature || buildDefaultAgentSignature(session));
     console.log(`Sending WhatsApp message to ${String(recipient).endsWith("@g.us") ? "a group" : "an individual"}...`);
 
-    const resolvedAttachments = [];
-    
-    // Dynamically generate personalized birthday card on-the-fly if requested (Zero DB storage)
+    // Direct dispatch for personalized birthday cards via Gateway engine
     if (body.attachBirthdayCard) {
-      try {
-        const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
-        const card = await generateBirthdayCard({ recipientName: body.recipientName || "Valued Client" });
-        resolvedAttachments.push({
-          mediaBase64: card.base64,
-          mediaType: "image",
-          filename: "birthday_greeting.png",
-          caption: signedMessage,
-        });
-      } catch (cardErr) {
-        console.error("Failed to generate in-memory birthday card:", cardErr);
-      }
+      const { sendWhatsAppBirthdayWish } = await import("@/lib/whatsapp/whatsapp-client");
+      const wishRes = await sendWhatsAppBirthdayWish(
+        recipient,
+        body.recipientName || "Valued Client",
+        signedMessage
+      );
+      return NextResponse.json({
+        success: true,
+        messageId: wishRes.id || null,
+      });
     }
 
+    const resolvedAttachments = [];
     for (const attachment of attachments) {
       const resolved = await resolveAttachmentPayload(attachment);
       if (resolved) resolvedAttachments.push(resolved);
