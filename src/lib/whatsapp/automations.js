@@ -111,7 +111,7 @@ export async function triggerDailyBirthdays({ organizationId = null } = {}) {
       const customerDisplayName = customer.contactPersonName || customer.name || 'Valued Customer';
 
       // Compile template variables
-      const templateBody = template?.body || 'Dear {{customerName}},\n\nWishing you a very Happy Birthday! 🎂 May this year bring you joy, health, and prosperity.\n\nBest regards,\n{{companyName}}';
+      const templateBody = template?.body || 'Dear {{customerName}},\n\nWishing you a very Happy Birthday! 🎂 May this special day bring you joy, good health, and prosperity.\n\nWarm regards,\n*Team Bima Headquarter by InsureDesk IMF Pvt. Ltd.*';
       
       const variables = {
         customerName: customerDisplayName,

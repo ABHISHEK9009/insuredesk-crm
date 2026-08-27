@@ -440,7 +440,7 @@ export default function BirthdayManagementPage() {
   // Setup greeting generation
   const handleOpenGreeting = (profile) => {
     setGreetingTarget(profile);
-    const professionalMsg = `Dear ${profile.name}, Insuredesk wishes you a very Happy Birthday! 🎂 May this special day bring you good health, happiness, and prosperity. Thank you for choosing us as your trusted partner. Have a wonderful celebration!`;
+    const professionalMsg = `Dear ${profile.name},\n\nWishing you a very Happy Birthday! 🎂 May this special day bring you joy, good health, and prosperity. Thank you for choosing us as your trusted partner. Have a wonderful celebration!\n\nWarm regards,\n*Team Bima Headquarter by InsureDesk IMF Pvt. Ltd.*`;
     setCustomMessage(professionalMsg);
     setSelectedTemplate("professional");
     setIsGreetingModalOpen(true);
@@ -453,11 +453,11 @@ export default function BirthdayManagementPage() {
 
     let text = "";
     if (templateType === "professional") {
-      text = `Dear ${greetingTarget.name}, Insuredesk wishes you a very Happy Birthday! 🎂 May this special day bring you good health, happiness, and prosperity. Thank you for choosing us as your trusted partner. Have a wonderful celebration!`;
+      text = `Dear ${greetingTarget.name},\n\nWishing you a very Happy Birthday! 🎂 May this special day bring you joy, good health, and prosperity. Thank you for choosing us as your trusted partner. Have a wonderful celebration!\n\nWarm regards,\n*Team Bima Headquarter by InsureDesk IMF Pvt. Ltd.*`;
     } else if (templateType === "warm") {
-      text = `Happy Birthday, ${greetingTarget.name}! 🎉🎈 Insuredesk wishes you a fantastic day and a wonderful year ahead filled with success and happiness. Hope you have a great celebration with family and friends! 🎂`;
+      text = `Dear ${greetingTarget.name},\n\nHappy Birthday! 🎉🎈 Wishing you a fantastic day and a wonderful year ahead filled with success, happiness, and good health. Have a wonderful celebration with family and friends! 🎂\n\nWarm regards,\n*Team Bima Headquarter by InsureDesk IMF Pvt. Ltd.*`;
     } else {
-      text = `Happy Birthday ${greetingTarget.name}! 🎁 Insuredesk wishes you joy, peace, and prosperity on your special day. Have a blast! 🥳`;
+      text = `Dear ${greetingTarget.name},\n\nWishing you a very Happy Birthday and a prosperous year ahead! 🎁🎂\n\nWarm regards,\n*Team Bima Headquarter by InsureDesk IMF Pvt. Ltd.*`;
     }
     setCustomMessage(text);
   };
