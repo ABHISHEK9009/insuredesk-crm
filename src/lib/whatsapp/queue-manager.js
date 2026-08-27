@@ -123,10 +123,18 @@ export async function processQueueBatch(limit = 5) {
     try {
       let openwaResponse;
       if (message.messageType === 'IMAGE') {
+        let mediaPayload = message.mediaUrl;
+        if (!mediaPayload || message.fileName === 'birthday_greeting.png') {
+          // Render personalized card in memory on the fly (Zero DB storage)
+          const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
+          const card = await generateBirthdayCard({ recipientName: message.recipientName });
+          mediaPayload = card.base64;
+        }
+
         openwaResponse = await sendWhatsAppImage(
           message.recipientPhone,
-          message.mediaUrl,
-          message.fileName,
+          mediaPayload,
+          message.fileName || 'birthday_greeting.png',
           message.caption || message.messageBody
         );
       } else if (message.messageType === 'PDF') {

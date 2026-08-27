@@ -108,7 +108,7 @@ export async function POST(request) {
     const { message } = body;
     const attachments = Array.isArray(body.attachments) ? body.attachments : [];
 
-    if (!recipient || (!message && attachments.length === 0)) {
+    if (!recipient || (!message && attachments.length === 0 && !body.attachBirthdayCard)) {
       return NextResponse.json({ error: "Recipient and a message or attachment are required" }, { status: 400 });
     }
 
@@ -116,6 +116,23 @@ export async function POST(request) {
     console.log(`Sending WhatsApp test message to ${String(recipient).endsWith("@g.us") ? "a group" : "an individual"}...`);
 
     const resolvedAttachments = [];
+    
+    // Dynamically generate personalized birthday card on-the-fly if requested (Zero DB storage)
+    if (body.attachBirthdayCard) {
+      try {
+        const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
+        const card = await generateBirthdayCard({ recipientName: body.recipientName || "Valued Client" });
+        resolvedAttachments.push({
+          mediaBase64: card.base64,
+          mediaType: "image",
+          filename: "birthday_greeting.png",
+          caption: signedMessage,
+        });
+      } catch (cardErr) {
+        console.error("Failed to generate in-memory birthday card:", cardErr);
+      }
+    }
+
     for (const attachment of attachments) {
       const resolved = await resolveAttachmentPayload(attachment);
       if (resolved) resolvedAttachments.push(resolved);

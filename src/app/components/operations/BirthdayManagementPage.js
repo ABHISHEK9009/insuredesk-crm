@@ -472,11 +472,16 @@ export default function BirthdayManagementPage() {
       const res = await fetch("/api/operations/whatsapp/test-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formattedPhone, message: customMessage }),
+        body: JSON.stringify({ 
+          phone: formattedPhone, 
+          message: customMessage,
+          attachBirthdayCard: true,
+          recipientName: greetingTarget.name,
+        }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast("success", `Birthday greeting sent successfully to ${greetingTarget.name}!`);
+        showToast("success", `Personalized birthday card & wish sent successfully to ${greetingTarget.name}!`);
       } else {
         showToast("error", `Failed to send greeting: ${data.error || "Unknown error"}`);
       }
@@ -1240,6 +1245,14 @@ export default function BirthdayManagementPage() {
                   onChange={(e) => setCustomMessage(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 leading-normal resize-none shadow-sm"
                 />
+              </div>
+
+              {/* Dynamic Card Attachment Indicator */}
+              <div className="flex items-center gap-2 p-2.5 bg-amber-50/80 border border-amber-200/80 rounded-lg text-amber-900">
+                <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <div className="text-[11px] leading-tight">
+                  <span className="font-bold">Personalized Card Attached:</span> Name <span className="font-semibold text-pink-700">"{greetingTarget.name}"</span> will be rendered on the golden ribbon automatically.
+                </div>
               </div>
 
               {/* Send Button */}

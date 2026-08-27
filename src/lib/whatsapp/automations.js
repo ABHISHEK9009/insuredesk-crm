@@ -131,9 +131,9 @@ export async function triggerDailyBirthdays({ organizationId = null } = {}) {
         organizationId: orgId,
         recipientPhone: customer.phone,
         recipientName: customerDisplayName,
-        messageType: template?.mediaUrl ? 'IMAGE' : 'TEXT',
+        messageType: 'IMAGE',
         messageBody: bodyText,
-        mediaUrl: template?.mediaUrl || null,
+        mediaUrl: null, // Keep null in DB to avoid database burden; rendered on-the-fly in RAM
         fileName: 'birthday_greeting.png',
         caption: bodyText,
         uniqueKey,
