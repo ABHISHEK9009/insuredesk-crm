@@ -1,5 +1,5 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { CARD_TEMPLATE_BASE64 } from "./card-template-base64.js";
+import { CARD_TEMPLATE_BASE64, BIMA_LOGO_BASE64 } from "./card-template-base64.js";
 
 /**
  * Computes optimal font size for ribbon
@@ -71,14 +71,25 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  // Draw background template
+  // 1. Draw background template
   ctx.drawImage(templateImage, 0, 0, width, height);
 
-  // Set font
+  // 2. Draw BimaHeadquarter Logo at top center
+  try {
+    const logoBuffer = Buffer.from(BIMA_LOGO_BASE64, "base64");
+    const logoImage = await loadImage(logoBuffer);
+    const logoW = 160;
+    const logoH = (logoImage.height / logoImage.width) * logoW;
+    ctx.drawImage(logoImage, 384 - logoW / 2, 48, logoW, logoH);
+  } catch (logoErr) {
+    console.warn("Could not draw logo in gateway:", logoErr.message);
+  }
+
+  // 3. Set font
   const fontSize = getOptimalFontSize(cleanName);
   ctx.font = `600 ${fontSize}px "DejaVu Serif", "Georgia", "Times New Roman", serif`;
 
-  // Draw curved name
+  // 4. Draw curved name
   const APEX_X = 384;
   const APEX_Y = 450;
   const CURVATURE = 0.00028;

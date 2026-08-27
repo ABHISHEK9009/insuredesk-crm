@@ -1,9 +1,13 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { CARD_TEMPLATE_BASE64 } from "./card-template-base64.js";
+import { CARD_TEMPLATE_BASE64, BIMA_LOGO_BASE64 } from "./card-template-base64.js";
 
 // Load template image buffer reliably from embedded constant with zero filesystem or network dependency
 function loadTemplateBuffer() {
   return Buffer.from(CARD_TEMPLATE_BASE64, "base64");
+}
+
+function loadLogoBuffer() {
+  return Buffer.from(BIMA_LOGO_BASE64, "base64");
 }
 
 /**
@@ -95,12 +99,23 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   // 3. Draw master template background (100% uncut glitter text and clean ribbon)
   ctx.drawImage(templateImage, 0, 0, width, height);
 
-  // 4. Set font typography
+  // 4. Draw BimaHeadquarter Logo at the top center
+  try {
+    const logoBuffer = loadLogoBuffer();
+    const logoImage = await loadImage(logoBuffer);
+    const logoW = 160;
+    const logoH = (logoImage.height / logoImage.width) * logoW;
+    ctx.drawImage(logoImage, 384 - logoW / 2, 48, logoW, logoH);
+  } catch (logoErr) {
+    console.warn("Could not draw logo on birthday card:", logoErr.message);
+  }
+
+  // 5. Set font typography
   const fontSize = getOptimalFontSize(cleanName);
   // System serif fallback stack (Georgia, Times New Roman, Playfair Display)
   ctx.font = `600 ${fontSize}px "Playfair Display", "Georgia", "Times New Roman", serif`;
 
-  // 5. Draw dynamically curved name onto the exact ribbon apex
+  // 6. Draw dynamically curved name onto the exact ribbon apex
   const APEX_X = 384;
   const APEX_Y = 450;
   const CURVATURE = 0.00028;
