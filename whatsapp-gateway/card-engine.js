@@ -6,53 +6,32 @@ import { CARD_TEMPLATE_BASE64, BIMA_LOGO_BASE64 } from "./card-template-base64.j
  */
 function getOptimalFontSize(name) {
   const len = name.length;
-  if (len <= 14) return 38;
-  if (len <= 20) return 32;
-  if (len <= 26) return 26;
+  if (len <= 14) return 36;
+  if (len <= 20) return 30;
+  if (len <= 26) return 25;
   return 22;
 }
 
 /**
- * Draws text curved along the golden ribbon arch
+ * Draws recipient name boldly and centered on the navy ribbon with drop shadow
  */
-function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00028) {
+function drawRibbonName(ctx, text, centerX = 384, centerY = 448) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  const totalWidth = ctx.measureText(text).width;
-  const chars = Array.from(text);
-  const charWidths = chars.map((c) => ctx.measureText(c).width);
-  
-  let currentX = apexX - totalWidth / 2;
+  const fontSize = getOptimalFontSize(text);
+  ctx.font = `bold ${fontSize}px sans-serif, Arial, Helvetica`;
 
-  for (let i = 0; i < chars.length; i++) {
-    const char = chars[i];
-    const w = charWidths[i];
-    const charCenterX = currentX + w / 2;
-    const dx = charCenterX - apexX;
-    
-    // Parabolic arch: y = apexY + curvature * dx^2
-    const charY = apexY + curvature * dx * dx;
-    const angle = Math.atan(2 * curvature * dx);
+  // Deep dark shadow for gold text depth
+  ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
 
-    ctx.save();
-    ctx.translate(charCenterX, charY);
-    ctx.rotate(angle);
-
-    // Drop shadow
-    ctx.shadowColor = "rgba(10, 15, 25, 0.75)";
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 1.5;
-    ctx.shadowOffsetY = 2.5;
-
-    // Champagne gold text
-    ctx.fillStyle = "#F4DA8C";
-    ctx.fillText(char, 0, 0);
-
-    ctx.restore();
-    currentX += w;
-  }
+  // Bright luxury gold
+  ctx.fillStyle = "#FCE38A";
+  ctx.fillText(text, centerX, centerY);
 
   ctx.restore();
 }
@@ -85,17 +64,9 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
     console.warn("Could not draw logo in gateway:", logoErr.message);
   }
 
-  // 3. Set font
-  const fontSize = getOptimalFontSize(cleanName);
-  ctx.font = `600 ${fontSize}px "DejaVu Serif", "Georgia", "Times New Roman", serif`;
+  // 3. Draw personalized recipient name centered on ribbon
+  drawRibbonName(ctx, cleanName, 384, 448);
 
-  // 4. Draw curved name
-  const APEX_X = 384;
-  const APEX_Y = 450;
-  const CURVATURE = 0.00028;
-
-  drawCurvedText(ctx, cleanName, APEX_X, APEX_Y, CURVATURE);
-
-  // Export high-quality JPEG (95%) for native WhatsApp compatibility and instant delivery
+  // 4. Export high-quality JPEG (95%) for native WhatsApp compatibility and instant delivery
   return canvas.toBuffer("image/jpeg", 95);
 }

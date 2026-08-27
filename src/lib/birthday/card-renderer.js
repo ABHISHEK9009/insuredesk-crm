@@ -15,62 +15,32 @@ function loadLogoBuffer() {
  */
 function getOptimalFontSize(name) {
   const len = name.length;
-  if (len <= 14) return 38;
-  if (len <= 20) return 32;
-  if (len <= 26) return 26;
+  if (len <= 14) return 36;
+  if (len <= 20) return 30;
+  if (len <= 26) return 25;
   return 22;
 }
 
 /**
- * Draws text curved along a quadratic upward arch centered at (apexX, apexY)
- * @param {CanvasRenderingContext2D} ctx 
- * @param {string} text 
- * @param {number} apexX - Center X coordinate (384px)
- * @param {number} apexY - Apex Y coordinate at center of arch (450px)
- * @param {number} curvature - Arch curvature factor (default 0.00028)
+ * Draws recipient name boldly and centered on the navy ribbon with drop shadow
  */
-function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00028) {
+function drawRibbonName(ctx, text, centerX = 384, centerY = 448) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  const totalWidth = ctx.measureText(text).width;
-  const chars = Array.from(text);
-  
-  // Calculate character widths to accurately space each glyph along the curve
-  const charWidths = chars.map((c) => ctx.measureText(c).width);
-  
-  let currentX = apexX - totalWidth / 2;
+  const fontSize = getOptimalFontSize(text);
+  ctx.font = `bold ${fontSize}px sans-serif, Arial, Helvetica`;
 
-  for (let i = 0; i < chars.length; i++) {
-    const char = chars[i];
-    const w = charWidths[i];
-    const charCenterX = currentX + w / 2;
-    const dx = charCenterX - apexX;
-    
-    // Parabolic arch: y = apexY + curvature * dx^2
-    const charY = apexY + curvature * dx * dx;
-    
-    // Tangent angle: dy/dx = 2 * curvature * dx
-    const angle = Math.atan(2 * curvature * dx);
+  // Deep dark shadow for gold text depth
+  ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
 
-    ctx.save();
-    ctx.translate(charCenterX, charY);
-    ctx.rotate(angle);
-
-    // Drop shadow for gold text depth
-    ctx.shadowColor = "rgba(10, 15, 25, 0.75)";
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 1.5;
-    ctx.shadowOffsetY = 2.5;
-
-    // Golden gradient or solid luxury champagne gold
-    ctx.fillStyle = "#F4DA8C";
-    ctx.fillText(char, 0, 0);
-
-    ctx.restore();
-    currentX += w;
-  }
+  // Bright luxury gold
+  ctx.fillStyle = "#FCE38A";
+  ctx.fillText(text, centerX, centerY);
 
   ctx.restore();
 }
@@ -96,7 +66,7 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  // 3. Draw master template background (100% uncut glitter text and clean ribbon)
+  // 3. Draw master template background
   ctx.drawImage(templateImage, 0, 0, width, height);
 
   // 4. Draw BimaHeadquarter Logo at the top center
@@ -110,17 +80,8 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
     console.warn("Could not draw logo on birthday card:", logoErr.message);
   }
 
-  // 5. Set font typography
-  const fontSize = getOptimalFontSize(cleanName);
-  // System serif fallback stack (Georgia, Times New Roman, Playfair Display)
-  ctx.font = `600 ${fontSize}px "Playfair Display", "Georgia", "Times New Roman", serif`;
-
-  // 6. Draw dynamically curved name onto the exact ribbon apex
-  const APEX_X = 384;
-  const APEX_Y = 450;
-  const CURVATURE = 0.00028;
-
-  drawCurvedText(ctx, cleanName, APEX_X, APEX_Y, CURVATURE);
+  // 5. Draw personalized recipient name centered on ribbon
+  drawRibbonName(ctx, cleanName, 384, 448);
 
   // 6. Export directly to in-memory Buffer (JPEG 95% for native WhatsApp compatibility)
   const buffer = canvas.toBuffer("image/jpeg", 95);
