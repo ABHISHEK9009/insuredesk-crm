@@ -1,45 +1,9 @@
-import fs from "fs";
-import path from "path";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { CARD_TEMPLATE_BASE64 } from "./card-template-base64.js";
 
-// Helper to load template image buffer across local dev, Vercel serverless, and production URLs
-async function loadTemplateBuffer() {
-  const candidatePaths = [
-    path.join(process.cwd(), "public", "templates", "card_template.png"),
-    path.join(process.cwd(), "birthday", "card_template.png"),
-    path.join(process.cwd(), "public", "card_template.png"),
-  ];
-
-  for (const p of candidatePaths) {
-    try {
-      if (fs.existsSync(p)) {
-        return fs.readFileSync(p);
-      }
-    } catch {
-      // Continue searching
-    }
-  }
-
-  // Fallback: fetch from hosted domain if running in isolated serverless bundle
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://bimaheadquarter.com").replace(/\/$/, "");
-  const fallbackUrls = [
-    `${appUrl}/templates/card_template.png`,
-    "https://bimaheadquarter.com/templates/card_template.png",
-  ];
-
-  for (const url of fallbackUrls) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) {
-        const ab = await res.arrayBuffer();
-        return Buffer.from(ab);
-      }
-    } catch {
-      // Continue searching
-    }
-  }
-
-  throw new Error("Birthday card template image could not be loaded from filesystem or network.");
+// Load template image buffer reliably from embedded constant with zero filesystem or network dependency
+function loadTemplateBuffer() {
+  return Buffer.from(CARD_TEMPLATE_BASE64, "base64");
 }
 
 /**

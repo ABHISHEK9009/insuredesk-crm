@@ -1,10 +1,5 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMPLATE_PATH = path.join(__dirname, "assets", "card_template.png");
+import { CARD_TEMPLATE_BASE64 } from "./card-template-base64.js";
 
 /**
  * Computes optimal font size for ribbon
@@ -69,11 +64,8 @@ function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00038) {
 export async function renderBirthdayCardBuffer(recipientName = "Valued Client") {
   const cleanName = (recipientName || "Valued Client").trim();
 
-  if (!fs.existsSync(TEMPLATE_PATH)) {
-    throw new Error(`Template image not found at: ${TEMPLATE_PATH}`);
-  }
-
-  const templateImage = await loadImage(TEMPLATE_PATH);
+  const templateBuffer = Buffer.from(CARD_TEMPLATE_BASE64, "base64");
+  const templateImage = await loadImage(templateBuffer);
   const width = templateImage.width;
   const height = templateImage.height;
 
