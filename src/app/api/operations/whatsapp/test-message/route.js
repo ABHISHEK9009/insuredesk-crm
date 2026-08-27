@@ -117,35 +117,21 @@ export async function POST(request) {
       : withAgentSignature(message, body.signature || buildDefaultAgentSignature(session));
     console.log(`Sending WhatsApp message to ${String(recipient).endsWith("@g.us") ? "a group" : "an individual"}...`);
 
-    // Direct dispatch for personalized birthday cards via Gateway engine with fallback
+    // Render personalized birthday card directly in memory on-the-fly and dispatch
     if (body.attachBirthdayCard) {
-      try {
-        const { sendWhatsAppBirthdayWish } = await import("@/lib/whatsapp/whatsapp-client");
-        const wishRes = await sendWhatsAppBirthdayWish(
-          recipient,
-          body.recipientName || "Valued Client",
-          signedMessage
-        );
-        return NextResponse.json({
-          success: true,
-          messageId: wishRes.id || null,
-        });
-      } catch (wishErr) {
-        console.warn("Direct gateway birthday wish failed, using local in-memory card fallback:", wishErr.message);
-        const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
-        const card = await generateBirthdayCard({ recipientName: body.recipientName || "Valued Client" });
-        const { sendWhatsAppImage } = await import("@/lib/whatsapp/whatsapp-client");
-        const imgRes = await sendWhatsAppImage(
-          recipient,
-          card.base64,
-          "birthday_greeting.png",
-          signedMessage
-        );
-        return NextResponse.json({
-          success: true,
-          messageId: imgRes.id || null,
-        });
-      }
+      const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
+      const card = await generateBirthdayCard({ recipientName: body.recipientName || "Valued Client" });
+      const { sendWhatsAppImage } = await import("@/lib/whatsapp/whatsapp-client");
+      const imgRes = await sendWhatsAppImage(
+        recipient,
+        card.base64,
+        "birthday_greeting.jpg",
+        signedMessage
+      );
+      return NextResponse.json({
+        success: true,
+        messageId: imgRes.id || null,
+      });
     }
 
     const resolvedAttachments = [];

@@ -123,34 +123,19 @@ export async function processQueueBatch(limit = 5) {
     try {
       let openwaResponse;
       if (message.messageType === 'IMAGE') {
-        if (!message.mediaUrl || message.fileName === 'birthday_greeting.png') {
-          try {
-            // Send personalized card directly via Gateway engine
-            const { sendWhatsAppBirthdayWish } = await import("./whatsapp-client");
-            openwaResponse = await sendWhatsAppBirthdayWish(
-              message.recipientPhone,
-              message.recipientName,
-              message.caption || message.messageBody
-            );
-          } catch (wishErr) {
-            console.warn("Direct gateway birthday wish failed, using local in-memory card fallback:", wishErr.message);
-            const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
-            const card = await generateBirthdayCard({ recipientName: message.recipientName });
-            openwaResponse = await sendWhatsAppImage(
-              message.recipientPhone,
-              card.base64,
-              "birthday_greeting.png",
-              message.caption || message.messageBody
-            );
-          }
-        } else {
-          openwaResponse = await sendWhatsAppImage(
-            message.recipientPhone,
-            message.mediaUrl,
-            message.fileName || 'image.png',
-            message.caption || message.messageBody
-          );
+        let mediaPayload = message.mediaUrl;
+        if (!mediaPayload || message.fileName?.includes('birthday')) {
+          const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
+          const card = await generateBirthdayCard({ recipientName: message.recipientName });
+          mediaPayload = card.base64;
         }
+
+        openwaResponse = await sendWhatsAppImage(
+          message.recipientPhone,
+          mediaPayload,
+          "birthday_greeting.jpg",
+          message.caption || message.messageBody
+        );
       } else if (message.messageType === 'PDF') {
         openwaResponse = await sendWhatsAppFile(
           message.recipientPhone,
