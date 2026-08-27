@@ -94,5 +94,6 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
 
   drawCurvedText(ctx, cleanName, APEX_X, APEX_Y, CURVATURE);
 
-  return canvas.toBuffer("image/png");
+  // Export high-quality JPEG (95%) for native WhatsApp compatibility and instant delivery
+  return canvas.toBuffer("image/jpeg", 95);
 }

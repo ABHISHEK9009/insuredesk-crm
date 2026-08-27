@@ -364,21 +364,30 @@ export async function sendMedia(to, mediaBase64, filename, caption, type) {
   if (!jid) throw new Error("A valid WhatsApp recipient is required");
   assertAvailableGroup(jid);
 
-  // Strip data URL prefix if present
-  let rawBase64 = mediaBase64;
-  if (rawBase64.includes(",")) {
-    rawBase64 = rawBase64.split(",")[1];
+  let buffer;
+  if (Buffer.isBuffer(mediaBase64)) {
+    buffer = mediaBase64;
+  } else if (typeof mediaBase64 === "string") {
+    let raw = mediaBase64.trim();
+    if (raw.includes(",")) {
+      raw = raw.split(",")[1];
+    }
+    buffer = Buffer.from(raw, "base64");
+  } else {
+    throw new Error("Invalid media payload: expected base64 string or buffer");
   }
-  const buffer = Buffer.from(rawBase64, "base64");
 
   const isDocument = type === "document" || String(filename || "").toLowerCase().endsWith(".pdf");
 
   let messagePayload;
-  if (!isDocument && type === "image") {
+  if (!isDocument && (type === "image" || String(filename || "").match(/\.(jpe?g|png|webp)$/i))) {
+    const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8;
+    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50;
     messagePayload = {
       image: buffer,
       caption: caption || "",
-      fileName: filename || "image.png",
+      mimetype: isJpeg ? "image/jpeg" : (isPng ? "image/png" : "image/jpeg"),
+      fileName: filename || (isJpeg ? "birthday_card.jpg" : "birthday_card.png"),
     };
   } else {
     // document / PDF / any file

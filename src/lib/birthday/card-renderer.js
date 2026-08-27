@@ -145,14 +145,14 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
 
   drawCurvedText(ctx, cleanName, APEX_X, APEX_Y, CURVATURE);
 
-  // 6. Export directly to in-memory Buffer (PNG)
-  const buffer = canvas.toBuffer("image/png");
+  // 6. Export directly to in-memory Buffer (JPEG 95% for native WhatsApp compatibility)
+  const buffer = canvas.toBuffer("image/jpeg", 95);
   const base64 = buffer.toString("base64");
 
   return {
     buffer,
     base64,
-    mimeType: "image/png",
+    mimeType: "image/jpeg",
     width,
     height,
   };
