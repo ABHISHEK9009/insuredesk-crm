@@ -9,7 +9,7 @@
 const BASE_URL =
   process.env.WHATSAPP_GATEWAY_URL ||
   process.env.OPENWA_BASE_URL ||
-  "https://insuredesk-whatsapp-gateway.onrender.com";
+  "https://gateway-production-3747.up.railway.app";
 
 const API_KEY =
   process.env.WHATSAPP_GATEWAY_API_KEY ||
@@ -35,7 +35,11 @@ function formatRecipient(recipient) {
 }
 
 export async function callGateway(method, endpoint, payload = null) {
-  const url = `${BASE_URL.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`;
+  let normalizedBase = (BASE_URL || "").trim().replace(/\/$/, "");
+  if (!/^https?:\/\//i.test(normalizedBase)) {
+    normalizedBase = `https://${normalizedBase}`;
+  }
+  const url = `${normalizedBase}/${endpoint.replace(/^\//, "")}`;
   const headers = {
     "Content-Type": "application/json",
   };
