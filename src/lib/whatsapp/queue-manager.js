@@ -124,13 +124,25 @@ export async function processQueueBatch(limit = 5) {
       let openwaResponse;
       if (message.messageType === 'IMAGE') {
         if (!message.mediaUrl || message.fileName === 'birthday_greeting.png') {
-          // Send personalized card directly via Gateway engine (Zero DB storage)
-          const { sendWhatsAppBirthdayWish } = await import("./whatsapp-client");
-          openwaResponse = await sendWhatsAppBirthdayWish(
-            message.recipientPhone,
-            message.recipientName,
-            message.caption || message.messageBody
-          );
+          try {
+            // Send personalized card directly via Gateway engine
+            const { sendWhatsAppBirthdayWish } = await import("./whatsapp-client");
+            openwaResponse = await sendWhatsAppBirthdayWish(
+              message.recipientPhone,
+              message.recipientName,
+              message.caption || message.messageBody
+            );
+          } catch (wishErr) {
+            console.warn("Direct gateway birthday wish failed, using local in-memory card fallback:", wishErr.message);
+            const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
+            const card = await generateBirthdayCard({ recipientName: message.recipientName });
+            openwaResponse = await sendWhatsAppImage(
+              message.recipientPhone,
+              card.base64,
+              "birthday_greeting.png",
+              message.caption || message.messageBody
+            );
+          }
         } else {
           openwaResponse = await sendWhatsAppImage(
             message.recipientPhone,

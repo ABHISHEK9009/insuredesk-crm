@@ -117,18 +117,35 @@ export async function POST(request) {
       : withAgentSignature(message, body.signature || buildDefaultAgentSignature(session));
     console.log(`Sending WhatsApp message to ${String(recipient).endsWith("@g.us") ? "a group" : "an individual"}...`);
 
-    // Direct dispatch for personalized birthday cards via Gateway engine
+    // Direct dispatch for personalized birthday cards via Gateway engine with fallback
     if (body.attachBirthdayCard) {
-      const { sendWhatsAppBirthdayWish } = await import("@/lib/whatsapp/whatsapp-client");
-      const wishRes = await sendWhatsAppBirthdayWish(
-        recipient,
-        body.recipientName || "Valued Client",
-        signedMessage
-      );
-      return NextResponse.json({
-        success: true,
-        messageId: wishRes.id || null,
-      });
+      try {
+        const { sendWhatsAppBirthdayWish } = await import("@/lib/whatsapp/whatsapp-client");
+        const wishRes = await sendWhatsAppBirthdayWish(
+          recipient,
+          body.recipientName || "Valued Client",
+          signedMessage
+        );
+        return NextResponse.json({
+          success: true,
+          messageId: wishRes.id || null,
+        });
+      } catch (wishErr) {
+        console.warn("Direct gateway birthday wish failed, using local in-memory card fallback:", wishErr.message);
+        const { generateBirthdayCard } = await import("@/lib/birthday/card-renderer");
+        const card = await generateBirthdayCard({ recipientName: body.recipientName || "Valued Client" });
+        const { sendWhatsAppImage } = await import("@/lib/whatsapp/whatsapp-client");
+        const imgRes = await sendWhatsAppImage(
+          recipient,
+          card.base64,
+          "birthday_greeting.png",
+          signedMessage
+        );
+        return NextResponse.json({
+          success: true,
+          messageId: imgRes.id || null,
+        });
+      }
     }
 
     const resolvedAttachments = [];
