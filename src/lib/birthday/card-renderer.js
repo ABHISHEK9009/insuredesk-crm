@@ -2,8 +2,45 @@ import fs from "fs";
 import path from "path";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 
-// Path to template image
-const TEMPLATE_PATH = path.join(process.cwd(), "birthday", "card_template.png");
+// Helper to load template image buffer across local dev, Vercel serverless, and production URLs
+async function loadTemplateBuffer() {
+  const candidatePaths = [
+    path.join(process.cwd(), "public", "templates", "card_template.png"),
+    path.join(process.cwd(), "birthday", "card_template.png"),
+    path.join(process.cwd(), "public", "card_template.png"),
+  ];
+
+  for (const p of candidatePaths) {
+    try {
+      if (fs.existsSync(p)) {
+        return fs.readFileSync(p);
+      }
+    } catch {
+      // Continue searching
+    }
+  }
+
+  // Fallback: fetch from hosted domain if running in isolated serverless bundle
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://bimaheadquarter.com").replace(/\/$/, "");
+  const fallbackUrls = [
+    `${appUrl}/templates/card_template.png`,
+    "https://bimaheadquarter.com/templates/card_template.png",
+  ];
+
+  for (const url of fallbackUrls) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const ab = await res.arrayBuffer();
+        return Buffer.from(ab);
+      }
+    } catch {
+      // Continue searching
+    }
+  }
+
+  throw new Error("Birthday card template image could not be loaded from filesystem or network.");
+}
 
 /**
  * Computes font size that fits nicely along the ribbon
@@ -83,12 +120,9 @@ function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00038) {
 export async function generateBirthdayCard({ recipientName = "Valued Client" } = {}) {
   const cleanName = (recipientName || "Valued Client").trim();
 
-  // 1. Load template image
-  if (!fs.existsSync(TEMPLATE_PATH)) {
-    throw new Error(`Birthday card template not found at: ${TEMPLATE_PATH}`);
-  }
-
-  const templateImage = await loadImage(TEMPLATE_PATH);
+  // 1. Load template image buffer
+  const templateBuffer = await loadTemplateBuffer();
+  const templateImage = await loadImage(templateBuffer);
   const width = templateImage.width;   // 1086
   const height = templateImage.height; // 1448
 
