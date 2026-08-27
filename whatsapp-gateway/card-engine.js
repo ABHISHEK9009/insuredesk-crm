@@ -6,17 +6,16 @@ import { CARD_TEMPLATE_BASE64 } from "./card-template-base64.js";
  */
 function getOptimalFontSize(name) {
   const len = name.length;
-  if (len <= 16) return 54;
-  if (len <= 22) return 46;
-  if (len <= 28) return 38;
-  if (len <= 34) return 32;
-  return 28;
+  if (len <= 14) return 38;
+  if (len <= 20) return 32;
+  if (len <= 26) return 26;
+  return 22;
 }
 
 /**
  * Draws text curved along the golden ribbon arch
  */
-function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00038) {
+function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00028) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -80,9 +79,9 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
   ctx.font = `600 ${fontSize}px "DejaVu Serif", "Georgia", "Times New Roman", serif`;
 
   // Draw curved name
-  const APEX_X = 555;
-  const APEX_Y = 623;
-  const CURVATURE = 0.00038;
+  const APEX_X = 384;
+  const APEX_Y = 450;
+  const CURVATURE = 0.00028;
 
   drawCurvedText(ctx, cleanName, APEX_X, APEX_Y, CURVATURE);
 

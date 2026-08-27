@@ -7,27 +7,25 @@ function loadTemplateBuffer() {
 }
 
 /**
- * Computes font size that fits nicely along the ribbon
- * Default: 54px for names <= 18 chars, scaled down progressively for longer names
+ * Computes font size that fits nicely along the ribbon (768px wide canvas)
  */
 function getOptimalFontSize(name) {
   const len = name.length;
-  if (len <= 16) return 54;
-  if (len <= 22) return 46;
-  if (len <= 28) return 38;
-  if (len <= 34) return 32;
-  return 28;
+  if (len <= 14) return 38;
+  if (len <= 20) return 32;
+  if (len <= 26) return 26;
+  return 22;
 }
 
 /**
  * Draws text curved along a quadratic upward arch centered at (apexX, apexY)
  * @param {CanvasRenderingContext2D} ctx 
  * @param {string} text 
- * @param {number} apexX - Center X coordinate (555px)
- * @param {number} apexY - Apex Y coordinate at center of arch (623px)
- * @param {number} curvature - Arch curvature factor (default 0.00038)
+ * @param {number} apexX - Center X coordinate (384px)
+ * @param {number} apexY - Apex Y coordinate at center of arch (450px)
+ * @param {number} curvature - Arch curvature factor (default 0.00028)
  */
-function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00038) {
+function drawCurvedText(ctx, text, apexX, apexY, curvature = 0.00028) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -87,8 +85,8 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   // 1. Load template image buffer
   const templateBuffer = await loadTemplateBuffer();
   const templateImage = await loadImage(templateBuffer);
-  const width = templateImage.width;   // 1086
-  const height = templateImage.height; // 1448
+  const width = templateImage.width;   // 768
+  const height = templateImage.height; // 1024
 
   // 2. Create in-memory canvas
   const canvas = createCanvas(width, height);
@@ -103,9 +101,9 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   ctx.font = `600 ${fontSize}px "Playfair Display", "Georgia", "Times New Roman", serif`;
 
   // 5. Draw dynamically curved name onto the exact ribbon apex
-  const APEX_X = 555;
-  const APEX_Y = 623;
-  const CURVATURE = 0.00038;
+  const APEX_X = 384;
+  const APEX_Y = 450;
+  const CURVATURE = 0.00028;
 
   drawCurvedText(ctx, cleanName, APEX_X, APEX_Y, CURVATURE);
 
