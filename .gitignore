@@ -93,3 +93,11 @@ prisma/schema.current.prisma
 # backups
 /archive/
 
+# Flutter build artifacts
+**/BHQ/.dart_tool/
+**/BHQ/build/
+**/BHQ/.pub/
+**/BHQ/.flutter-plugins*
+**/BHQ/.idea/
+**/BHQ/*.iml
+
