@@ -6,6 +6,14 @@ import {
   BOTTOM_SECTION_B64,
 } from "./card-assets.js";
 
+function getOptimalFontSize(name) {
+  const len = name.length;
+  if (len <= 14) return 46;
+  if (len <= 20) return 38;
+  if (len <= 26) return 32;
+  return 26;
+}
+
 export async function renderBirthdayCardBuffer(recipientName = "Valued Client") {
   const cleanName = (recipientName || "Valued Client").trim();
   const width = 1086;
@@ -24,10 +32,9 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
   // 1. Draw base backdrop
   ctx.drawImage(baseImg, 0, 0, width, height);
 
-  // 2. Draw bottom section (Cake, gifts, trust badges, signature)
-  const bottomW = width;
-  const bottomH = (bottomImg.height / bottomImg.width) * bottomW;
-  ctx.drawImage(bottomImg, 0, height - bottomH, bottomW, bottomH);
+  // 2. Draw bottom section
+  const bottomH = (bottomImg.height / bottomImg.width) * width;
+  ctx.drawImage(bottomImg, 0, height - bottomH, width, bottomH);
 
   // 3. Draw brand logo
   const logoW = 235;
@@ -39,9 +46,8 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
   const hbH = (hbImg.height / hbImg.width) * hbW;
   ctx.drawImage(hbImg, (width - hbW) / 2, 170, hbW, hbH);
 
-  // 5. Draw 3D curved arched ribbon with personalized recipient name
-  const fontSize = cleanName.length > 20 ? 32 : (cleanName.length > 14 ? 38 : 44);
-  const svgRibbon = `
+  // 5. Draw 3D Navy Ribbon
+  const svgRibbonOnly = `
     <svg xmlns="http://www.w3.org/2000/svg" width="680" height="158" viewBox="0 0 540 125">
       <defs>
         <linearGradient id="ribbonMainNavy" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -61,7 +67,6 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
           <stop offset="75%" stop-color="#FFF099" />
           <stop offset="100%" stop-color="#9C7015" />
         </linearGradient>
-        <path id="ribbonTextArch" d="M 70, 71 Q 270, 52 470, 71" fill="none" />
       </defs>
       <g>
         <path d="M 65 32 L 8 44 L 38 66 L 8 88 L 65 80 Z" fill="url(#ribbonMainNavy)" />
@@ -73,39 +78,50 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
         <path d="M 55 30 Q 270 12 485 30 L 485 92 Q 270 74 55 92 Z" fill="url(#ribbonMainNavy)" />
         <path d="M 55 30 Q 270 12 485 30 L 485 92 Q 270 74 55 92 Z" fill="none" stroke="url(#goldStitch)" stroke-width="1" />
         <path d="M 62 36 Q 270 18 478 36 L 478 86 Q 270 68 62 86 Z" fill="none" stroke="url(#goldStitch)" stroke-width="1.4" stroke-dasharray="4.5 3" />
-        <text font-family="'Cinzel', 'Playfair Display', serif" font-weight="bold" font-size="${fontSize}" fill="#FFF5A5" letter-spacing="0.04em">
-          <textPath href="#ribbonTextArch" startOffset="50%" text-anchor="middle">
-            ${cleanName}
-          </textPath>
-        </text>
       </g>
     </svg>
   `;
 
   try {
-    const ribbonImg = await loadImage(Buffer.from(svgRibbon));
+    const ribbonImg = await loadImage(Buffer.from(svgRibbonOnly));
     const ribW = 680;
     const ribH = (ribbonImg.height / ribbonImg.width) * ribW;
-    ctx.drawImage(ribbonImg, (width - ribW) / 2, 430, ribW, ribH);
+    const ribX = (width - ribW) / 2;
+    const ribY = 430;
+    ctx.drawImage(ribbonImg, ribX, ribY, ribW, ribH);
   } catch (ribbonErr) {
     console.warn("Could not draw SVG ribbon:", ribbonErr.message);
   }
 
-  // 6. Draw Wish Poem Text
+  // 6. Draw Name directly on canvas over the ribbon in bold 3D Gold
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const fontSize = getOptimalFontSize(cleanName);
+  ctx.font = `bold ${fontSize}px sans-serif, Arial, Helvetica`;
+  ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "#FCE38A";
+  ctx.fillText(cleanName, width / 2, 506);
+  ctx.restore();
+
+  // 7. Draw Wish Poem Text directly on canvas
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#0A1930";
   ctx.font = "25px serif, Georgia, Times";
-  ctx.fillText("Wishing you a day filled with", 543, 675);
-  ctx.font = "bold 29px serif, Georgia, Times";
-  ctx.fillText("happiness, love and success.", 543, 710);
+  ctx.fillText("Wishing you a day filled with", 543, 665);
+  ctx.font = "bold 30px serif, Georgia, Times";
+  ctx.fillText("happiness, love and success.", 543, 702);
   ctx.font = "25px serif, Georgia, Times";
-  ctx.fillText("May this year bring you endless", 543, 745);
-  ctx.fillText("joy, good health and all the", 543, 778);
-  ctx.fillText("dreams you aspire to achieve.", 543, 811);
+  ctx.fillText("May this year bring you endless", 543, 738);
+  ctx.fillText("joy, good health and all the", 543, 772);
+  ctx.fillText("dreams you aspire to achieve.", 543, 806);
   ctx.font = "italic 32px serif, Georgia, Times";
-  ctx.fillText("Have a wonderful year ahead!", 543, 855);
+  ctx.fillText("Have a wonderful year ahead!", 543, 852);
   ctx.restore();
 
   return canvas.toBuffer("image/jpeg", 95);
