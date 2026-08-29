@@ -31,3 +31,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
+    - assets/brand/app-logo.png
+    - assets/brand/main-logo.webp
+    - assets/brand/main-logo-wide.webp
+    - assets/brand/house-mark.webp
+    - assets/brand/favicon.png
