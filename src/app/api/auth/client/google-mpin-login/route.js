@@ -150,6 +150,7 @@ async function createClientLoginResponse(customer, message, verifiedCredentialVe
     success: true,
     linked: true,
     message,
+    token,
     user: {
       customerId: customer.id,
       email: customer.email,

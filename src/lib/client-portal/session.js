@@ -4,7 +4,9 @@ import { verifyJWT } from "@/lib/auth";
 import { getClientCredentialVersion } from "@/lib/client-portal/credentials";
 
 export async function requireClient(request) {
-  const token = request.cookies.get("token")?.value;
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7).trim() : null;
+  const token = bearerToken || request.cookies?.get?.("token")?.value;
   const session = token ? await verifyJWT(token) : null;
 
   if (!session || session.role !== "CLIENT" || !session.customerId || session.organizationId === undefined) {
