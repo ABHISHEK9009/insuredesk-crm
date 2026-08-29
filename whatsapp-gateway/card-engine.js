@@ -1,103 +1,45 @@
-import fs from "fs";
-import path from "path";
-import { execSync } from "child_process";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-
-const BROWSER_EXECUTABLE_CANDIDATES = [
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "/usr/bin/google-chrome",
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
-];
-
-function getBrowserExecutablePath() {
-  for (const p of BROWSER_EXECUTABLE_CANDIDATES) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
+import {
+  BASE_IMAGE_B64,
+  BRAND_LOGO_B64,
+  HAPPY_BIRTHDAY_B64,
+  BOTTOM_SECTION_B64,
+} from "./card-assets.js";
 
 export async function renderBirthdayCardBuffer(recipientName = "Valued Client") {
   const cleanName = (recipientName || "Valued Client").trim();
   const width = 1086;
   const height = 1448;
 
-  const browserPath = getBrowserExecutablePath();
-  const indexPath = path.resolve(process.cwd(), "birthday/index.html");
+  const [baseImg, logoImg, hbImg, bottomImg] = await Promise.all([
+    loadImage(Buffer.from(BASE_IMAGE_B64, "base64")),
+    loadImage(Buffer.from(BRAND_LOGO_B64, "base64")),
+    loadImage(Buffer.from(HAPPY_BIRTHDAY_B64, "base64")),
+    loadImage(Buffer.from(BOTTOM_SECTION_B64, "base64")),
+  ]);
 
-  if (browserPath && fs.existsSync(indexPath)) {
-    try {
-      let html = fs.readFileSync(indexPath, "utf8");
-
-      html = html.replace(
-        /<textPath id="recipientTextPath"[^>]*>[\s\S]*?<\/textPath>/,
-        `<textPath id="recipientTextPath" href="#ribbonTextArch" startOffset="50%" text-anchor="middle">${cleanName}</textPath>`
-      );
-
-      const styleInjection = `
-        <style>
-          .app-header-controls, .floating-actions-bar, .interactive-tool-panel, .ambient-dust-container { display: none !important; }
-          body { background: transparent !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; width: 1086px !important; height: 1448px !important; }
-          .card-scene { margin: 0 !important; padding: 0 !important; width: 1086px !important; height: 1448px !important; perspective: none !important; }
-          .card-frame { transform: none !important; box-shadow: none !important; width: 1086px !important; height: 1448px !important; border-radius: 0 !important; }
-          .greeting-card { width: 1086px !important; height: 1448px !important; border-radius: 0 !important; }
-        </style>
-      `;
-      html = html.replace("</head>", `${styleInjection}</head>`);
-
-      const tempId = `gw_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const tempHtmlPath = path.resolve(process.cwd(), `birthday/temp_${tempId}.html`);
-      const tempOutPng = path.resolve(process.cwd(), `birthday/temp_${tempId}.png`);
-
-      fs.writeFileSync(tempHtmlPath, html, "utf8");
-
-      const fileUrl = `file:///${tempHtmlPath.replace(/\\/g, "/")}`;
-      const cmd = `"${browserPath}" --headless=new --disable-gpu --hide-scrollbars --window-size=1086,1448 --screenshot="${tempOutPng}" "${fileUrl}"`;
-
-      execSync(cmd, { stdio: "pipe", timeout: 10000 });
-
-      if (fs.existsSync(tempHtmlPath)) fs.unlinkSync(tempHtmlPath);
-
-      if (fs.existsSync(tempOutPng)) {
-        const rawPng = fs.readFileSync(tempOutPng);
-        fs.unlinkSync(tempOutPng);
-
-        const img = await loadImage(rawPng);
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        return canvas.toBuffer("image/jpeg", 95);
-      }
-    } catch (browserErr) {
-      console.warn("Gateway headless HTML render fallback:", browserErr.message);
-    }
-  }
-
-  // Fallback Canvas Composition
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  const baseImg = await loadImage(path.resolve(process.cwd(), "birthday/base_image.png"));
+  // 1. Draw base backdrop
   ctx.drawImage(baseImg, 0, 0, width, height);
 
-  const bottomImg = await loadImage(path.resolve(process.cwd(), "birthday/assets/bottom_section.png"));
-  const bottomH = (bottomImg.height / bottomImg.width) * width;
-  ctx.drawImage(bottomImg, 0, height - bottomH, width, bottomH);
+  // 2. Draw bottom section (Cake, gifts, trust badges, signature)
+  const bottomW = width;
+  const bottomH = (bottomImg.height / bottomImg.width) * bottomW;
+  ctx.drawImage(bottomImg, 0, height - bottomH, bottomW, bottomH);
 
-  const logoImg = await loadImage(path.resolve(process.cwd(), "birthday/brand_logo.png"));
+  // 3. Draw brand logo
   const logoW = 235;
   const logoH = (logoImg.height / logoImg.width) * logoW;
   ctx.drawImage(logoImg, (width - logoW) / 2, 45, logoW, logoH);
 
-  const hbImg = await loadImage(path.resolve(process.cwd(), "birthday/assets/happy_birthday.png"));
+  // 4. Draw Happy Birthday 3D title
   const hbW = 540;
   const hbH = (hbImg.height / hbImg.width) * hbW;
   ctx.drawImage(hbImg, (width - hbW) / 2, 170, hbW, hbH);
 
+  // 5. Draw 3D curved arched ribbon with personalized recipient name
   const fontSize = cleanName.length > 20 ? 32 : (cleanName.length > 14 ? 38 : 44);
   const svgRibbon = `
     <svg xmlns="http://www.w3.org/2000/svg" width="680" height="158" viewBox="0 0 540 125">
@@ -149,6 +91,7 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
     console.warn("Could not draw SVG ribbon:", ribbonErr.message);
   }
 
+  // 6. Draw Wish Poem Text
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
