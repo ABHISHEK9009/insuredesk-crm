@@ -85,4 +85,6 @@ class Policy {
       sumInsured: sumIns.toString(),
     );
   }
+
+  static const List<Policy> mockPolicies = [];
 }

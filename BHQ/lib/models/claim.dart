@@ -59,4 +59,6 @@ class Claim {
       surveyorName: json['surveyorName'] ?? 'Assigned TPA / Surveyor',
     );
   }
+
+  static const List<Claim> mockClaims = [];
 }

@@ -15,6 +15,8 @@ class KpiMetric {
     required this.tone,
     this.icon,
   });
+
+  static const List<KpiMetric> mockKpis = [];
 }
 
 class ActivityItem {
@@ -29,4 +31,6 @@ class ActivityItem {
     required this.tone,
     required this.icon,
   });
+
+  static const List<ActivityItem> mockActivities = [];
 }
