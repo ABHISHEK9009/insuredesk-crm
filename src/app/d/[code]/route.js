@@ -75,7 +75,7 @@ export async function GET(_request, { params }) {
       }
     }
 
-    if (!uploadedFile || !uploadedFile.storagePath) {
+    if (!uploadedFile || (!uploadedFile.storagePath && !uploadedFile.pdfBytes && !record?.pdfBytes)) {
       return new Response(
         `<!DOCTYPE html>
         <html>
@@ -94,7 +94,7 @@ export async function GET(_request, { params }) {
             <div class="card">
               <h1>Document Not Found</h1>
               <p>The requested policy document could not be located or may have been updated. Please contact support.</p>
-              <a href="https://wa.me/918839707135" class="btn">Contact Bima Headquarter Support</a>
+              <a href="https://wa.me/918818889660" class="btn">Contact Bima Headquarter Support</a>
             </div>
           </body>
         </html>`,
@@ -105,18 +105,47 @@ export async function GET(_request, { params }) {
       );
     }
 
-    return serveFile(uploadedFile, sanitizeFileName(uploadedFile.sourceFile || "policy.pdf"));
+    const fileToServe = uploadedFile || {
+      sourceFile: record?.pdfFileName || record?.sourceFile || "policy.pdf",
+      mimeType: record?.pdfMimeType || "application/pdf",
+      pdfBytes: record?.pdfBytes,
+    };
+    return serveFile(fileToServe, sanitizeFileName(fileToServe.sourceFile || "policy.pdf"));
   }
 
   const file = record.uploadedFile;
   const policyNum = record.extractedData?.policyNumber || record.reviewedData?.policyNumber || record.data?.policyNumber || "";
-  const baseName = policyNum ? `Policy_${policyNum}.pdf` : (record.pdfFileName || file.sourceFile || "policy.pdf");
+  const baseName = policyNum ? `Policy_${policyNum}.pdf` : (record.pdfFileName || file?.sourceFile || "policy.pdf");
   const fileName = sanitizeFileName(baseName);
+
+  if (record.pdfBytes && (!file || !file.storagePath)) {
+    return new Response(Buffer.from(record.pdfBytes), {
+      headers: {
+        "Content-Type": record.pdfMimeType || "application/pdf",
+        "Content-Disposition": `inline; filename="${fileName}"`,
+        "Content-Length": String(record.pdfBytes.length),
+      },
+    });
+  }
 
   return serveFile(file, fileName);
 }
 
 async function serveFile(file, fileName) {
+  if (!file) {
+    return new Response("Document not found.", { status: 404 });
+  }
+
+  if (file.pdfBytes) {
+    return new Response(Buffer.from(file.pdfBytes), {
+      headers: {
+        "Content-Type": file.mimeType || "application/pdf",
+        "Content-Disposition": `inline; filename="${fileName}"`,
+        "Content-Length": String(file.pdfBytes.length),
+      },
+    });
+  }
+
   if (file.storageProvider === "local" || !file.storageProvider) {
     try {
       const physicalPath = getLocalPhysicalPath(file.storagePath);
