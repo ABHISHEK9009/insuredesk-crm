@@ -179,7 +179,18 @@ function getClientPolicyRows({ orgId, customerId, policyNo = "", policyId = "", 
       WHERE id = ${policyId}::uuid
         AND deleted_at IS NULL
         AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
-        AND LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) = LOWER(${customerId})
+        AND (
+          LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) = LOWER(${customerId})
+          OR id IN (
+            SELECT p2.id FROM pdf_records p2
+            JOIN client_accounts ca ON ca.id = ${customerId}::uuid
+            WHERE p2.deleted_at IS NULL
+              AND (
+                COALESCE(NULLIF(p2.reviewed_data->>'contactNumber', ''), p2.data->>'contactNumber', '') LIKE ('%' || RIGHT(REGEXP_REPLACE(ca.phone, '[^0-9]', '', 'g'), 10) || '%')
+                OR LOWER(COALESCE(NULLIF(p2.reviewed_data->>'insuredName', ''), p2.data->>'insuredName', '')) = LOWER(ca.name)
+              )
+          )
+        )
         AND (
           reviewed_data->>'policyNumber' = ${policyNo} OR
           data->>'policyNumber' = ${policyNo}
@@ -193,7 +204,18 @@ function getClientPolicyRows({ orgId, customerId, policyNo = "", policyId = "", 
       FROM pdf_records
       WHERE deleted_at IS NULL
         AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
-        AND LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) = LOWER(${customerId})
+        AND (
+          LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) = LOWER(${customerId})
+          OR id IN (
+            SELECT p2.id FROM pdf_records p2
+            JOIN client_accounts ca ON ca.id = ${customerId}::uuid
+            WHERE p2.deleted_at IS NULL
+              AND (
+                COALESCE(NULLIF(p2.reviewed_data->>'contactNumber', ''), p2.data->>'contactNumber', '') LIKE ('%' || RIGHT(REGEXP_REPLACE(ca.phone, '[^0-9]', '', 'g'), 10) || '%')
+                OR LOWER(COALESCE(NULLIF(p2.reviewed_data->>'insuredName', ''), p2.data->>'insuredName', '')) = LOWER(ca.name)
+              )
+          )
+        )
         AND (
           reviewed_data->>'policyNumber' = ${policyNo} OR
           data->>'policyNumber' = ${policyNo}
@@ -207,6 +229,17 @@ function getClientPolicyRows({ orgId, customerId, policyNo = "", policyId = "", 
     FROM pdf_records
     WHERE deleted_at IS NULL
       AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
-      AND LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) = LOWER(${customerId})
+      AND (
+        LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) = LOWER(${customerId})
+        OR id IN (
+          SELECT p2.id FROM pdf_records p2
+          JOIN client_accounts ca ON ca.id = ${customerId}::uuid
+          WHERE p2.deleted_at IS NULL
+            AND (
+              COALESCE(NULLIF(p2.reviewed_data->>'contactNumber', ''), p2.data->>'contactNumber', '') LIKE ('%' || RIGHT(REGEXP_REPLACE(ca.phone, '[^0-9]', '', 'g'), 10) || '%')
+              OR LOWER(COALESCE(NULLIF(p2.reviewed_data->>'insuredName', ''), p2.data->>'insuredName', '')) = LOWER(ca.name)
+            )
+        )
+      )
   `;
 }

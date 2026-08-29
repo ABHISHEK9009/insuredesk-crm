@@ -8,14 +8,22 @@ export async function GET(request) {
     if (auth.error) return auth.error;
     const orgId = auth.organizationId;
     const customerId = auth.customer.id;
+    const clientPhone = (auth.customer.phone || "").replace(/[^0-9]/g, "").slice(-10);
+    const clientName = (auth.customer.name || "").trim();
 
-    // Fetch matched policy IDs from DB via SQL query (matching manually entered clientId JSON property)
+    // Fetch matched policy IDs from DB via SQL query (matching clientId, contactNumber, mobileNumber, or insuredName)
     const matchedRows = await prisma.$queryRaw`
         SELECT id
         FROM pdf_records
         WHERE deleted_at IS NULL
           AND organization_id IS NOT DISTINCT FROM ${orgId}::uuid
-          AND LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId')) = LOWER(${customerId})
+          AND (
+            LOWER(COALESCE(NULLIF(reviewed_data->>'clientId', ''), data->>'clientId', '')) = LOWER(${customerId})
+            OR (${clientPhone} != '' AND COALESCE(NULLIF(reviewed_data->>'contactNumber', ''), data->>'contactNumber', '') LIKE ${'%' + clientPhone + '%'})
+            OR (${clientPhone} != '' AND COALESCE(NULLIF(reviewed_data->>'mobileNumber', ''), data->>'mobileNumber', '') LIKE ${'%' + clientPhone + '%'})
+            OR (${clientPhone} != '' AND COALESCE(NULLIF(reviewed_data->>'phone', ''), data->>'phone', '') LIKE ${'%' + clientPhone + '%'})
+            OR (${clientName} != '' AND LOWER(COALESCE(NULLIF(reviewed_data->>'insuredName', ''), data->>'insuredName', '')) = LOWER(${clientName}))
+          )
       `;
 
     const matchedPolicyIds = matchedRows.map((row) => row.id);
