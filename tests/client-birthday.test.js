@@ -31,4 +31,33 @@ describe("client birthday helper functions", () => {
     expect(result.age).toBeNull();
     expect(result.daysToBirthday).toBeNull();
   });
+
+  it("generates a personalized birthday card buffer and base64 string", async () => {
+    const { generateBirthdayCard } = await import("../src/lib/birthday/card-renderer.js");
+    const card = await generateBirthdayCard({ recipientName: "Abhishek Verma" });
+    
+    expect(card).toBeDefined();
+    expect(card.mimeType).toBe("image/jpeg");
+    expect(card.width).toBe(768);
+    expect(card.height).toBe(1024);
+    expect(card.base64).toBeDefined();
+    expect(card.base64.length).toBeGreaterThan(1000);
+    expect(card.buffer).toBeInstanceOf(Buffer);
+    expect(card.buffer.length).toBeGreaterThan(1000);
+  });
+
+  it("compiles birthday wish templates with customer and company variables", async () => {
+    const { compileTemplate } = await import("../src/lib/whatsapp/queue-manager.js");
+    const rawTemplate = "Dear {{customerName}},\n\nWishing you a very Happy Birthday! 🎂 Warm regards,\n*Team {{companyName}}*";
+    const compiled = compileTemplate(rawTemplate, {
+      customerName: "Abhishek Verma",
+      companyName: "Bima Headquarter",
+    });
+
+    expect(compiled).toContain("Dear Abhishek Verma,");
+    expect(compiled).toContain("*Team Bima Headquarter*");
+    expect(compiled).not.toContain("{{customerName}}");
+    expect(compiled).not.toContain("{{companyName}}");
+  });
 });
+
