@@ -17,6 +17,7 @@ import { UPLOAD_STATUS } from "@/lib/uploads/status";
 import { uploadFile } from "@/lib/storage";
 import { getUserFacingErrorMessage } from "@/lib/errors/user-facing";
 import { buildPolicyCustomerNameFields } from "@/lib/renewals/customer-name";
+import { sendPolicyUploadWelcomeMessage } from "@/lib/policies/welcome-message";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -126,6 +127,14 @@ export async function POST(request) {
             createdById: user.userId || user.id,
             ...customerNameFields,
           },
+        });
+
+        // Trigger 1-time WhatsApp welcome message with clean PDF link to contact person
+        sendPolicyUploadWelcomeMessage({
+          recordId: record.id,
+          data,
+        }).catch((msgErr) => {
+          console.warn("Background welcome message dispatch notice:", msgErr?.message || msgErr);
         });
 
         created.push(

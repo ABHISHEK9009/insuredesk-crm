@@ -23,6 +23,7 @@ import {
   withClientIdRequestLock,
   withClientPhoneLock,
 } from "@/lib/client-accounts/server";
+import { sendPolicyUploadWelcomeMessage } from "@/lib/policies/welcome-message";
 
 export const runtime = "nodejs";
 
@@ -756,6 +757,14 @@ export async function POST(request) {
       reviewedData,
       userId: actorId,
       organizationId: user.organizationId,
+    });
+
+    // Trigger 1-time WhatsApp welcome message with clean PDF link to contact person
+    sendPolicyUploadWelcomeMessage({
+      recordId: record.id,
+      data: reviewedData || legacyPayload || extractedData,
+    }).catch((msgErr) => {
+      console.warn("Background welcome message dispatch notice:", msgErr?.message || msgErr);
     });
 
     if (uploadedFile) {
