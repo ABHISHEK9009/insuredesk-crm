@@ -1,10 +1,30 @@
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
 import {
   BASE_IMAGE_B64,
   BRAND_LOGO_B64,
   HAPPY_BIRTHDAY_B64,
   BOTTOM_SECTION_B64,
+  ARIAL_FONT_B64,
+  GEORGIA_FONT_B64,
 } from "./card-assets.js";
+
+// Register custom bundled fonts once to guarantee rendering on Linux / Vercel serverless containers
+let fontsRegistered = false;
+function ensureFontsRegistered() {
+  if (!fontsRegistered) {
+    try {
+      if (ARIAL_FONT_B64) {
+        GlobalFonts.register(Buffer.from(ARIAL_FONT_B64, "base64"), "CardSans");
+      }
+      if (GEORGIA_FONT_B64) {
+        GlobalFonts.register(Buffer.from(GEORGIA_FONT_B64, "base64"), "CardSerif");
+      }
+      fontsRegistered = true;
+    } catch (fontErr) {
+      console.warn("Could not register custom font buffer:", fontErr.message);
+    }
+  }
+}
 
 function getOptimalFontSize(name) {
   const len = name.length;
@@ -22,6 +42,8 @@ function getOptimalFontSize(name) {
  * @returns {Promise<{ buffer: Buffer, base64: string, mimeType: string, width: number, height: number }>}
  */
 export async function generateBirthdayCard({ recipientName = "Valued Client" } = {}) {
+  ensureFontsRegistered();
+
   const cleanName = (recipientName || "Valued Client").trim();
   const width = 1086;
   const height = 1448;
@@ -106,7 +128,7 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const fontSize = getOptimalFontSize(cleanName);
-  ctx.font = `bold ${fontSize}px sans-serif, Arial, Helvetica`;
+  ctx.font = `bold ${fontSize}px CardSans, Arial, sans-serif`;
   ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
   ctx.shadowBlur = 8;
   ctx.shadowOffsetX = 2;
@@ -120,15 +142,15 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#0A1930";
-  ctx.font = "26px serif, Georgia, Times";
+  ctx.font = "26px CardSerif, Georgia, serif";
   ctx.fillText("Wishing you a day filled with", 543, 665);
-  ctx.font = "bold 30px serif, Georgia, Times";
+  ctx.font = "bold 30px CardSerif, Georgia, serif";
   ctx.fillText("happiness, love and success.", 543, 702);
-  ctx.font = "26px serif, Georgia, Times";
+  ctx.font = "26px CardSerif, Georgia, serif";
   ctx.fillText("May this year bring you endless", 543, 738);
   ctx.fillText("joy, good health and all the", 543, 772);
   ctx.fillText("dreams you aspire to achieve.", 543, 806);
-  ctx.font = "italic 32px serif, Georgia, Times";
+  ctx.font = "italic 32px CardSerif, Georgia, serif";
   ctx.fillText("Have a wonderful year ahead!", 543, 852);
   ctx.restore();
 
