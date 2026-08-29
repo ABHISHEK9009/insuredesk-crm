@@ -34,7 +34,7 @@ class KpiGrid extends ConsumerWidget {
     final policiesAsync = ref.watch(livePoliciesProvider);
     final claimsAsync = ref.watch(liveClaimsProvider);
 
-    final policies = policiesAsync.value ?? Policy.mockPolicies;
+    final policies = policiesAsync.value ?? <Policy>[];
     final claims = claimsAsync.value ?? [];
 
     final activeCount = policies.length;

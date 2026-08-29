@@ -7,41 +7,28 @@ import 'api_service.dart';
 final livePoliciesProvider = FutureProvider<List<Policy>>((ref) async {
   try {
     final rawPolicies = await ApiService.getPolicies();
-    if (rawPolicies.isNotEmpty) {
-      return rawPolicies.map((p) => Policy.fromJson(p)).toList();
-    }
+    return rawPolicies.map((p) => Policy.fromJson(p)).toList();
   } catch (err) {
-    // If offline or unauthenticated, fallback gracefully to cached/mock list
-    // so the UI never displays a broken screen
+    return <Policy>[];
   }
-  return Policy.mockPolicies;
 });
 
 /// Provider for live claims filed by the client
 final liveClaimsProvider = FutureProvider<List<Claim>>((ref) async {
   try {
     final rawClaims = await ApiService.getClaims();
-    if (rawClaims.isNotEmpty) {
-      return rawClaims.map((c) => Claim.fromJson(c)).toList();
-    }
+    return rawClaims.map((c) => Claim.fromJson(c)).toList();
   } catch (err) {
-    // Fallback to mock list on error/offline
+    return <Claim>[];
   }
-  return Claim.mockClaims;
 });
 
 /// Provider for live customer profile details
 final liveProfileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   try {
     final profile = await ApiService.getProfile();
-    if (profile.isNotEmpty) return profile;
-  } catch (_) {}
-  return {
-    'name': 'Anand Soni',
-    'phone': '+91 88188 89660',
-    'email': 'anand.soni@insuredesk.in',
-    'clientId': 'CLI-894210',
-    'membersCount': 3,
-    'assetsCount': 2,
-  };
+    return profile;
+  } catch (_) {
+    return <String, dynamic>{};
+  }
 });

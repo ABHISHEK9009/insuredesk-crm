@@ -15,7 +15,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   Customer? _selectedCustomer;
 
   List<Customer> get _filteredCustomers {
-    return Customer.mockCustomers.where((c) {
+    return Customer.emptyList.where((c) {
       final matchesSearch = c.name.toLowerCase().contains(_search.toLowerCase()) ||
           c.email.toLowerCase().contains(_search.toLowerCase()) ||
           c.phone.toLowerCase().contains(_search.toLowerCase()) ||

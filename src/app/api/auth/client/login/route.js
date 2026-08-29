@@ -12,26 +12,44 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "Client ID and Client MPIN are required" }, { status: 400 });
     }
 
-    const normalizedCustomerId = normalizeClientId(customerId);
+    const rawInput = String(customerId || "").trim();
+    const normalizedCustomerId = normalizeClientId(rawInput);
+    const cleanPhone = rawInput.replace(/[^0-9]/g, "").slice(-10);
     const cleanMpin = String(mpin || "").replace(/[^0-9]/g, "");
-    if (!normalizedCustomerId) {
-      return NextResponse.json({ success: false, error: "Invalid Client ID or MPIN" }, { status: 401 });
-    }
+
     if (cleanMpin.length !== 4) {
       return NextResponse.json({ success: false, error: "Client MPIN must be a 4-digit code" }, { status: 400 });
     }
 
-    const customer = await prisma.clientAccount.findUnique({
-      where: { id: normalizedCustomerId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        organizationId: true,
-        deletedAt: true
-      }
-    });
+    let customer = null;
+    if (normalizedCustomerId) {
+      customer = await prisma.clientAccount.findUnique({
+        where: { id: normalizedCustomerId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          organizationId: true,
+          deletedAt: true
+        }
+      });
+    } else if (cleanPhone.length === 10) {
+      customer = await prisma.clientAccount.findFirst({
+        where: {
+          phone: { contains: cleanPhone },
+          deletedAt: null
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          organizationId: true,
+          deletedAt: true
+        }
+      });
+    }
 
     if (!customer || customer.deletedAt) {
       return NextResponse.json({ success: false, error: "Invalid Client ID or MPIN" }, { status: 401 });

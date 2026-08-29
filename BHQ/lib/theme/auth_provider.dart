@@ -158,26 +158,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } catch (err) {
-      // Fallback for offline demo testing if credentials match standard test codes
-      if (cleanMpin == '4321' || cleanMpin == '1234' || cleanMpin == '9999') {
-        final authenticatedUser = AuthUser(
-          clientId: cleanId,
-          name: 'Anand Soni',
-          email: 'anand.soni@insuredesk.in',
-          accountNo: '99201',
-          avatarInitials: 'AS',
-          isGoogleLinked: false,
-        );
-
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          user: authenticatedUser,
-          successMessage: 'Demo session active! Directing to client workspace...',
-        );
-        return true;
-      }
-
       state = state.copyWith(
         isLoading: false,
         errorMessage: err.toString().replaceAll('Exception:', '').trim(),

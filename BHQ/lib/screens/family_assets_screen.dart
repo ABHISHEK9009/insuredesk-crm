@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import '../theme/auth_provider.dart';
+import '../services/crm_data_provider.dart';
 
-class FamilyAssetsScreen extends StatelessWidget {
+class FamilyAssetsScreen extends ConsumerWidget {
   const FamilyAssetsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
+    final policiesAsync = ref.watch(livePoliciesProvider);
+
+    final userName = authState.user?.name ?? 'Primary Account Holder';
 
     final members = [
-      {'name': 'Anand Soni', 'relation': 'Self (Primary Insured)', 'age': '34 Yrs', 'status': 'Covered'},
-      {'name': 'Priya Verma', 'relation': 'Spouse', 'age': '31 Yrs', 'status': 'Covered'},
-      {'name': 'Rohan Verma', 'relation': 'Son (Nominee)', 'age': '6 Yrs', 'status': 'Covered'},
+      {'name': userName, 'relation': 'Self (Primary Insured)', 'age': 'Active', 'status': 'Covered'},
     ];
 
-    final assets = [
-      {'name': 'Maruti Swift VXI', 'type': 'Private Car', 'regNo': 'MH-02-CB-9844', 'idv': '₹5.40 Lakh'},
-      {'name': 'Bhiwandi Warehouse Unit 3', 'type': 'Property Fire Cover', 'regNo': 'FIR-55011', 'idv': '₹85.00 Lakh'},
-    ];
+    final policies = policiesAsync.value ?? [];
+    final motorPolicies = policies.where((p) => p.vehicleNumber != null && p.vehicleNumber!.isNotEmpty).toList();
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -70,6 +73,7 @@ class FamilyAssetsScreen extends StatelessWidget {
             separatorBuilder: (context, index) => const Gap(10),
             itemBuilder: (context, idx) {
               final item = members[idx];
+              final initial = item['name']!.isNotEmpty ? item['name']!.substring(0, 1).toUpperCase() : 'U';
               return Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -84,7 +88,7 @@ class FamilyAssetsScreen extends StatelessWidget {
                     CircleAvatar(
                       backgroundColor: const Color(0xFF2563EB).withAlpha(20),
                       child: Text(
-                        item['name']!.substring(0, 1),
+                        initial,
                         style: const TextStyle(
                           color: Color(0xFF2563EB),
                           fontWeight: FontWeight.bold,
@@ -119,11 +123,11 @@ class FamilyAssetsScreen extends StatelessWidget {
                         color: const Color(0xFF10B981).withAlpha(20),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        item['status']!,
-                        style: const TextStyle(
+                      child: const Text(
+                        'Covered',
+                        style: TextStyle(
                           color: Color(0xFF10B981),
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -136,79 +140,102 @@ class FamilyAssetsScreen extends StatelessWidget {
 
           const Gap(24),
 
-          // Insured Vehicles & Properties
-          const Text(
-            'Insured Vehicles & Assets',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          // Registered Assets
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Registered Insured Assets',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Add Asset request sent to Advisor.')),
+                  );
+                },
+                icon: const Icon(Icons.add_home_work_rounded, size: 14),
+                label: const Text('Add Asset', style: TextStyle(fontSize: 12)),
+              ),
+            ],
           ),
           const Gap(10),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: assets.length,
-            separatorBuilder: (context, index) => const Gap(10),
-            itemBuilder: (context, idx) {
-              final asset = assets[idx];
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+          if (motorPolicies.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: const Center(
+                child: Text(
+                  'No registered vehicle or property assets found in your active policies.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: motorPolicies.length,
+              separatorBuilder: (context, index) => const Gap(10),
+              itemBuilder: (context, idx) {
+                final policy = motorPolicies[idx];
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D9488).withAlpha(20),
-                        borderRadius: BorderRadius.circular(10),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withAlpha(20),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.directions_car_rounded,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        asset['type']!.contains('Car')
-                            ? Icons.directions_car_rounded
-                            : Icons.business_rounded,
-                        color: const Color(0xFF0D9488),
-                        size: 20,
-                      ),
-                    ),
-                    const Gap(12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            asset['name']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13.5,
+                      const Gap(12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              policy.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${asset['type']} • ${asset['regNo']}',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            Text(
+                              'Reg: ${policy.vehicleNumber} • ${policy.price}',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Text(
-                      'IDV: ${asset['idv']}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ],
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

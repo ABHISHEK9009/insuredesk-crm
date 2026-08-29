@@ -102,10 +102,10 @@ class _LeadsScreenState extends State<LeadsScreen> {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: Lead.mockLeads.length,
+              itemCount: Lead.emptyList.length,
               separatorBuilder: (_, index) => const Gap(10),
               itemBuilder: (context, idx) {
-                final lead = Lead.mockLeads[idx];
+                final lead = Lead.emptyList[idx];
                 return Card(
                   color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   elevation: 0,
@@ -147,7 +147,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
   }
 
   Widget _buildKanbanColumn(String title, LeadStage stage, bool isDark) {
-    final stageLeads = Lead.mockLeads.where((l) => l.stage == stage).toList();
+    final stageLeads = Lead.emptyList.where((l) => l.stage == stage).toList();
 
     return Container(
       width: 270,

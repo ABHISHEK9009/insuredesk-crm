@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import '../models/policy.dart';
 import '../widgets/ai_advisor_card.dart';
 import '../widgets/common_dialogs.dart';
 import '../widgets/kpi_grid.dart';
@@ -212,19 +211,22 @@ class DashboardScreen extends ConsumerWidget {
                   child: CircularProgressIndicator(),
                 ),
               ),
-              error: (error, stack) => ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: Policy.mockPolicies.take(3).length,
-                separatorBuilder: (context, index) => const Gap(10),
-                itemBuilder: (context, index) {
-                  return PolicyCard(
-                    policy: Policy.mockPolicies[index],
-                    onTap: () {
-                      CommonDialogs.showDownloadPolicyModal(context);
-                    },
-                  );
-                },
+              error: (error, stack) => Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: const Center(
+                  child: Text(
+                    'No active policies found. Policies issued in CRM will automatically appear here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ),
               ),
             ),
           ],

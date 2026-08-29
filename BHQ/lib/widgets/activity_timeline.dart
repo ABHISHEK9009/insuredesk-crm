@@ -9,7 +9,7 @@ class ActivityTimeline extends StatelessWidget {
 
   const ActivityTimeline({
     super.key,
-    this.activities = ActivityItem.mockActivities,
+    this.activities = const [],
   });
 
   @override
@@ -39,65 +39,79 @@ class ActivityTimeline extends StatelessWidget {
             ],
           ),
           const Gap(14),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: activities.length,
-            separatorBuilder: (_, index) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Divider(
-                height: 1,
-                thickness: 0.5,
-                color: isDark ? Colors.white12 : Colors.black.withAlpha(12),
+          if (activities.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: Text(
+                  'No recent policy or claim activities.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-            itemBuilder: (context, index) {
-              final item = activities[index];
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: activities.length,
+              separatorBuilder: (_, index) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: isDark ? Colors.white12 : Colors.black.withAlpha(12),
+                ),
+              ),
+              itemBuilder: (context, index) {
+                final item = activities[index];
 
-              return Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: (isDark ? AppColors.accentLight : AppColors.accent)
-                          .withAlpha(isDark ? 35 : 15),
-                      shape: BoxShape.circle,
+                return Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: (isDark ? AppColors.accentLight : AppColors.accent)
+                            .withAlpha(isDark ? 35 : 15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        item.icon,
+                        size: 14,
+                        color: isDark ? AppColors.accentLight : AppColors.accent,
+                      ),
                     ),
-                    child: Icon(
-                      item.icon,
-                      size: 14,
-                      color: isDark ? AppColors.accentLight : AppColors.accent,
+                    const Gap(12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                          ),
+                          const Gap(2),
+                          Text(
+                            item.meta,
+                            style:
+                                Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontSize: 11,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                        const Gap(2),
-                        Text(
-                          item.meta,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontSize: 11,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );

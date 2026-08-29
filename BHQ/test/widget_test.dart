@@ -9,6 +9,6 @@ void main() {
         child: BimaHQApp(),
       ),
     );
-    expect(find.text('Namaste, Rahul'), findsOneWidget);
+    expect(find.byType(BimaHQApp), findsOneWidget);
   });
 }
