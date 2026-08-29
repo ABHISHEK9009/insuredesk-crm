@@ -29,6 +29,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/d/") ||
     pathname.startsWith("/logo") ||
     pathname.startsWith("/brand") ||
     pathname.startsWith("/docs") ||

@@ -6,6 +6,8 @@ import fs from "fs/promises";
 
 export const runtime = "nodejs";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function sanitizeFileName(name) {
   return (name || "policy.pdf")
     .replace(/[^\w.-]/g, "_")
@@ -18,34 +20,60 @@ export async function GET(_request, { params }) {
     return NextResponse.json({ error: "Missing document code" }, { status: 400 });
   }
 
-  // Look up policy record by id, uploadedFileId, or policy number
-  const record = await prisma.policyRecord.findFirst({
-    where: {
-      OR: [
-        { id: code },
-        { uploadedFileId: code },
-        {
-          extractedData: {
-            path: ["policyNumber"],
-            equals: code,
-          },
+  const cleanCode = String(code).trim();
+  const isUuid = UUID_REGEX.test(cleanCode);
+
+  let record = null;
+  try {
+    if (isUuid) {
+      record = await prisma.policyRecord.findFirst({
+        where: {
+          OR: [{ id: cleanCode }, { uploadedFileId: cleanCode }],
+          deletedAt: null,
         },
-      ],
-      deletedAt: null,
-    },
-    include: {
-      uploadedFile: true,
-    },
-  });
+        include: {
+          uploadedFile: true,
+        },
+      });
+    }
+
+    if (!record) {
+      // Look up by policy number in data / reviewedData / extractedData
+      const foundRecords = await prisma.policyRecord.findMany({
+        where: { deletedAt: null },
+        include: { uploadedFile: true },
+        take: 100,
+        orderBy: { savedAt: "desc" },
+      });
+
+      record = foundRecords.find(
+        (r) =>
+          r.id === cleanCode ||
+          r.uploadedFileId === cleanCode ||
+          r.extractedData?.policyNumber === cleanCode ||
+          r.reviewedData?.policyNumber === cleanCode ||
+          r.data?.policyNumber === cleanCode
+      );
+    }
+  } catch (findErr) {
+    console.error("Error finding policy record for /d/[code]:", findErr);
+  }
 
   if (!record || !record.uploadedFile) {
-    // If not found by direct record, check uploadedFile directly
-    const uploadedFile = await prisma.uploadedFile.findFirst({
-      where: {
-        id: code,
-        deletedAt: null,
-      },
-    });
+    // Check uploadedFile directly if code is UUID
+    let uploadedFile = null;
+    if (isUuid) {
+      try {
+        uploadedFile = await prisma.uploadedFile.findFirst({
+          where: {
+            id: cleanCode,
+            deletedAt: null,
+          },
+        });
+      } catch (fileErr) {
+        console.error("Error finding uploaded file for /d/[code]:", fileErr);
+      }
+    }
 
     if (!uploadedFile || !uploadedFile.storagePath) {
       return new Response(
@@ -81,7 +109,7 @@ export async function GET(_request, { params }) {
   }
 
   const file = record.uploadedFile;
-  const policyNum = record.extractedData?.policyNumber || record.reviewedData?.policyNumber || "";
+  const policyNum = record.extractedData?.policyNumber || record.reviewedData?.policyNumber || record.data?.policyNumber || "";
   const baseName = policyNum ? `Policy_${policyNum}.pdf` : (record.pdfFileName || file.sourceFile || "policy.pdf");
   const fileName = sanitizeFileName(baseName);
 
