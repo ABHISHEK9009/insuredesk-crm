@@ -38,8 +38,8 @@ describe("client birthday helper functions", () => {
     
     expect(card).toBeDefined();
     expect(card.mimeType).toBe("image/jpeg");
-    expect(card.width).toBe(768);
-    expect(card.height).toBe(1024);
+    expect(card.width).toBe(1086);
+    expect(card.height).toBe(1448);
     expect(card.base64).toBeDefined();
     expect(card.base64.length).toBeGreaterThan(1000);
     expect(card.buffer).toBeInstanceOf(Buffer);

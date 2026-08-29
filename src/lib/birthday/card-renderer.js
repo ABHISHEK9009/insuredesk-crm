@@ -1,30 +1,26 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { CARD_TEMPLATE_BASE64, BIMA_LOGO_BASE64 } from "./card-template-base64.js";
+import { CARD_TEMPLATE_BASE64 } from "./card-template-base64.js";
 
 // Load template image buffer reliably from embedded constant with zero filesystem or network dependency
 function loadTemplateBuffer() {
   return Buffer.from(CARD_TEMPLATE_BASE64, "base64");
 }
 
-function loadLogoBuffer() {
-  return Buffer.from(BIMA_LOGO_BASE64, "base64");
-}
-
 /**
- * Computes font size that fits nicely along the ribbon (768px wide canvas)
+ * Computes font size that fits nicely along the ribbon (1086px wide canvas)
  */
 function getOptimalFontSize(name) {
   const len = name.length;
-  if (len <= 14) return 36;
-  if (len <= 20) return 30;
-  if (len <= 26) return 25;
-  return 22;
+  if (len <= 14) return 52;
+  if (len <= 20) return 44;
+  if (len <= 26) return 36;
+  return 30;
 }
 
 /**
  * Draws recipient name boldly and centered on the navy ribbon with drop shadow
  */
-function drawRibbonName(ctx, text, centerX = 384, centerY = 448) {
+function drawRibbonName(ctx, text, centerX = 543, centerY = 638) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -33,10 +29,10 @@ function drawRibbonName(ctx, text, centerX = 384, centerY = 448) {
   ctx.font = `bold ${fontSize}px sans-serif, Arial, Helvetica`;
 
   // Deep dark shadow for gold text depth
-  ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
-  ctx.shadowBlur = 6;
+  ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+  ctx.shadowBlur = 8;
   ctx.shadowOffsetX = 2;
-  ctx.shadowOffsetY = 2;
+  ctx.shadowOffsetY = 3;
 
   // Bright luxury gold
   ctx.fillStyle = "#FCE38A";
@@ -56,11 +52,11 @@ function drawRibbonName(ctx, text, centerX = 384, centerY = 448) {
 export async function generateBirthdayCard({ recipientName = "Valued Client" } = {}) {
   const cleanName = (recipientName || "Valued Client").trim();
 
-  // 1. Load template image buffer
+  // 1. Load master base template image buffer (1086 x 1448)
   const templateBuffer = await loadTemplateBuffer();
   const templateImage = await loadImage(templateBuffer);
-  const width = templateImage.width;   // 768
-  const height = templateImage.height; // 1024
+  const width = templateImage.width;   // 1086
+  const height = templateImage.height; // 1448
 
   // 2. Create in-memory canvas
   const canvas = createCanvas(width, height);
@@ -69,21 +65,10 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
   // 3. Draw master template background
   ctx.drawImage(templateImage, 0, 0, width, height);
 
-  // 4. Draw BimaHeadquarter Logo at the top center
-  try {
-    const logoBuffer = loadLogoBuffer();
-    const logoImage = await loadImage(logoBuffer);
-    const logoW = 160;
-    const logoH = (logoImage.height / logoImage.width) * logoW;
-    ctx.drawImage(logoImage, 384 - logoW / 2, 48, logoW, logoH);
-  } catch (logoErr) {
-    console.warn("Could not draw logo on birthday card:", logoErr.message);
-  }
+  // 4. Draw personalized recipient name centered on ribbon
+  drawRibbonName(ctx, cleanName, width / 2, 638);
 
-  // 5. Draw personalized recipient name centered on ribbon
-  drawRibbonName(ctx, cleanName, 384, 448);
-
-  // 6. Export directly to in-memory Buffer (JPEG 95% for native WhatsApp compatibility)
+  // 5. Export directly to in-memory Buffer (JPEG 95% for native WhatsApp compatibility)
   const buffer = canvas.toBuffer("image/jpeg", 95);
   const base64 = buffer.toString("base64");
 
@@ -95,3 +80,4 @@ export async function generateBirthdayCard({ recipientName = "Valued Client" } =
     height,
   };
 }
+
