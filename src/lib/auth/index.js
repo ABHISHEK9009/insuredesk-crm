@@ -36,11 +36,12 @@ export async function comparePassword(password, hash) {
 /**
  * Sign a payload into a JWT token.
  */
-export async function signJWT(payload) {
+export async function signJWT(payload, expiresIn) {
+  const duration = expiresIn || (payload?.role === "CLIENT" ? "365d" : "24h");
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("24h")
+    .setExpirationTime(duration)
     .sign(encodedSecret);
 }
 

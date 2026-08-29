@@ -9,17 +9,22 @@ class ApiService {
   static const String _tokenKey = 'bhq_auth_token';
   static const String _userKey = 'bhq_auth_user';
   static const String _mpinKey = 'bhq_auth_mpin';
+  static const String _customerIdKey = 'bhq_auth_customer_id';
 
   // ── Session & Storage Helpers ─────────────────────────────────────
 
   static Future<void> saveSession({
     required String token,
     required Map<String, dynamic> user,
+    String? customerId,
     String? mpin,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_userKey, jsonEncode(user));
+    if (customerId != null && customerId.isNotEmpty) {
+      await prefs.setString(_customerIdKey, customerId);
+    }
     if (mpin != null && mpin.isNotEmpty) {
       await prefs.setString(_mpinKey, mpin);
     }
@@ -41,16 +46,23 @@ class ApiService {
     }
   }
 
+  static Future<String?> getSavedCustomerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_customerIdKey);
+  }
+
   static Future<String?> getSavedMpin() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_mpinKey);
   }
 
+  /// Explicit user logout only
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
     await prefs.remove(_mpinKey);
+    await prefs.remove(_customerIdKey);
   }
 
   // ── Generic HTTP Methods with Bearer Header ───────────────────────
@@ -72,6 +84,19 @@ class ApiService {
   static Uri _buildUri(String path, [Map<String, dynamic>? queryParams]) {
     final cleanPath = path.startsWith('/') ? path : '/$path';
     return Uri.parse('$baseUrl$cleanPath').replace(queryParameters: queryParams);
+  }
+
+  /// Attempts background re-authentication if token expired
+  static Future<bool> _tryBackgroundReauth() async {
+    final customerId = await getSavedCustomerId();
+    final mpin = await getSavedMpin();
+    if (customerId != null && customerId.isNotEmpty && mpin != null && mpin.isNotEmpty) {
+      try {
+        await login(customerId: customerId, mpin: mpin);
+        return true;
+      } catch (_) {}
+    }
+    return false;
   }
 
   // ── Auth APIs ─────────────────────────────────────────────────────
@@ -96,7 +121,7 @@ class ApiService {
       final token = data['token'] as String? ?? '';
       final user = data['user'] as Map<String, dynamic>? ?? {};
       if (token.isNotEmpty) {
-        await saveSession(token: token, user: user, mpin: mpin);
+        await saveSession(token: token, user: user, customerId: customerId, mpin: mpin);
       }
       return data;
     } else {
@@ -126,7 +151,7 @@ class ApiService {
       final token = data['token'] as String? ?? '';
       final user = data['user'] as Map<String, dynamic>? ?? {};
       if (token.isNotEmpty) {
-        await saveSession(token: token, user: user, mpin: mpin);
+        await saveSession(token: token, user: user, customerId: customerId, mpin: mpin);
       }
       return data;
     } else {
@@ -139,7 +164,14 @@ class ApiService {
   /// Fetches active policies from PostgreSQL
   static Future<List<Map<String, dynamic>>> getPolicies() async {
     final uri = _buildUri('/api/client/policies');
-    final response = await http.get(uri, headers: await _getHeaders());
+    var response = await http.get(uri, headers: await _getHeaders());
+
+    if (response.statusCode == 401) {
+      final reauth = await _tryBackgroundReauth();
+      if (reauth) {
+        response = await http.get(uri, headers: await _getHeaders());
+      }
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -147,19 +179,22 @@ class ApiService {
         return (data['policies'] as List).cast<Map<String, dynamic>>();
       }
       return [];
-    } else if (response.statusCode == 401) {
-      await clearSession();
-      throw Exception('Session expired. Please log in again.');
     } else {
-      final data = jsonDecode(response.body);
-      throw Exception(data['error'] ?? 'Failed to load policies.');
+      return [];
     }
   }
 
   /// Fetches claims history from PostgreSQL
   static Future<List<Map<String, dynamic>>> getClaims() async {
     final uri = _buildUri('/api/client/claims');
-    final response = await http.get(uri, headers: await _getHeaders());
+    var response = await http.get(uri, headers: await _getHeaders());
+
+    if (response.statusCode == 401) {
+      final reauth = await _tryBackgroundReauth();
+      if (reauth) {
+        response = await http.get(uri, headers: await _getHeaders());
+      }
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -167,12 +202,8 @@ class ApiService {
         return (data['claims'] as List).cast<Map<String, dynamic>>();
       }
       return [];
-    } else if (response.statusCode == 401) {
-      await clearSession();
-      throw Exception('Session expired. Please log in again.');
     } else {
-      final data = jsonDecode(response.body);
-      throw Exception(data['error'] ?? 'Failed to load claims.');
+      return [];
     }
   }
 
@@ -184,7 +215,7 @@ class ApiService {
     String? remarks,
   }) async {
     final uri = _buildUri('/api/client/claims');
-    final response = await http.post(
+    var response = await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -194,6 +225,22 @@ class ApiService {
         'remarks': remarks?.trim() ?? '',
       }),
     );
+
+    if (response.statusCode == 401) {
+      final reauth = await _tryBackgroundReauth();
+      if (reauth) {
+        response = await http.post(
+          uri,
+          headers: await _getHeaders(),
+          body: jsonEncode({
+            'policyNumber': policyNumber.trim(),
+            'claimAmount': claimAmount,
+            'garageOrHospital': garageOrHospital?.trim() ?? '',
+            'remarks': remarks?.trim() ?? '',
+          }),
+        );
+      }
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200 && data['success'] == true) {
@@ -206,17 +253,20 @@ class ApiService {
   /// Fetches customer profile, covered members & registered assets
   static Future<Map<String, dynamic>> getProfile() async {
     final uri = _buildUri('/api/client/profile');
-    final response = await http.get(uri, headers: await _getHeaders());
+    var response = await http.get(uri, headers: await _getHeaders());
+
+    if (response.statusCode == 401) {
+      final reauth = await _tryBackgroundReauth();
+      if (reauth) {
+        response = await http.get(uri, headers: await _getHeaders());
+      }
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       return data['profile'] ?? data['customer'] ?? {};
-    } else if (response.statusCode == 401) {
-      await clearSession();
-      throw Exception('Session expired. Please log in again.');
     } else {
-      final data = jsonDecode(response.body);
-      throw Exception(data['error'] ?? 'Failed to load profile.');
+      return {};
     }
   }
 
@@ -228,7 +278,7 @@ class ApiService {
     String? policyNumber,
   }) async {
     final uri = _buildUri('/api/client/service-requests');
-    final response = await http.post(
+    var response = await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -238,6 +288,22 @@ class ApiService {
         if (policyNumber != null && policyNumber.isNotEmpty) 'policyNumber': policyNumber.trim(),
       }),
     );
+
+    if (response.statusCode == 401) {
+      final reauth = await _tryBackgroundReauth();
+      if (reauth) {
+        response = await http.post(
+          uri,
+          headers: await _getHeaders(),
+          body: jsonEncode({
+            'requestType': requestType,
+            'subject': subject.trim(),
+            'description': description.trim(),
+            if (policyNumber != null && policyNumber.isNotEmpty) 'policyNumber': policyNumber.trim(),
+          }),
+        );
+      }
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200 && data['success'] == true) {
