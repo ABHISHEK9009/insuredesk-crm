@@ -37,9 +37,9 @@ final liveProfileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
     if (profile.isNotEmpty) return profile;
   } catch (_) {}
   return {
-    'name': 'Anand Tiwari',
-    'phone': '+91 98201 44812',
-    'email': 'anand.tiwari@insuredesk.in',
+    'name': 'Anand Soni',
+    'phone': '+91 88188 89660',
+    'email': 'anand.soni@insuredesk.in',
     'clientId': 'CLI-894210',
     'membersCount': 3,
     'assetsCount': 2,

@@ -15,7 +15,7 @@ class _SupportScreenState extends State<SupportScreen> {
 
   Future<void> _openWhatsAppDirectly(BuildContext context) async {
     const phone = '918818889660';
-    final urlString = 'https://wa.me/$phone?text=${Uri.encodeComponent('Hello Anand Tiwari, I need assistance with my insurance policy.')}';
+    final urlString = 'https://wa.me/$phone?text=${Uri.encodeComponent('Hello Anand Soni, I need assistance with my insurance policy.')}';
     final uri = Uri.parse(urlString);
 
     try {
@@ -27,7 +27,7 @@ class _SupportScreenState extends State<SupportScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Opening WhatsApp with Anand Tiwari (+91 88188 89660)...'),
+            content: Text('Opening WhatsApp with Anand Soni (+91 88188 89660)...'),
             backgroundColor: Color(0xFF10B981),
           ),
         );
@@ -42,7 +42,7 @@ class _SupportScreenState extends State<SupportScreen> {
       if (!launched && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Calling Anand Tiwari (+91 88188 89660)...'),
+            content: Text('Calling Anand Soni (+91 88188 89660)...'),
             backgroundColor: Color(0xFF1D4ED8),
           ),
         );
@@ -51,7 +51,7 @@ class _SupportScreenState extends State<SupportScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Calling Anand Tiwari (+91 88188 89660)...'),
+            content: Text('Calling Anand Soni (+91 88188 89660)...'),
             backgroundColor: Color(0xFF1D4ED8),
           ),
         );
@@ -155,11 +155,12 @@ class _SupportScreenState extends State<SupportScreen> {
                   children: [
                     Stack(
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 24,
-                          backgroundColor: Color(0xFF1D4ED8),
-                          child: Text(
-                            'AT',
+                          backgroundColor: const Color(0xFF1D4ED8),
+                          foregroundImage: const AssetImage('assets/brand/anand-soni.png'),
+                          child: const Text(
+                            'AS',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -188,7 +189,7 @@ class _SupportScreenState extends State<SupportScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Anand Tiwari',
+                            'Anand Soni',
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.bold,
@@ -415,6 +416,66 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
               );
             },
+          ),
+
+          const Gap(24),
+
+          // 7. Official Company & Regulatory Footer
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/brand/app-logo.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                      ),
+                    ),
+                    const Gap(8),
+                    const Text(
+                      'Bima Headquarter',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(4),
+                const Text(
+                  'by Insuredesk IMF PVT LTD',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+                const Gap(4),
+                Text(
+                  'IRDAI Registered Insurance Marketing Firm • Dedicated Client Support',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -667,7 +728,7 @@ class _SupportScreenState extends State<SupportScreen> {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Support ticket #SR-9012 created. Anand Tiwari will contact you shortly.'),
+                  content: Text('Support ticket #SR-9012 created. Anand Soni will contact you shortly.'),
                   backgroundColor: Color(0xFF10B981),
                 ),
               );
@@ -765,13 +826,13 @@ class _SupportScreenState extends State<SupportScreen> {
             children: [
               const Text('Subject: Sec 80D Tax Exemption Certificate Request', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               const Gap(4),
-              const Text('Assigned Advisor: Anand Tiwari • Status: In Progress', style: TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+              const Text('Assigned Advisor: Anand Soni • Status: In Progress', style: TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
               const Gap(12),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
                 child: const Text(
-                  'Advisor Note (Anand Tiwari - 10:30 AM):\n"Your tax receipt for HDFC Ergo Health Policy #HE-22910 is generated and ready for instant download under Documents tab."',
+                  'Advisor Note (Anand Soni - 10:30 AM):\n"Your tax receipt for HDFC Ergo Health Policy #HE-22910 is generated and ready for instant download under Documents tab."',
                   style: TextStyle(fontSize: 11.5, color: Color(0xFF334155), height: 1.4),
                 ),
               ),

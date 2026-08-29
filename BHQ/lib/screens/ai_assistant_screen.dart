@@ -32,7 +32,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           _messages.add({
             'role': 'assistant',
             'text':
-                'Based on your CRM records, Anand Tiwari has ₹46,800 total tax deduction eligibility under Sec 80D & 80C. His HDFC Ergo Health cover (₹24,500 premium) qualifies for Sec 80D exemption.'
+                'Based on your CRM records, Anand Soni has ₹46,800 total tax deduction eligibility under Sec 80D & 80C. His HDFC Ergo Health cover (₹24,500 premium) qualifies for Sec 80D exemption.'
           });
         });
       }
@@ -115,7 +115,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             child: Row(
               children: [
                 _promptPill('Which motor policies expire in 15 days?', isDark),
-                _promptPill('Calculate Sec 80D tax savings for Anand Tiwari', isDark),
+                _promptPill('Calculate Sec 80D tax savings for Anand Soni', isDark),
                 _promptPill('Show claims with cashless approval pending', isDark),
               ],
             ),

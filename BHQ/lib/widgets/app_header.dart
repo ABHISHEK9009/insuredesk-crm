@@ -20,8 +20,8 @@ class AppHeader extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final userName = user?.name ?? 'Anand Tiwari';
-    final userInitials = user?.avatarInitials ?? 'AT';
+    final userName = user?.name ?? 'Anand Soni';
+    final userInitials = user?.avatarInitials ?? 'AS';
     final clientId = user?.clientId ?? 'CLI-894210';
 
     final screenWidth = MediaQuery.of(context).size.width;

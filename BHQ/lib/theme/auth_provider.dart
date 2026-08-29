@@ -162,10 +162,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (cleanMpin == '4321' || cleanMpin == '1234' || cleanMpin == '9999') {
         final authenticatedUser = AuthUser(
           clientId: cleanId,
-          name: 'Anand Tiwari',
-          email: 'anand.tiwari@insuredesk.in',
+          name: 'Anand Soni',
+          email: 'anand.soni@insuredesk.in',
           accountNo: '99201',
-          avatarInitials: 'AT',
+          avatarInitials: 'AS',
           isGoogleLinked: false,
         );
 

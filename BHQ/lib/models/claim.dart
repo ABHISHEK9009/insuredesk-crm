@@ -64,7 +64,7 @@ class Claim {
     Claim(
       id: 'CLM-2026-881',
       policyNo: 'HE-22910',
-      customerName: 'Anand Tiwari',
+      customerName: 'Anand Soni',
       insurer: 'HDFC Ergo Health',
       claimAmount: '₹1,42,000',
       estimatedPayout: '₹1,38,500',

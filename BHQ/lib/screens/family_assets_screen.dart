@@ -9,7 +9,7 @@ class FamilyAssetsScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final members = [
-      {'name': 'Anand Tiwari', 'relation': 'Self (Primary Insured)', 'age': '34 Yrs', 'status': 'Covered'},
+      {'name': 'Anand Soni', 'relation': 'Self (Primary Insured)', 'age': '34 Yrs', 'status': 'Covered'},
       {'name': 'Priya Verma', 'relation': 'Spouse', 'age': '31 Yrs', 'status': 'Covered'},
       {'name': 'Rohan Verma', 'relation': 'Son (Nominee)', 'age': '6 Yrs', 'status': 'Covered'},
     ];

@@ -295,7 +295,7 @@ class _ClientLoginScreenState extends ConsumerState<ClientLoginScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Bimaheadquarter',
+                            'Bima Headquarter',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -304,10 +304,11 @@ class _ClientLoginScreenState extends ConsumerState<ClientLoginScreen>
                             ),
                           ),
                           Text(
-                            'InsureDesk Customer Vault',
+                            'by Insuredesk IMF PVT LTD',
                             style: TextStyle(
-                              color: Colors.white.withAlpha(170),
+                              color: Colors.white.withAlpha(200),
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -560,13 +561,22 @@ class _ClientLoginScreenState extends ConsumerState<ClientLoginScreen>
         ),
         const Gap(6),
         Text(
-          'Bimaheadquarter',
+          'Bima Headquarter',
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
                 letterSpacing: -0.4,
               ),
+        ),
+        const Gap(2),
+        Text(
+          'by Insuredesk IMF PVT LTD',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF2563EB),
+          ),
         ),
       ],
     );
@@ -1463,9 +1473,9 @@ class _ClientLoginScreenState extends ConsumerState<ClientLoginScreen>
         ),
         const Gap(8),
         Text(
-          'Server Status: Operational | 256-bit AES Encrypted',
+          'Bima Headquarter by Insuredesk IMF PVT LTD • 256-bit Encrypted',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10.5,
             color: isCompact
                 ? (Theme.of(context).brightness == Brightness.dark
                     ? Colors.white54

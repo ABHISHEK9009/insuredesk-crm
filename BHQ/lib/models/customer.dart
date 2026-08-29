@@ -30,8 +30,8 @@ class Customer {
   static const List<Customer> mockCustomers = [
     Customer(
       id: 'CUST-1092',
-      name: 'Anand Tiwari',
-      email: 'anand.tiwari@example.com',
+      name: 'Anand Soni',
+      email: 'anand.soni@insuredesk.in',
       phone: '+91 88188 89660',
       city: 'Mumbai, MH',
       activePoliciesCount: 3,

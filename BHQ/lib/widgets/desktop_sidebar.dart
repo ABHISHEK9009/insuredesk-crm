@@ -88,20 +88,20 @@ class DesktopSidebar extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'BimaHQ',
+                      'Bima Headquarter',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: 17,
+                        fontSize: 15,
                         letterSpacing: -0.3,
                         color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                     Text(
-                      'Client Portal',
+                      'by Insuredesk IMF PVT LTD',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white60 : AppColors.textMuted,
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
                       ),
                     ),
                   ],
