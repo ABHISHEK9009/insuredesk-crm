@@ -27,10 +27,10 @@ function ensureFontsRegistered() {
 
 function getOptimalFontSize(name) {
   const len = name.length;
-  if (len <= 14) return 46;
-  if (len <= 20) return 38;
-  if (len <= 26) return 32;
-  return 26;
+  if (len <= 14) return 48;
+  if (len <= 20) return 40;
+  if (len <= 26) return 34;
+  return 28;
 }
 
 export async function renderBirthdayCardBuffer(recipientName = "Valued Client") {
@@ -58,18 +58,23 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
   ctx.drawImage(bottomImg, 0, height - bottomH, width, bottomH);
 
   // 3. Draw brand logo
-  const logoW = 235;
+  const logoW = 280;
   const logoH = (logoImg.height / logoImg.width) * logoW;
-  ctx.drawImage(logoImg, (width - logoW) / 2, 45, logoW, logoH);
+  ctx.drawImage(logoImg, (width - logoW) / 2, 40, logoW, logoH);
 
   // 4. Draw Happy Birthday 3D title
-  const hbW = 540;
+  const hbW = 600;
   const hbH = (hbImg.height / hbImg.width) * hbW;
-  ctx.drawImage(hbImg, (width - hbW) / 2, 170, hbW, hbH);
+  ctx.drawImage(hbImg, (width - hbW) / 2, 175, hbW, hbH);
 
   // 5. Draw 3D Navy Ribbon
+  const ribW = 760;
+  const ribH = (158 / 680) * ribW;
+  const ribX = (width - ribW) / 2;
+  const ribY = 445;
+
   const svgRibbonOnly = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="680" height="158" viewBox="0 0 540 125">
+    <svg xmlns="http://www.w3.org/2000/svg" width="760" height="176" viewBox="0 0 540 125">
       <defs>
         <linearGradient id="ribbonMainNavy" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stop-color="#193358" />
@@ -105,16 +110,12 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
 
   try {
     const ribbonImg = await loadImage(Buffer.from(svgRibbonOnly));
-    const ribW = 680;
-    const ribH = (ribbonImg.height / ribbonImg.width) * ribW;
-    const ribX = (width - ribW) / 2;
-    const ribY = 430;
     ctx.drawImage(ribbonImg, ribX, ribY, ribW, ribH);
   } catch (ribbonErr) {
     console.warn("Could not draw SVG ribbon:", ribbonErr.message);
   }
 
-  // 6. Draw Name directly on canvas over the ribbon in bold 3D Gold
+  // 6. Draw Name directly on canvas over the ribbon in bold cream/gold with 3D drop shadow
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -124,25 +125,37 @@ export async function renderBirthdayCardBuffer(recipientName = "Valued Client") 
   ctx.shadowBlur = 8;
   ctx.shadowOffsetX = 2;
   ctx.shadowOffsetY = 3;
-  ctx.fillStyle = "#FCE38A";
-  ctx.fillText(cleanName, width / 2, 506);
+  ctx.fillStyle = "#FFF6DC";
+  ctx.fillText(cleanName, width / 2, ribY + ribH / 2 - 2);
   ctx.restore();
 
-  // 7. Draw Wish Poem Text directly on canvas
+  // 7. Draw Wish Poem Text matching exact proportions
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "#0A1930";
-  ctx.font = "26px CardSerif, Georgia, serif";
-  ctx.fillText("Wishing you a day filled with", 543, 665);
-  ctx.font = "bold 30px CardSerif, Georgia, serif";
-  ctx.fillText("happiness, love and success.", 543, 702);
-  ctx.font = "26px CardSerif, Georgia, serif";
-  ctx.fillText("May this year bring you endless", 543, 738);
-  ctx.fillText("joy, good health and all the", 543, 772);
-  ctx.fillText("dreams you aspire to achieve.", 543, 806);
-  ctx.font = "italic 32px CardSerif, Georgia, serif";
-  ctx.fillText("Have a wonderful year ahead!", 543, 852);
+  ctx.fillStyle = "#2D3748";
+
+  ctx.font = "30px CardSerif, Georgia, serif";
+  ctx.fillText("Wishing you a day filled with", 543, 672);
+
+  ctx.font = "bold 34px CardSerif, Georgia, serif";
+  ctx.fillStyle = "#0F172A";
+  ctx.fillText("happiness, love and success.", 543, 712);
+
+  ctx.fillStyle = "#2D3748";
+  ctx.font = "30px CardSerif, Georgia, serif";
+  ctx.fillText("May this year bring you endless", 543, 752);
+  ctx.fillText("joy, good health and all the", 543, 788);
+  ctx.fillText("dreams you aspire to achieve.", 543, 824);
+
+  ctx.font = "italic 36px CardSerif, Georgia, serif";
+  ctx.fillStyle = "#0F172A";
+  ctx.fillText("Have a wonderful year ahead!", 543, 872);
+
+  // Golden heart flourish below poem
+  ctx.font = "26px CardSerif";
+  ctx.fillStyle = "#C59620";
+  ctx.fillText("♡", 543, 908);
   ctx.restore();
 
   return canvas.toBuffer("image/jpeg", 95);
