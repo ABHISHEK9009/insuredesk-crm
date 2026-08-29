@@ -3,7 +3,7 @@ import { sendWhatsAppText } from "@/lib/whatsapp/whatsapp-client";
 
 /**
  * Compiles and sends a 1-time WhatsApp Welcome Message with a clean branded PDF link
- * to the Contact Person when a Policy PDF is uploaded.
+ * to the Contact Person when a Policy PDF is uploaded or verified and saved.
  *
  * @param {Object} params
  * @param {string} params.recordId - PolicyRecord ID
@@ -38,37 +38,68 @@ export async function sendPolicyUploadWelcomeMessage({
 
   const existingExtracted = record.extractedData || {};
   const existingReviewed = record.reviewedData || {};
+  const legacyData = record.data || {};
 
   // Check if welcome message was already dispatched for this policy (strict 1-time protection)
-  if (existingReviewed.welcomeMessageSentAt || existingExtracted.welcomeMessageSentAt) {
+  if (existingReviewed.welcomeMessageSentAt || existingExtracted.welcomeMessageSentAt || legacyData.welcomeMessageSentAt) {
     return { sent: false, reason: "Welcome message was already sent previously" };
   }
 
-  // 2. Resolve Contact Person Name and Phone Number
+  // 2. Resolve Contact Person Name
   const resolvedName =
     contactName ||
     data.contactPersonName ||
+    data.contactPerson ||
     data.contactName ||
     existingReviewed.contactPersonName ||
+    existingReviewed.contactPerson ||
+    existingReviewed.contactName ||
     existingExtracted.contactPersonName ||
+    existingExtracted.contactPerson ||
+    existingExtracted.contactName ||
+    legacyData.contactPersonName ||
+    legacyData.contactPerson ||
+    legacyData.contactName ||
     data.insuredName ||
     data.customerName ||
     existingReviewed.insuredName ||
+    existingReviewed.customerName ||
     existingExtracted.insuredName ||
+    existingExtracted.customerName ||
     record.customerName ||
     "Valued Client";
 
+  // 3. Resolve Contact Phone Number
   const rawPhone =
     contactPhone ||
     data.contactPersonPhone ||
     data.contactPhone ||
+    data.contactNumber ||
     data.phone ||
     data.mobile ||
+    data.customerMobile ||
     data.customerPhone ||
     existingReviewed.contactPersonPhone ||
-    existingExtracted.contactPersonPhone ||
+    existingReviewed.contactPhone ||
+    existingReviewed.contactNumber ||
     existingReviewed.phone ||
+    existingReviewed.mobile ||
+    existingReviewed.customerMobile ||
+    existingReviewed.customerPhone ||
+    existingExtracted.contactPersonPhone ||
+    existingExtracted.contactPhone ||
+    existingExtracted.contactNumber ||
     existingExtracted.phone ||
+    existingExtracted.mobile ||
+    existingExtracted.customerMobile ||
+    existingExtracted.customerPhone ||
+    legacyData.contactPersonPhone ||
+    legacyData.contactPhone ||
+    legacyData.contactNumber ||
+    legacyData.phone ||
+    legacyData.mobile ||
+    legacyData.customerMobile ||
+    legacyData.customerPhone ||
     "";
 
   const cleanPhone = String(rawPhone || "").replace(/\D/g, "");
@@ -78,12 +109,16 @@ export async function sendPolicyUploadWelcomeMessage({
 
   const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 
-  // 3. Resolve Policy Details
+  // 4. Resolve Policy Details
   const insuredName =
     data.insuredName ||
     data.customerName ||
     existingReviewed.insuredName ||
+    existingReviewed.customerName ||
     existingExtracted.insuredName ||
+    existingExtracted.customerName ||
+    legacyData.insuredName ||
+    legacyData.customerName ||
     record.customerName ||
     resolvedName;
 
@@ -91,13 +126,16 @@ export async function sendPolicyUploadWelcomeMessage({
     data.policyNumber ||
     existingReviewed.policyNumber ||
     existingExtracted.policyNumber ||
+    legacyData.policyNumber ||
     "N/A";
 
   const insuranceCompany =
     data.insuranceCompany ||
     existingReviewed.insuranceCompany ||
     existingExtracted.insuranceCompany ||
+    legacyData.insuranceCompany ||
     record.detectedCompany ||
+    record.selectedCompany ||
     "Bima Headquarter Partner";
 
   const policyCode = record.id;
@@ -105,7 +143,7 @@ export async function sendPolicyUploadWelcomeMessage({
   const normalizedBase = baseUrl.replace(/\/$/, "");
   const policyPdfUrl = `${normalizedBase}/d/${policyCode}`;
 
-  // 4. Construct Exact Chosen Welcome Message Template
+  // 5. Construct Exact Chosen Welcome Message Template
   const welcomeMessage = `Dear ${resolvedName},
 
 Greetings from Bima Headquarter.
@@ -126,11 +164,11 @@ Best regards,
 Team Bima Headquarter
 by InsureDesk IMF Pvt. Ltd.`;
 
-  // 5. Send WhatsApp message via Gateway
+  // 6. Send WhatsApp message via Gateway
   try {
     const sendRes = await sendWhatsAppText(formattedPhone, welcomeMessage);
 
-    // 6. Record 1-time delivery timestamp in policy record
+    // 7. Record 1-time delivery timestamp in policy record
     const updatedReviewed = {
       ...existingReviewed,
       welcomeMessageSentAt: new Date().toISOString(),

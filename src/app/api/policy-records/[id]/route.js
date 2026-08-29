@@ -16,6 +16,7 @@ import {
   withClientPhoneLock,
   withPolicyRecordLock,
 } from "@/lib/client-accounts/server";
+import { sendPolicyUploadWelcomeMessage } from "@/lib/policies/welcome-message";
 
 export const runtime = "nodejs";
 const { normalizeInsuranceCompanyName } = insuranceCompanyMaster;
@@ -377,6 +378,14 @@ export async function PUT(request, { params }) {
       return Response.json({ error: updateResult.error }, { status: updateResult.status });
     }
     const record = updateResult.record;
+
+    // Trigger 1-time WhatsApp welcome message with clean PDF link to contact person
+    sendPolicyUploadWelcomeMessage({
+      recordId: record.id,
+      data: reviewedData || record.reviewedData || record.extractedData || record.data,
+    }).catch((msgErr) => {
+      console.warn("Background welcome message dispatch notice on PUT:", msgErr?.message || msgErr);
+    });
 
     // Audit log update event
     const { ipAddress, userAgent } = getAuditMetadata(request);
