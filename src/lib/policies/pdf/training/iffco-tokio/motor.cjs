@@ -7,7 +7,12 @@ const scope = { insurer: "iffco-tokio", category: "motor" };
 function matches({ text = "", result = {} }) {
   const company = String(result.insuranceCompany || result.companyName || "");
   const format = String(result.documentFormat || "");
-  const isIffcoCompany = /IFFCO\s*[- ]?\s*TOKIO/i.test(company) || /IFFCO\s*[- ]?\s*TOKIO/i.test(text);
+  if (company && !/IFFCO\s*[- ]?\s*TOKIO/i.test(company)) return false;
+  const header = String(text).slice(0, 3000);
+  if (/Future\s+Generali|generali|TATA\s*AIG|tataaig\.com|HDFC\s*ERGO|ICICI\s*Lombard|Bajaj\s*Allianz|Royal\s*Sundaram|Shriram|Go\s*Digit/i.test(header) && !/IFFCO-TOKIO\s+GENERAL\s+INSURANCE/i.test(header)) {
+    return false;
+  }
+  const isIffcoCompany = /IFFCO\s*[- ]?\s*TOKIO/i.test(company) || /IFFCO\s*[- ]?\s*TOKIO/i.test(header);
   const isMotor = /Motor|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Insured\s+Motor\s+Vehicle/i.test(
     result.documentCategory || result.policyType || format || text
   );
@@ -19,6 +24,9 @@ function clean(value = "") {
     .replace(/^(?:Mr|Mrs|Ms|Miss|Dr|Shri|Smt|MR|MRS|MS|MISS|DR|SHRI|SMT)\.?\s+/i, "")
     .replace(/\s*Policy\s*#.*$/i, "")
     .replace(/\s*Tax\s+Invoice.*$/i, "")
+    .replace(/\s*Original\s+Invoice.*$/i, "")
+    .replace(/\s*Unique\s+Invoice.*$/i, "")
+    .replace(/\s*Address\s*:.*$/i, "")
     .trim();
 }
 
@@ -53,6 +61,7 @@ function extractPremiumBifurcation(text = "") {
       sec1,
       sec2,
       sec3,
+      addonPremium: normalizeAmount(String(parseFloat(sec2 || 0) + parseFloat(sec3 || 0))),
       netPremium: taxableNet,
       gstAmount: gst,
       totalPremium: totalInvoice,
@@ -75,6 +84,7 @@ function extractPremiumBifurcation(text = "") {
       sec1,
       sec2,
       sec3: "0.00",
+      addonPremium: sec2,
       netPremium: taxableNet,
       gstAmount: gst,
       totalPremium: totalInvoice,
@@ -91,9 +101,9 @@ function train({ text = "", result = {} }) {
   const patch = {};
 
   // 1. Policy Number & Invoices
-  const p400Match = text.match(/P400\s+Policy\s*#\s*:\s*([A-Z0-9]+)/i);
+  const p400Match = text.match(/P400\s+Policy\s*#\s*:?\s*([A-Z0-9]+)/i);
   const polScheduleMatch = text.match(/Policy\s+No\.?[\s….:]+([A-Z0-9]+)/i);
-  const polNumMatch = text.match(/Policy\s*#\s*:\s*([A-Z0-9-]+)/i);
+  const polNumMatch = text.match(/Policy\s*#\s*:?\s*([A-Z0-9-]+)/i);
   
   if (p400Match) {
     patch.policyNumber = p400Match[1].trim();
@@ -107,7 +117,7 @@ function train({ text = "", result = {} }) {
     patch.policyNumber = polNumMatch[1].trim();
   }
 
-  const taxInvMatch = text.match(/Tax\s+Invoice\s+No\s*:\s*([A-Z0-9-]+)/i);
+  const taxInvMatch = text.match(/Tax\s+Invoice\s+No\s*:?\s*([A-Z0-9-]+)/i);
   if (taxInvMatch) {
     patch.taxInvoiceNumber = taxInvMatch[1].trim();
     patch.invoiceNumber = patch.invoiceNumber || taxInvMatch[1].trim();
@@ -123,8 +133,20 @@ function train({ text = "", result = {} }) {
 
   // 2. Insured / Customer Name
   const correctNameMatch = text.match(/CORRECT\s+INSURED\s+NAME\s*-\s*([^\n]+)/i);
-  const insuredNameColonMatch = text.match(/Insured'?s?\s*Name:\s*([A-Z\s]+?)(?=\s*Policy\s*#:|\s*Tax\s+Invoice|\s*Original|\s*Unique|\n|$)/i);
-  const rawName = correctNameMatch ? correctNameMatch[1] : (insuredNameColonMatch ? insuredNameColonMatch[1] : "");
+  const insuredNameColonMatch = text.match(/Insured'?s?\s*Name:\s*([A-Z0-9\s.,&'()-]+?)(?=\s*Policy\s*#:|\s*Tax\s+Invoice|\s*Original|\s*Unique|\n|$)/i);
+  const headerNameMatch = text.match(/(?:Intermediary\s+Mobile[^\n]*\n+)\s*([A-Z0-9\s.,&'()-]+?)(?=\s*Policy\s*#:|\s*Tax\s+Invoice|\s*Address:)/i);
+  const corporateNameMatch = text.match(/\n\s*([A-Z0-9\s.,&'()-]+?(?:PVT\.?\s*LTD\.?|LIMITED|LTD\.?|LLP|CORP|COMPANY))\s*(?=Policy\s*#:|\s*Tax\s+Invoice|\s*Address:)/i);
+
+  const rawName = correctNameMatch
+    ? correctNameMatch[1]
+    : insuredNameColonMatch
+    ? insuredNameColonMatch[1]
+    : headerNameMatch
+    ? headerNameMatch[1]
+    : corporateNameMatch
+    ? corporateNameMatch[1]
+    : "";
+
   const cleanName = clean(rawName);
   if (cleanName) {
     patch.insuredName = cleanName;
@@ -184,21 +206,28 @@ function train({ text = "", result = {} }) {
   if (agentMobileMatch) patch.intermediaryMobile = agentMobileMatch[1].trim();
 
   // 6. Vehicle Details
-  const regMatch = text.match(/([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})(?=\d{4}|\b|\s)/i) ||
+  const regMatch = text.match(/\b([A-Z]{2}\s*[-–\s]?\s*\d{1,2}\s*[-–\s]?\s*[A-Z]{1,3}\s*[-–\s]?\s*\d{4})(?=\s*20\d{2}|\b|\s)/i) ||
     text.match(/\b([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})\b/i);
   if (regMatch) {
-    patch.registrationNumber = regMatch[1].trim().toUpperCase();
+    patch.registrationNumber = regMatch[1].replace(/[\s-]+/g, "").toUpperCase();
     patch.vehicleNumber = patch.registrationNumber;
   }
 
-  const yomMatch = text.match(/[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}(20\d{2})/i) ||
+  const yomMatch = text.match(/[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}\s*(20\d{2})/i) ||
     text.match(/\b(20\d{2})\s+Make\s+of\s+Vehicle/i) ||
     text.match(/\b(20\d{2})\s+-\s+([A-Z0-9\s]+?)\s+(\d{2,4})\s+Own/i) ||
     text.match(/Year\s+of\s+Manuf\.?[\s\S]{0,50}?\b(20\d{2})\b/i);
   if (yomMatch) patch.manufacturingYear = yomMatch[1].trim();
 
+  const signaMatch = text.match(/SIGNA\s+[A-Z0-9.\s]+?(?:7CUM\s+TM|BSVI[A-Z0-9.\s]*?TM|\bTM\b)/i);
   const mmChassMatch = text.match(/(TVS\s+JUPITER\s+DRUM|TVS\s+[A-Z0-9\s-]+?)(MD\d{3}[A-Z0-9]{12}|[A-Z0-9]{17})/i);
-  if (mmChassMatch) {
+
+  if (signaMatch) {
+    const rawModel = signaMatch[0].replace(/\s+/g, " ").trim();
+    patch.vehicleMake = "TATA";
+    patch.vehicleModel = rawModel;
+    patch.makeModel = `TATA ${rawModel}`;
+  } else if (mmChassMatch) {
     const rawMm = mmChassMatch[1].replace(/\s+/g, " ").trim();
     patch.makeModel = rawMm;
     const parts = rawMm.split(" ");
@@ -224,47 +253,67 @@ function train({ text = "", result = {} }) {
     patch.idv = normalizeAmount(ccIdvMatch[2]);
     patch.totalIdv = patch.idv;
   } else {
-    const ccMatch = text.match(/\bCC\b[\s\S]{0,60}?\b(\d{2,4})\b/i) ||
+    const ccMatch = text.match(/\b(\d{3,5})\s+Package/i) ||
+      text.match(/\bCC\b[\s\S]{0,60}?\b(\d{2,4})\b/i) ||
       text.match(/(\d{2,4})\s+Stand\s+Alone\s+OD/i) ||
       text.match(/(\d{2,4})\s+Own\s+Damage/i);
     if (ccMatch) patch.cubicCapacity = ccMatch[1].trim();
 
-    const idvMatch = text.match(/Stand\s+Alone\s+OD\s+([0-9,.]+)/i) ||
+    const idvMatch = text.match(/Package\s*(\d{5,9})/i) ||
+      text.match(/Stand\s+Alone\s+OD\s+([0-9,.]+)/i) ||
       text.match(/\bOwn\s+Damage\s+only\s+(\d{4,8})\b/i) ||
       text.match(/IDV\s+in[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i) ||
       text.match(/Two\s+Wheeler[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i);
     if (idvMatch) {
-      patch.idv = normalizeAmount(idvMatch[1]);
+      patch.idv = normalizeAmount(idvMatch[1].includes(".") ? idvMatch[1] : `${idvMatch[1]}.00`);
       patch.totalIdv = patch.idv;
     }
   }
 
+  // Engine Number
+  const wrappedEngMatch = text.match(/\b(B56B[A-Z0-9]+)(?:[\r\n]+(\d))?\b/i);
   const engMatch = text.match(/KG5GS\d+[\s\r\n]*\d+/i) ||
-    text.match(/Engine\s+No\.?[\s\S]{0,40}?([A-Z0-9\s]{6,20})(?=\s+MD626|MD|\n\d)/i);
-  if (engMatch) {
+    text.match(/Engine\s+No\.?[\s\S]{0,40}?([A-Z0-9\s]{6,25})(?=\s+MD626|MD|\n\d)/i);
+
+  if (wrappedEngMatch) {
+    patch.engineNumber = (wrappedEngMatch[1] + (wrappedEngMatch[2] || "")).replace(/\s+/g, "").trim();
+  } else if (engMatch) {
     patch.engineNumber = engMatch[0].replace(/\s+/g, "").trim();
   }
 
+  // Chassis Number
   if (!patch.chassisNumber) {
-    const chassMatch = text.match(/MD626[A-Z0-9\s]{12,20}/i) ||
+    const chassMatch = text.match(/MD626[A-Z0-9\s]{10,22}/i) ||
+      text.match(/\b(DTRMX\s*MAT[A-Z0-9]{10,20}|MAT[A-Z0-9]{14,18})\b/i) ||
       text.match(/Chassis\s+No\.?[\s\S]{0,80}?([A-Z0-9\s]{14,25})(?=\s+\d|\n\s*\d)/i);
     if (chassMatch) {
       const rawChass = chassMatch[0].replace(/\s+/g, "").trim();
-      patch.chassisNumber = rawChass.slice(0, 17);
+      patch.chassisNumber = /^MD/i.test(rawChass) ? rawChass.slice(0, 17) : rawChass.slice(0, 25);
     }
   }
 
-  const seatsMatch = text.match(/Chassis\s+No\.[\s\S]{0,30}?\b([1-9])\b/i) ||
+  // Seating Capacity
+  const seatsMatch = text.match(/Chassis\s+No\.[\s\r\n]+(\d{1,2})[\s\r\n]+(?:DTRMX|MAT|MD)/i) ||
+    text.match(/Chassis\s+No\.[\s\S]{0,30}?\b([1-9])\b/i) ||
     text.match(/MD626[A-Z0-9\s]+?\d{2}\s*\n+(\d)\b/i) ||
     text.match(/Seating\s+Capacity[\s\S]{0,80}?\b([1-9])\b/i);
   if (seatsMatch) patch.seatingCapacity = seatsMatch[1].trim();
 
   // 7. Product & Category
+  const isCommVeh = /Commercial\s+Vehicle/i.test(text);
   const isTwoWheeler = /Two\s+Wheeler/i.test(text);
   const isEndorsement = /Endorsement/i.test(text);
-  patch.productName = isTwoWheeler ? "Two Wheeler Policy" : (isEndorsement ? "Motor Endorsement" : "Motor Policy");
+
+  patch.productName = isCommVeh
+    ? "Commercial Vehicle Package Policy"
+    : isTwoWheeler
+    ? "Two Wheeler Policy"
+    : isEndorsement
+    ? "Motor Endorsement"
+    : "Motor Policy";
   patch.policyType = patch.productName;
   patch.policyCategory = "Motor";
+  patch.policyCoverType = isCommVeh ? "Comprehensive" : (isTwoWheeler ? "Stand Alone OD" : "Comprehensive");
 
   // 8. Endorsement Remarks
   if (isEndorsement) {
@@ -284,18 +333,26 @@ function train({ text = "", result = {} }) {
   const tpEndMatch = text.match(/TP\s+End\s+Date\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
   if (tpEndMatch) patch.tpEndDate = normalizeDate(tpEndMatch[1]);
 
-  // 10. NCB Discount
-  const ncbPctMatch = text.match(/No\s+Claim\s+Bonus\s+Discount\s*\(\s*(\d+)\s*%\s*\)/i);
+  // 10. Financials & Premium Bifurcation
+  const netODMatch = text.match(/Net\s*\(A\)\s*([0-9,.]+)/i);
+  if (netODMatch) patch.odPremium = normalizeAmount(netODMatch[1]);
+
+  const netTPMatch = text.match(/Net\s*\(B\)\s*([0-9,.]+)/i);
+  if (netTPMatch) patch.tpPremium = normalizeAmount(netTPMatch[1]);
+
+  const ncbPctMatch = text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)\s*\(\s*(\d+)\s*%\s*\)/i);
   if (ncbPctMatch) patch.ncbPercentage = ncbPctMatch[1].trim();
-  const ncbAmtMatch = text.match(/No\s+Claim\s+Bonus\s+Discount[^\n]*-([0-9,.]+)/i);
+  const ncbAmtMatch = text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)[^\n]*-([0-9,.]+)/i);
   if (ncbAmtMatch) patch.ncbDiscount = normalizeAmount(ncbAmtMatch[1]);
 
-  // 11. Premium Bifurcation / Financials
   const bifurcation = extractPremiumBifurcation(text);
   if (bifurcation) {
     if (bifurcation.netPremium) {
       patch.netPremium = bifurcation.netPremium;
       patch.basicPremium = bifurcation.netPremium;
+    }
+    if (bifurcation.addonPremium) {
+      patch.addonPremium = bifurcation.addonPremium;
     }
     if (bifurcation.gstAmount) {
       patch.gstAmount = bifurcation.gstAmount;
@@ -328,6 +385,29 @@ function train({ text = "", result = {} }) {
       patch.premium = patch.totalPremium;
       patch.premiumIncludingGst = patch.totalPremium;
     }
+  }
+
+  // 11. Payment Details
+  const payMatch = text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH)[\s\r\n]+([0-9.]+)[\s\r\n]+([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Z\s]+?)(?=\s+Amount|\n\n|$)/i);
+  if (payMatch) {
+    patch.paymentMethod = payMatch[1];
+    patch.paymentAmount = normalizeAmount(payMatch[2]);
+    patch.paymentReference = payMatch[3].trim();
+    patch.paymentDate = normalizeDate(payMatch[4]);
+    patch.bankName = payMatch[5].replace(/\s+/g, " ").trim();
+  }
+
+  // 12. Financer & Previous Policy Details
+  const finMatch = text.match(/Under\s+Hire\s+Purchase\s*\/Hypothecated\/Lease\s+Agreement\s+with\s+([^\n]+)/i);
+  if (finMatch) patch.financerName = finMatch[1].replace(/\s+/g, " ").trim();
+
+  const prevMatch = text.match(/Previous\s+Policy\s+Number[^\n]*\n+(\d{10,25})\s*([^\n]+?)\s+(\d{2}\/\d{2}\/\d{4})/i);
+  if (prevMatch) {
+    patch.previousPolicyNumber = prevMatch[1].trim();
+    const rawInsurer = prevMatch[2].replace(/\s+/g, " ").trim();
+    const cleanInsurerMatch = rawInsurer.match(/(.*?ASSURANCE\s+CO\.?\s*LTD\.?|.*?INSURANCE\s+CO\.?\s*LTD\.?|.*?LIMITED|.*?LTD\.?)/i);
+    patch.previousInsurer = cleanInsurerMatch ? cleanInsurerMatch[1].trim() : rawInsurer;
+    patch.previousPolicyExpiryDate = normalizeDate(prevMatch[3]);
   }
 
   patch.extractionTrainingVersion = "IFFCO_TOKIO_MOTOR_V2";

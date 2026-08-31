@@ -164,12 +164,30 @@ function isNewIndiaMotor(result = {}, context = {}) {
   const category = normalizeCategory(result.documentCategory);
   if (category && category !== "motor") return false;
   const insurer = result.insuranceCompany || result.companyName || "";
-  if (insurer && /TATA\s*AIG|ICICI\s*Lombard|Bajaj|HDFC\s*ERGO|Shriram|Liberty|Digit/i.test(insurer)) {
+  if (insurer && /TATA\s*AIG|ICICI\s*Lombard|Bajaj|HDFC\s*ERGO|Shriram|Liberty|Digit|IFFCO/i.test(insurer)) {
     return false;
   }
+  if (/IFFCO\s*[- ]?\s*TOKIO/i.test(text.slice(0, 3000))) return false;
   return (
     /THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(text) &&
     /Motor|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
+  );
+}
+
+function isIffcoTokioMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/IFFCO\s*[- ]?\s*TOKIO/i.test(insurer)) return false;
+  const header = text.slice(0, 3000);
+  if (!/IFFCO\s*[- ]?\s*TOKIO/i.test(header)) return false;
+  if (/Future\s+Generali|generali|TATA\s*AIG|tataaig\.com|HDFC\s*ERGO|ICICI\s*Lombard|Bajaj\s*Allianz|Royal\s*Sundaram|Shriram|Go\s*Digit/i.test(header) && !/IFFCO-TOKIO\s+GENERAL\s+INSURANCE/i.test(header)) {
+    return false;
+  }
+  return (
+    /COMMERCIAL\s+VEHICLE|TWO\s+WHEELER|PRIVATE\s+CAR|Insured\s+Motor\s+Vehicle|Stand\s*Alone\s*OD|Own\s*Damage\s*only/i.test(text) ||
+    /Motor/i.test(result.documentCategory || result.policyType || "")
   );
 }
 
@@ -217,6 +235,9 @@ function deriveTrainingScope(result = {}, context = {}) {
   }
   if (isBajajAllianzMotor(result, context)) {
     return { insurer: "bajaj-allianz", category: "motor" };
+  }
+  if (isIffcoTokioMotor(result, context)) {
+    return { insurer: "iffco-tokio", category: "motor" };
   }
   if (isUnitedIndiaHealth(result, context)) {
     return { insurer: "united-india", category: "health" };
@@ -333,6 +354,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       documentCategory: "Motor Insurance",
       documentFormat: "BAJAJ_ALLIANZ_MOTOR_V1",
       sourceDocumentType: "BAJAJ_ALLIANZ_MOTOR_V1",
+    };
+  }
+  if (isIffcoTokioMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "IFFCO Tokio General Insurance Company Limited",
+      companyName: "IFFCO Tokio General Insurance Company Limited",
+      documentCategory: "Motor Insurance",
+      documentFormat: "IFFCO_TOKIO_MOTOR_V1",
+      sourceDocumentType: "IFFCO_TOKIO_MOTOR_V1",
     };
   }
   return result;

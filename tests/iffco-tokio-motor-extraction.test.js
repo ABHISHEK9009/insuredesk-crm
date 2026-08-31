@@ -180,4 +180,130 @@ describe("IFFCO Tokio Motor Policy Extraction & Isolation", () => {
     expect(trained.totalPremium).toBe("1814.84");
     expect(trained.extractionTrainingVersion).toBe("IFFCO_TOKIO_MOTOR_V2");
   });
+
+  it("extracts all fields accurately from IFFCO Tokio Commercial Vehicle Policy (MP04YR6027 / MP04YR6085)", () => {
+    const sampleCommVehicleText = `
+IFFCO-TOKIO GENERAL INSURANCE CO.LTD
+Regd. Office: IFFCO Sadan C1 Distt. Centre, Saket, New Delhi - 110017
+COMMERCIAL VEHICLE CERTIFICATE OF INSURANCE cum 
+SCHEDULE  & TAX INVOICE
+Corporate Identification Number (CIN) U74899DL2000PLC107621, 
+IRDA Reg. No. 106
+UIN: IRDAN106P0005V01200607 
+Servicing Office
+Service Office : IFFCO TOKIO GEN INSU. CO. LTD. Bhagwan Complex, 1ST Floor
+Plot No 214 Zone - I, M.P. Nagar, BHOPAL MADHYA PRA 462011 INDIA
+General Insurance Services: 997134
+GSTIN : 23AAACI7573H1ZK
+Phone #: 0755 4022600
+Intermediary Name:
+INSUREDESK IMF PRIVATE LIMITED 
+Intermediary #: 
+21002760
+Intermediary Mobile #: 8818889660
+ 
+ VIJAY KUMAR MISHRA CONSTRUCTION PVT. LTD. Policy #: 1-8MS4NYSX P400 Policy # N8440049
+Tax Invoice No: 1-8MS4NYSX        
+Address:
+ A-54, DWARIKA DHAM 11TH MILE GARDEN CITY BHOJPUR ROAD, CHHAN BHOPAL, MADHYA PRADESH
+Invoice/Issuance Date:
+24/08/2026 16:45:52
+Period of Insurance
+From: 26/08/2026 00:00:00
+To: Midnight On 25/08/2027 23:59:59
+ BHOPAL MADHYA PRA INDIA Pin Code 462047
+Phone #: XXXXXXX528 CKYC #: XXXXXXX Cover Note #
+Geographical Area: Within India Only Status Check : Inforce
+State Code: 23 Country INDIA Place Of Supply: MADHYA PRADESH
+GSTIN UIN 23AABCV9626P1ZR
+ 
+  Insured Motor Vehicle Details & Premium Calculation
+Registration Mark & No. Year of Manuf.
+Vehicle Name
+CC Coverage IDV in Rs. Non Elect. Acc.
+Engine No.
+Seating Capacity as per RC
+GVW
+SIGNA 2823.K BSVI 39W 7CUM TM
+B56B62220D01152E6447768
+8
+MP04YR6027 2025
+Make of Vehicle
+5000 Package 3847500
+Non Electrical Accessories are not covered as its value is 0
+Chassis No.
+2
+DTRMXMAT802301S2E08652
+  
+Registration Authority
+Vehicle Trailer Elec./Elect. Acc. Bi-Fuel Kit Total Value Net Premium Rs.
+3847500.00 0.00 0.00 0 3847500.00 27561.26
+A. Own Damage (Rs.) B. Third Party (Rs.)
+Basic OD Premium 4625.00
+Basic TP Premium (Including TPPD) 7267.00
+IMT 23 694.00 Legal Liability to Driver (IMT 28) 100.00
+No Claim Discount ( 20% ) -1064
+Net (A) 4255.00 Net (B) 7367.00
+Section 1
+ 11622.00
+Section 2: Value Auto Coverage
+Coverages Premium Rs. Limit Of Liability
+Depreciation Waver Cover 7503.00 As Per Coverage Wordings
+Consumable 4232.00 As Per Coverage Wordings
+Premium Bifurcation (Rs.)
+Section 1 (Rs.) Section 2 (Rs.) RPI Premium Premium/Taxable Value(Rs.) Total GST Net Premium (Rs.)
+11622.00 11735.00 23357.00 4204.26 27561.26
+Under Hire Purchase /Hypothecated/Lease Agreement with HDFC BANK LTD
+Previous Policy Number Previous Insurer Name and Address Policy Expiry Date
+80000031250350068997 NEW INDIA ASSURANCE CO. LTD BHOPAL BHOPAL BHOPAL MADHYA PRA 462001 25/08/2026
+Receipt Particulars:   
+Pay Method Receipt Amount Instrument # Instrument Date Bank
+NEFT 27561.00 HDFCH01211962853 24/08/2026 HDFC BANK    
+Amount Received 27561.00
+`;
+
+    const original = {
+      insuranceCompany: "IFFCO-TOKIO GENERAL INSURANCE CO.LTD",
+      documentCategory: "Motor Insurance",
+    };
+
+    const trained = applyScopedTraining(original, { text: sampleCommVehicleText });
+
+    expect(trained.policyNumber).toBe("N8440049");
+    expect(trained.taxInvoiceNumber).toBe("1-8MS4NYSX");
+    expect(trained.insuredName).toBe("VIJAY KUMAR MISHRA CONSTRUCTION PVT. LTD.");
+    expect(trained.registrationNumber).toBe("MP04YR6027");
+    expect(trained.vehicleMake).toBe("TATA");
+    expect(trained.vehicleModel).toBe("SIGNA 2823.K BSVI 39W 7CUM TM");
+    expect(trained.makeModel).toBe("TATA SIGNA 2823.K BSVI 39W 7CUM TM");
+    expect(trained.manufacturingYear).toBe("2025");
+    expect(trained.engineNumber).toBe("B56B62220D01152E64477688");
+    expect(trained.chassisNumber).toBe("DTRMXMAT802301S2E08652");
+    expect(trained.seatingCapacity).toBe("2");
+    expect(trained.cubicCapacity).toBe("5000");
+    expect(trained.idv).toBe("3847500.00");
+    expect(trained.totalIdv).toBe("3847500.00");
+    expect(trained.startDate).toBe("26/08/2026");
+    expect(trained.expiryDate).toBe("25/08/2027");
+    expect(trained.policyIssueDate).toBe("24/08/2026");
+    expect(trained.agentCode).toBe("21002760");
+    expect(trained.intermediaryName).toBe("INSUREDESK IMF PRIVATE LIMITED");
+    expect(trained.odPremium).toBe("4255.00");
+    expect(trained.tpPremium).toBe("7367.00");
+    expect(trained.addonPremium).toBe("11735.00");
+    expect(trained.netPremium).toBe("23357.00");
+    expect(trained.gstAmount).toBe("4204.26");
+    expect(trained.totalPremium).toBe("27561.26");
+    expect(trained.ncbPercentage).toBe("20");
+    expect(trained.ncbDiscount).toBe("1064.00");
+    expect(trained.financerName).toBe("HDFC BANK LTD");
+    expect(trained.previousPolicyNumber).toBe("80000031250350068997");
+    expect(trained.previousInsurer).toBe("NEW INDIA ASSURANCE CO. LTD");
+    expect(trained.previousPolicyExpiryDate).toBe("25/08/2026");
+    expect(trained.paymentMethod).toBe("NEFT");
+    expect(trained.paymentReference).toBe("HDFCH01211962853");
+    expect(trained.paymentDate).toBe("24/08/2026");
+    expect(trained.bankName).toBe("HDFC BANK");
+    expect(trained.extractionTrainingVersion).toBe("IFFCO_TOKIO_MOTOR_V2");
+  });
 });
