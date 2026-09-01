@@ -153,6 +153,7 @@ function isGoDigitMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   if (/TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text)) return false;
   if (/HDFC\s*ERGO/i.test(text)) return false;
+  if (/Bajaj\s*(?:Allianz|General)/i.test(text.slice(0, 3000))) return false;
   return (
     /Go\s+Digit|godigit\.com|Digit\s+Two-Wheeler/i.test(text) &&
     /Motor|Two-Wheeler|Private\s+Car|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)

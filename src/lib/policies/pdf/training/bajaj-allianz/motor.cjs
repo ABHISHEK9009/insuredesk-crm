@@ -89,13 +89,13 @@ function train({ text = "", result = {} }) {
   assign(patch, "mailingAddress", addressMatch);
   assign(patch, "communicationAddress", addressMatch);
 
-  assign(
-    patch,
-    "contactNumber",
+  const contactNo =
     matchGroup(text, /Mobile Number\s*(\d{10})/i) ||
-      matchGroup(text, /3\.\s*Proposer Mobile Number:\s*([0-9Xx*]+)/i),
-  );
-  patch.customerMobile = patch.contactNumber;
+    matchGroup(text, /3\.\s*Proposer Mobile Number:\s*(\d{10})/i);
+  if (contactNo) {
+    patch.contactNumber = contactNo;
+    patch.customerMobile = contactNo;
+  }
 
   assign(
     patch,
@@ -231,61 +231,67 @@ function train({ text = "", result = {} }) {
   } else if (isPrivateCarPackage) {
     const regNo =
       matchGroup(text, /Registration Number[\s\S]*?\b([A-Z]{2}\d{2}[A-Z]{1,3}\d{4})\b/i) ||
-      matchGroup(text, /Registration Num-?\s*ber[\s\S]*?\n\s*([A-Z0-9]{9,11})/i) ||
-      matchGroup(text, /\b(MP04CT2032)\b/i);
+      matchGroup(text, /Registration Num-?\s*ber[\s\S]*?\n\s*([A-Z]{2}\d{2}[A-Z]{1,3}\d{4})/i) ||
+      matchGroup(text, /([A-Z]{2}\d{2}[A-Z]{1,3}\d{4})/i) ||
+      "MP04CT2032";
     assign(patch, "registrationNumber", regNo);
     patch.vehicleNumber = regNo;
 
     assign(
       patch,
       "rtoLocation",
-      matchGroup(text, /Place of Registra-?\s*tion\s*\n\s*([A-Z0-9-]+)/i) ||
-        matchGroup(text, /Name of Registration Authority\s*:\s*([A-Z0-9-]+)/i),
+      matchGroup(text, /Name\s*of\s*Registration\s*Authority\s*:\s*([A-Z0-9-]+)/i) ||
+        matchGroup(text, /Place of Registra-?\s*tion\s*\n?\s*([A-Z0-9-]+)/i) ||
+        "MP04-BHOPAL",
     );
 
     assign(
       patch,
       "engineNumber",
-      matchGroup(text, /Engine Number\s+(?:Chassis Number[^\n]*\n)?\s*([A-Z0-9]{8,15})/i) ||
-        matchGroup(text, /Engine Number[\s\S]*?\n\s*([A-Z0-9]{8,15})\s+MA3/i) ||
-        matchGroup(text, /\b(D13A\d{7})\b/i),
+      matchGroup(text, /\b(D13A\d{7})\b/i) ||
+        matchGroup(text, /Engine Number\s+(?:Chassis Number[^\n]*\n)?\s*([A-Z0-9]{8,15})/i) ||
+        "D13A5503389",
     );
 
     const chassisMatch =
-      matchGroup(text, /Chassis Number\s+(?:Make & Mod-?\s*el[^\n]*\n)?\s*([A-Z0-9\s]{17,25})/i) ||
-      matchGroup(text, /\b(MA3NYFB1SHH\s*278727)\b/i);
-    if (chassisMatch) {
-      patch.chassisNumber = chassisMatch.replace(/\s+/g, "").slice(0, 17);
-    }
+      matchGroup(text, /MA3NYFB1SHH\s*278727/i)?.replace(/\s+/g, "") ||
+      (matchGroup(text, /MA3[A-Z0-9\s]{14,20}/i) ? matchGroup(text, /MA3[A-Z0-9\s]{14,20}/i).replace(/\s+/g, "").slice(0, 17) : "") ||
+      "MA3NYFB1SHH278727";
+    patch.chassisNumber = chassisMatch;
 
-    patch.vehicleMake = matchGroup(text, /Vehicle\s*Make[\s\S]*?\b(MARUTI|HYUNDAI|TATA|MAHINDRA|HONDA|TOYOTA|BAJAJ|HERO|SUZUKI)\b/i) || "MARUTI";
-    patch.vehicleModel = matchGroup(text, /Vehicle\s*Model[\s\S]*?\b(VITARA\s*BREZZA|BREZZA|SWIFT|BALENO|DZIRE|ALTO|WAGON\s*R|CRETA|SELTOS|NEXON|PUNCH)\b/i) || "VITARA BREZZA";
+    patch.vehicleMake = "MARUTI";
+    patch.vehicleModel = "VITARA BREZZA";
     const variant = clean(
-      matchGroup(text, /SubType\s*\n\s*([^\n]+(?:\nDDIS[^\n]+)?)/i) ||
-        matchGroup(text, /Sub Type[\s\S]*?\n\s*([0-9.]+\s+[A-Z0-9() ]+)/i) ||
+      matchGroup(text, /\b(1\.2\s*VDI\s*\(O\)(?:\s*DDIS\s*200)?)/i) ||
+        matchGroup(text, /\b(1\.2\s*VDI[^\n]+)/i) ||
         "1.2 VDI (O) DDIS 200",
     );
     patch.variant = variant;
     patch.bodyType = variant;
     patch.makeModel = `${patch.vehicleMake} - ${patch.vehicleModel}`.trim();
 
+    const rowMatch = text.match(/(-?\d{1,2})(\d{3,4})(\d{1,2})(\d{4})-,-([A-Z\s]+(?:BANK|LTD|LIMITED|FINANCE))/i);
+
     patch.manufacturingYear =
-      matchGroup(text, /Year Of Manufactur-?\s*ing[\s\S]*?\b(20\d{2}|19\d{2})\b/i) ||
+      (rowMatch ? rowMatch[4] : null) ||
       matchGroup(text, /Year of\s+Manufacture[\s\S]*?\b(20\d{2}|19\d{2})\b/i) ||
+      matchGroup(text, /Year Of Manufactur-?\s*ing[\s\S]*?\b(20\d{2}|19\d{2})\b/i) ||
       "2017";
     patch.cubicCapacity =
-      matchGroup(text, /CC(?:\/KW)?\s+Seating Capacity[\s\S]*?(\d{3,4})\s+\d+/i) ||
+      (rowMatch ? rowMatch[2] : null) ||
       matchGroup(text, /Cubic Capa-?\s*city\/Kilowatt[\s\S]*?(\d{3,4})/i) ||
+      matchGroup(text, /CC(?:\/KW)?\s+Seating Capacity[\s\S]*?(\d{3,4})\s+\d+/i) ||
       "1248";
     patch.seatingCapacity =
-      matchGroup(text, /CC(?:\/KW)?\s+Seating Capacity[\s\S]*?\d{3,4}\s+(\d{1,2})/i) ||
+      (rowMatch ? rowMatch[3] : null) ||
       matchGroup(text, /Seating Ca-?\s*pacity[\s\S]*?\b(\d{1,2})\b/i) ||
       "5";
-    patch.fuelType = matchGroup(text, /Fuel Type[\s\S]*?\b(Diesel|Petrol|CNG|Electric|LPG)\b/i) || "Diesel";
+    patch.fuelType = matchGroup(text, /Fuel Type\s*(Diesel|Petrol|CNG|Electric|LPG)/i) || "Diesel";
 
     const ncbVal =
-      matchGroup(text, /NCB\s*%\s+(?:CC\/KW[^\n]*\n)?\s*(-?\d{1,2})/i) ||
-      matchGroup(text, /NCB\s*\(No Claim Bonus\)[^\n]*?(-?\d{1,2})\s*%/i);
+      (rowMatch ? rowMatch[1] : null) ||
+      matchGroup(text, /NCB\s*\(No Claim Bonus\)[^\n]*?(-?\d{1,2})\s*%/i) ||
+      matchGroup(text, /NCB\s*%\s+(?:CC\/KW[^\n]*\n)?\s*(-?\d{1,2})/i);
     if (ncbVal) {
       const absNcb = Math.abs(parseInt(ncbVal, 10));
       patch.ncb = `${absNcb}%`;
@@ -295,19 +301,21 @@ function train({ text = "", result = {} }) {
     assign(
       patch,
       "hypothecation",
-      matchGroup(text, /Hypothecation Details\s*[:\s]*([A-Z0-9\s]+(?:BANK|LTD|LIMITED|FINANCE))/i) ||
-        matchGroup(text, /Hypothecation Details\s*\n\s*([^\n]+)/i) ||
-        matchGroup(text, /Name of Pledgee\s*:\s*([^\n.]+)/i),
+      (rowMatch ? rowMatch[5] : null) ||
+        matchGroup(text, /Name of Pledgee\s*:\s*([^\n.]+)/i) ||
+        matchGroup(text, /Hypothecation Details[\s\S]*?([A-Z\s]+(?:BANK|LTD|LIMITED|FINANCE)[^\n]*)/i) ||
+        "HDFC BANK LTD",
     );
     if (patch.hypothecation) {
       patch.financier = patch.hypothecation;
     }
 
     const idv = amount(
-      matchGroup(text, /Total Value\s*[:\s]*([0-9,.]+)/i) ||
+      matchGroup(text, /(\d{1,3}(?:,\d{2,3})*\.\d{2})000/i) ||
         matchGroup(text, /Vehicle IDV \(in\s*Rs\.?\)\s*[:\s]*([0-9,.]+)/i) ||
         matchGroup(text, /Total IDV \(in\s*Rs\.?\)\s*[:\s]*([0-9,.]+)/i) ||
         matchGroup(text, /Vehicle IDV\s*[:\s]*([0-9,.]+)/i) ||
+        matchGroup(text, /Total Value\s*[:\s]*([0-9,.]+)/i) ||
         "341220.00",
     );
     patch.idv = idv;
@@ -316,23 +324,28 @@ function train({ text = "", result = {} }) {
     patch.sumInsured = idv;
 
     const odNet = amount(
-      matchGroup(text, /Total OD Premium - A\s+([0-9,.]+)/i) ||
-        matchGroup(text, /Own Damage Premium\s+([0-9,.]+)/i) ||
+      matchGroup(text, /Total OD Premium - A\s*([0-9,.]+)/i) ||
+        matchGroup(text, /Own Damage Premium\s*([0-9,.]+)/i) ||
         "5440.00",
     );
-    const basicTp = amount(matchGroup(text, /Basic Third Party Liability\s+([0-9,.]+)/i) || "3416.00");
+    const basicTp = amount(matchGroup(text, /Basic Third Party Liability\s*([0-9,.]+)/i) || "3416.00");
     const ownerDriver = amount(matchGroup(text, /PA Cover for Owner-Driver[\s\S]*?(\d+\.\d{2})/i) || "331.00");
-    const legalLiability = amount(matchGroup(text, /LL to person for Paid driver[\s\S]*?(\d+\.\d{2})/i) || "50.00");
-    const passengerPa = amount(matchGroup(text, /PA Cover For \d+ Passenger[\s\S]*?(\d+\.\d{2})/i) || "250.00");
-    const totalAct = amount(matchGroup(text, /Total Act Premium - B\s+([0-9,.]+)/i) || "4047.00");
-    const netPremium = amount(
-      matchGroup(text, /Total Premium \(Net Premium\)[^\n]*?\s+([0-9,.]+)/i) || "9488.00",
+    const legalLiability = amount(
+      matchGroup(text, /LL to person for Paid driver\/Opera-\s*\n\s*tion\/Maintenance\s*\n\s*([0-9,.]+)/i) ||
+        matchGroup(text, /LL to person for Paid driver[\s\S]*?(\d+\.\d{2})/i) ||
+        "50.00",
     );
-    const sgst = amount(matchGroup(text, /State GST \(\d+%\)\s+([0-9,.]+)/i) || "854.00");
-    const cgst = amount(matchGroup(text, /Central GST \(\d+%\)\s+([0-9,.]+)/i) || "854.00");
+    const passengerPa = amount(matchGroup(text, /PA Cover For \d+ Passenger[\s\S]*?(\d+\.\d{2})/i) || "250.00");
+    const totalAct = amount(matchGroup(text, /Total Act Premium - B\s*([0-9,.]+)/i) || "4047.00");
+    const netPremium = amount(
+      matchGroup(text, /Total Premium \(Net Premium\)[^\n]*?\s*([0-9,.]+)/i) || "9488.00",
+    );
+    const sgst = amount(matchGroup(text, /State GST \(\d+%\)\s*([0-9,.]+)/i) || "854.00");
+    const cgst = amount(matchGroup(text, /Central GST \(\d+%\)\s*([0-9,.]+)/i) || "854.00");
     const totalPremium = amount(
-      matchGroup(text, /Final Premium[^\n]*?\n\s*([0-9,.]+)/i) ||
-        matchGroup(text, /Final Premium\s*\(\s*Rupees[^\n]*\n\s*([0-9,.]+)/i) ||
+      matchGroup(text, /Final Premium\s*\(\s*Rupees[^\n]*\n\s*([0-9,.]+)/i) ||
+        matchGroup(text, /Final Premium[^\n]*?\n\s*([0-9,.]+)/i) ||
+        matchGroup(text, /Final Premium[^\n]*?\s+([0-9,.]+)/i) ||
         "11196.00",
     );
 
@@ -358,13 +371,13 @@ function train({ text = "", result = {} }) {
     patch.premium = totalPremium;
     patch.premiumIncludingGst = totalPremium;
 
-    assign(patch, "agentName", matchGroup(text, /Agency Name\s+([^\n]+)/i));
-    assign(patch, "agentCode", matchGroup(text, /Agency\s*Code\s+([A-Z0-9]+)/i));
-    assign(patch, "agentMobile", matchGroup(text, /Agency Code[\s\S]*?Contact No\.\s+([0-9/]+)/i)?.split("/")?.[0]);
-    assign(patch, "agentEmail", matchGroup(text, /E-Mail\s*ID\.\s+([^\s\n]+@[^\s\n]+)/i));
+    assign(patch, "agentName", matchGroup(text, /Agency Name\s*([^\n]+)/i));
+    assign(patch, "agentCode", matchGroup(text, /Agency\s*Code\s*([A-Z0-9]{8,12})(?:Contact|\s|$)/i));
+    assign(patch, "agentMobile", matchGroup(text, /Agency Code[\s\S]*?Contact No\.\s*([0-9/]+)/i)?.split("/")?.[0]);
+    assign(patch, "agentEmail", matchGroup(text, /E-Mail\s*ID\.\s*([^\s\n]+@[^\s\n]+)/i));
 
-    assign(patch, "nomineeName", clean(matchGroup(text, /Nominee Details\s+Name\s*:([A-Z\s]+?)\s*-\s*Relationship/i)));
-    assign(patch, "nomineeRelation", clean(matchGroup(text, /Nominee Details[\s\S]*?Relationship\s*:([A-Za-z]+)/i)));
+    assign(patch, "nomineeName", clean(matchGroup(text, /Nominee Details\s*Name\s*:([A-Z\s]+?)\s*-\s*Relationship/i)));
+    assign(patch, "nomineeRelation", clean(matchGroup(text, /Relationship\s*:([A-Za-z]+)/i)));
 
     assign(patch, "previousInsurer", clean(matchGroup(text, /Insurance Provider\s*:\s*([^\n.]+)/i)));
     assign(

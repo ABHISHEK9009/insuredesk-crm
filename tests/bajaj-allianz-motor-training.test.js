@@ -251,6 +251,66 @@ describe("Bajaj Allianz motor scoped training", () => {
     });
   });
 
+  it("extracts AMRIT LAL PARWANI real PDF file correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "AMRIT LAL PARWANI_MP04CT2032_2026-27 POLICY.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("Bajaj Allianz General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Private Car Package Policy");
+    expect(result.policyNumber).toBe("OG-27-2301-1801-00000509");
+    expect(result.customerName).toBe("AMRIT LAL PARWANI");
+    expect(result.vehicleNumber).toBe("MP04CT2032");
+    expect(result.registrationNumber).toBe("MP04CT2032");
+    expect(result.rtoLocation).toBe("MP04-BHOPAL");
+    expect(result.engineNumber).toBe("D13A5503389");
+    expect(result.chassisNumber).toBe("MA3NYFB1SHH278727");
+    expect(result.vehicleMake).toBe("MARUTI");
+    expect(result.vehicleModel).toBe("VITARA BREZZA");
+    expect(result.variant).toBe("1.2 VDI (O) DDIS 200");
+    expect(result.makeModel).toBe("MARUTI - VITARA BREZZA");
+    expect(result.manufacturingYear).toBe("2017");
+    expect(result.cubicCapacity).toBe("1248");
+    expect(result.seatingCapacity).toBe("5");
+    expect(result.fuelType).toBe("Diesel");
+    expect(result.ncb).toBe("45%");
+    expect(result.hypothecation).toBe("HDFC BANK LTD");
+    expect(result.idv).toBe("341220.00");
+    expect(result.startDate).toBe("04/08/2026");
+    expect(result.expiryDate).toBe("03/08/2027");
+    expect(result.odPremium).toBe("5440.00");
+    expect(result.basicTpPremium).toBe("3416.00");
+    expect(result.ownerDriverPremium).toBe("331.00");
+    expect(result.legalLiabilityPremium).toBe("50.00");
+    expect(result.paPassengersPremium).toBe("250.00");
+    expect(result.tpPremium).toBe("4047.00");
+    expect(result.netPremium).toBe("9488.00");
+    expect(result.cgst).toBe("854.00");
+    expect(result.sgst).toBe("854.00");
+    expect(result.gstAmount).toBe("1708.00");
+    expect(result.totalPremium).toBe("11196.00");
+    expect(result.agentName).toBe("PRAGATI PANDEY");
+    expect(result.agentCode).toBe("BAG10107590");
+    expect(result.agentMobile).toBe("08818889660");
+    expect(result.agentEmail).toBe("ANAND.SONI10@GMAIL.COM");
+    expect(result.nomineeName).toBe("MRS PARWANI");
+    expect(result.nomineeRelation).toBe("Spouse");
+    expect(result.previousInsurer).toBe("Go Digit General Insurance Limited");
+    expect(result.previousPolicyNumber).toBe("D217171051");
+    expect(result.previousPolicyExpiryDate).toBe("03/08/2026");
+    expect(result.addOnCovers).toBe("Drive Assure Economy Plus");
+    expect(result.depreciationShieldCover).toBe("Yes");
+    expect(result.engineProtectorCover).toBe("Yes");
+    expect(result.spotAssistanceCover).toBe("Yes");
+    expect(result.keysAndLocksCover).toBe("Yes");
+    expect(result.personalBaggageCover).toBe("Yes");
+    expect(result.compulsoryDeductible).toBe("1000.00");
+  });
+
   it("extracts RAKESH TIWARI Standalone Own Damage Two-Wheeler policy correctly", async () => {
     const filePath = path.join(process.cwd(), "storage", "NEW HEALTH", "RAKESHTIWARI_MP05ZB6573_2026-27.pdf");
     const buf = fs.readFileSync(filePath);
