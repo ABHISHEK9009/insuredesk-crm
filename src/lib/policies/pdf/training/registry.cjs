@@ -151,12 +151,18 @@ function isCareHealth(result = {}, context = {}) {
 
 function isGoDigitMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
-  if (/TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text)) return false;
-  if (/HDFC\s*ERGO/i.test(text)) return false;
-  if (/Bajaj\s*(?:Allianz|General)/i.test(text.slice(0, 3000))) return false;
-  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(text.slice(0, 3000))) return false;
+  const header = text.slice(0, 3000);
+  if (/TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(header)) return false;
+  if (/HDFC\s*ERGO/i.test(header)) return false;
+  if (/Bajaj\s*(?:Allianz|General)/i.test(header)) return false;
+  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(header)) return false;
+  if (/IFFCO\s*[- ]?\s*TOKIO/i.test(header)) return false;
+  if (/ICICI\s+Lombard/i.test(header)) return false;
+  if (/UNITED\s+INDIA\s+INSURANCE/i.test(header)) return false;
+  if (/ROYAL\s+SUNDARAM/i.test(header)) return false;
+  if (/FUTURE\s+GENERALI/i.test(header)) return false;
   return (
-    /Go\s+Digit|godigit\.com|Digit\s+Two-Wheeler/i.test(text) &&
+    /Go\s+Digit|godigit\.com|Digit\s+Two-Wheeler/i.test(header) &&
     /Motor|Two-Wheeler|Private\s+Car|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
   );
 }
