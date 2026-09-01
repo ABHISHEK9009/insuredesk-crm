@@ -417,6 +417,14 @@ function train({ text = "", result = {} }) {
   const ncbAmtMatch = text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)[^\n]*-([0-9,.]+)/i);
   if (ncbAmtMatch) patch.ncbDiscount = normalizeAmount(ncbAmtMatch[1]);
 
+  const cgstSgstMatch =
+    text.match(/Amount\s*\n\s*(\d+\.\d{2})(\d+\.\d{2})0\.000\.00/i) ||
+    text.match(/Total\s*\n\s*\d+\.\d{2}(\d+\.\d{2})(\d+\.\d{2})\d+\.\d{2}/i);
+  if (cgstSgstMatch) {
+    patch.cgst = normalizeAmount(cgstSgstMatch[1]);
+    patch.sgst = normalizeAmount(cgstSgstMatch[2]);
+  }
+
   const bifurcation = extractPremiumBifurcation(text);
   if (bifurcation) {
     if (bifurcation.netPremium) {
