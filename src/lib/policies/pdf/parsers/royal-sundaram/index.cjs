@@ -123,7 +123,10 @@ function extractRoyalSundaramMotor(text, _sourceFile = "") {
 // Start of isRoyalSundaramMotor (Lines 2680-2686)
 function isRoyalSundaramMotor(text) {
   const header = text.slice(0, 3000);
-  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE/i.test(header)) return false;
+  // Only reject if NEW INDIA appears as the primary company, not as a previous-insurer mention
+  const isNewIndiaPrimary = /THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE/i.test(header) &&
+    !/Royal\s+Sundaram/i.test(header.slice(0, 500));
+  if (isNewIndiaPrimary) return false;
   return (
     /Royal\s+Sundaram\s+General\s+Insurance|ROYAL\s+SUNDARAM\s+ALLIANCE/i.test(header) &&
     /Certificate\s*of\s*Insurance|CERTIFICATEOFINSURANCE/i.test(text) &&

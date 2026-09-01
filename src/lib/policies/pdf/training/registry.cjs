@@ -171,6 +171,22 @@ function isGoDigitMotor(result = {}, context = {}) {
   );
 }
 
+function isRoyalSundaramMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  const insurer = result.insuranceCompany || result.companyName || "";
+  if (insurer && !/Royal\s+Sundaram/i.test(insurer)) return false;
+  const header = text.slice(0, 3000);
+  const topLines = text.slice(0, 500);
+  // Reject if New India is the primary company (appears at top, not just as previous insurer)
+  if (/THE\s+NEW\s+INDIA\s+ASSURANCE/i.test(topLines)) return false;
+  return (
+    /Royal\s+Sundaram\s+General\s+Insurance|ROYAL\s+SUNDARAM\s+INSURANCE|Royal\s+Sundaram\s+Alliance/i.test(header) &&
+    /Goods\s+Carrying\s+Vehicle|Commercial\s+Vehicle|Private\s+Car|Two\s+Wheeler|Motor\s+Vehicle|Certificate\s+of\s+Insurance/i.test(text)
+  );
+}
+
 function isNewIndiaMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   const category = normalizeCategory(result.documentCategory);
@@ -182,6 +198,7 @@ function isNewIndiaMotor(result = {}, context = {}) {
   const header = text.slice(0, 3000);
   if (/Future\s+Generali|generalicentral|generali/i.test(header)) return false;
   if (/IFFCO\s*[- ]?\s*TOKIO/i.test(header)) return false;
+  if (/Royal\s+Sundaram/i.test(text.slice(0, 500))) return false;
   return (
     /THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(text) &&
     /Motor|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
@@ -301,6 +318,9 @@ function deriveTrainingScope(result = {}, context = {}) {
   if (isCareHealth(result, context)) {
     return { insurer: "care-health", category: "health" };
   }
+  if (isRoyalSundaramMotor(result, context)) {
+    return { insurer: "royal-sundaram", category: "motor" };
+  }
   if (isNewIndiaMotor(result, context)) {
     return { insurer: "new-india", category: "motor" };
   }
@@ -394,6 +414,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       insuranceCompany: "Tata AIG General Insurance Company Limited",
       companyName: "Tata AIG General Insurance Company Limited",
       documentCategory: "Motor Insurance",
+    };
+  }
+  if (isRoyalSundaramMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Royal Sundaram General Insurance Co. Limited",
+      companyName: "Royal Sundaram General Insurance Co. Limited",
+      documentCategory: "Motor Insurance",
+      documentFormat: "ROYAL_SUNDARAM_MOTOR_V2",
+      sourceDocumentType: "ROYAL_SUNDARAM_MOTOR_V2",
     };
   }
   if (isNewIndiaMotor(result, context)) {
