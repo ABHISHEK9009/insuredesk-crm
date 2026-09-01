@@ -1,7 +1,5 @@
 const { normalizeAmount, sumAmounts } = require("../../utils/amounts.cjs");
 const { buildDuration } = require("../../utils/dates.cjs");
-const { cleanHdfcValue } = require("../../utils/text.cjs");
-const { matchGroup } = require("../../utils/regex.cjs");
 
 const scope = { insurer: "hdfc-ergo", category: "motor" };
 
@@ -15,10 +13,6 @@ function matches({ text = "", result = {} }) {
     );
   const isHealth = /Optima\s+Secure|Optima\s+Restore|my\s*:\s*health|Health\s*Suraksha|INDIVIDUAL\s+HEALTH/i.test(text);
   return isHdfc && isMotor && !isHealth;
-}
-
-function clean(value = "") {
-  return cleanHdfcValue(value).replace(/^(?:Mr|Mrs|Ms|Miss|Dr|Shri|Smt|MR|MRS|MS|MISS|DR|SHRI|SMT)\.?\s+/i, "").trim();
 }
 
 function formatAmount(value = "") {

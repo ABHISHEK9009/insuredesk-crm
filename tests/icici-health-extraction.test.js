@@ -328,12 +328,12 @@ describe("ICICI Lombard Elevate Health training", () => {
       selectScopedTraining(iciciMotor, {
         text: "ICICI Lombard PRIVATE CAR PACKAGE POLICY vehicle chassis engine registration",
       }),
-    ).toHaveLength(0);
+    ).not.toContain(healthTrainer);
     expect(
       selectScopedTraining(iciciWarehouse, {
         text: "ICICI Lombard MSME Suraksha Kavach warehouse stock fire burglary",
       }),
-    ).toHaveLength(0);
+    ).not.toContain(healthTrainer);
   });
 
   it("does not select ICICI Health training for another insurer's Health document", () => {

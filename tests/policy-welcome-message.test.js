@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("policy upload welcome message", () => {
   it("formats the WhatsApp welcome message with clean spacing and branded link", () => {

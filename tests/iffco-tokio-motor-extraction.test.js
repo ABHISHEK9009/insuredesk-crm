@@ -3,7 +3,6 @@ import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
-const iffcoTokioMotor = require("../src/lib/policies/pdf/training/iffco-tokio/motor.cjs");
 const { applyScopedTraining, deriveTrainingScope } = require("../src/lib/policies/pdf/training/registry.cjs");
 
 const sampleEndorsementText = `IFFCO - TOKIO GENERAL INSURANCE CO. LTD Servicing Office:

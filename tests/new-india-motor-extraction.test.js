@@ -8,7 +8,6 @@ const require = createRequire(import.meta.url);
 const pdf = require("pdf-parse");
 const { extractPolicyFromText } = require("../src/lib/policies/pdf/extractor.cjs");
 const { applyScopedTraining, selectScopedTraining } = require("../src/lib/policies/pdf/training/registry.cjs");
-const trainer = require("../src/lib/policies/pdf/training/new-india/motor.cjs");
 
 describe("New India Commercial Vehicle Motor Policy extraction", () => {
   const sampleText = `

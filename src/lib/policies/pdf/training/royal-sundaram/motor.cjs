@@ -22,7 +22,7 @@ function cleanAmount(val) {
 
 function normalizeDate(raw) {
   if (!raw) return "";
-  const m = raw.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  const m = raw.match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})/);
   if (m) {
     return `${m[1].padStart(2, "0")}/${m[2].padStart(2, "0")}/${m[3]}`;
   }
@@ -91,7 +91,7 @@ function train({ text = "", result = {}, sourceFile = "" }) {
   const rawInsured =
     matchGroup(text, /Address\s+of\s+insured:\s*\n\s*Insured\s+Name:\s*([^\n]+)/i) ||
     matchGroup(text, /Name\s+of\s+(?:the\s+)?Insured\s*:?\s*(?:Wr\s+|Mr\.?\s+|Mrs\.?\s+|Ms\.?\s+)?([^\n]+)/i) ||
-    matchGroup(text, /Aug\s+\d{1,2},\s+\d{4}\s*\n\s*(?:Mr\.?|Mrs\.?|Wr)?\s*([A-Z\s.,\/]+?)(?=\n\s*(?:U\/C|WARD|INDORE|BHOPAL|PLOT|FLAT|STREET|ROAD|\d{6}))/i);
+    matchGroup(text, /Aug\s+\d{1,2},\s+\d{4}\s*\n\s*(?:Mr\.?|Mrs\.?|Wr)?\s*([A-Z\s.,/]+?)(?=\n\s*(?:U\/C|WARD|INDORE|BHOPAL|PLOT|FLAT|STREET|ROAD|\d{6}))/i);
 
   if (rawInsured) {
     const cleaned = rawInsured.replace(/^(?:Wr|Mr\.?|Mrs\.?|Ms\.?)\s+/i, "").replace(/\s+/g, " ").trim();

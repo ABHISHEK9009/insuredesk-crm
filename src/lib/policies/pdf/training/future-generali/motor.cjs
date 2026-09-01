@@ -1,4 +1,3 @@
-const { normalizeAmount } = require("../../utils/amounts.cjs");
 const { matchGroup } = require("../../utils/regex.cjs");
 
 const scope = { insurer: "future-generali", category: "motor" };
@@ -20,14 +19,14 @@ function cleanAmount(val) {
 
 function normalizeDate(raw) {
   if (!raw) return "";
-  const m = raw.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  const m = raw.match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})/);
   if (m) {
     return `${m[1].padStart(2, "0")}/${m[2].padStart(2, "0")}/${m[3]}`;
   }
   return raw;
 }
 
-function train({ text = "", result = {}, sourceFile = "" }) {
+function train({ text = "", result = {}, _sourceFile = "" }) {
   if (!result || typeof result !== "object") return result;
 
   const patch = {
@@ -43,8 +42,8 @@ function train({ text = "", result = {}, sourceFile = "" }) {
 
   // 1. Policy Number & Invoices
   const polMatch =
-    matchGroup(text, /Policy\s+No\.?\s*:?\s*(132[A-Z0-9/\-]+)/i) ||
-    matchGroup(text, /Policy\s+Number\s*:?\s*(132[A-Z0-9/\-]+)/i) ||
+    matchGroup(text, /Policy\s+No\.?\s*:?\s*(132[A-Z0-9/-]+)/i) ||
+    matchGroup(text, /Policy\s+Number\s*:?\s*(132[A-Z0-9/-]+)/i) ||
     matchGroup(text, /\b(132\/\d{2}\/\d{2}\/[A-Z0-9/]+)\b/i);
   if (polMatch) {
     patch.policyNumber = polMatch.trim();

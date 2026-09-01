@@ -7,7 +7,7 @@ import fs from "node:fs";
 const require = createRequire(import.meta.url);
 const pdf = require("pdf-parse");
 const { extractPolicyFromText } = require("../src/lib/policies/pdf/extractor.cjs");
-const { applyScopedTraining, selectScopedTraining, deriveTrainingScope } = require("../src/lib/policies/pdf/training/registry.cjs");
+const { selectScopedTraining, deriveTrainingScope } = require("../src/lib/policies/pdf/training/registry.cjs");
 
 describe("Future Generali Motor Policy Training", () => {
   it("extracts SHREENATHJI INFRASTRUCTURE real Future Generali Motor policy correctly", async () => {
