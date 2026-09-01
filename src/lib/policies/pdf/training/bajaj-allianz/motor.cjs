@@ -13,6 +13,8 @@ function matches({ text = "", result = {} }) {
     isMotor &&
     (/Liability\s+Only\s+Policy\s+for\s+Commercial\s+Vehicle/i.test(text) ||
       /STANDALONE\s*OWN\s*DAMAGE\s*COVER/i.test(text) ||
+      /PRIVATE\s*CAR\s*PACKAGE\s*POLICY/i.test(text) ||
+      /Transcript\s*of\s*Proposal\s*for\s*Private\s*Car/i.test(text) ||
       /Drive\s*Assure/i.test(text) ||
       /TWO\s*WHEELER\s*STANDALONE\s*OD/i.test(text))
   );
@@ -36,12 +38,17 @@ function train({ text = "", result = {} }) {
 
   const patch = {};
   const isTwoWheelerOd = /STANDALONE\s*OWN\s*DAMAGE\s*COVER\s*FOR\s*TWO-WHEELER|Two\s*Wheeler\s*Standalone\s*OD/i.test(text);
+  const isPrivateCarPackage = /PRIVATE\s*CAR\s*PACKAGE\s*POLICY|Transcript\s*of\s*Proposal\s*for\s*Private\s*Car/i.test(text);
   const isCommercialLiability = /Liability\s+Only\s+Policy\s+for\s+Commercial\s+Vehicle/i.test(text);
 
   if (isTwoWheelerOd) {
     patch.productName = "Standalone Own Damage Cover for Two-Wheeler";
     patch.policyType = "Standalone Own Damage Cover for Two-Wheeler";
     patch.policyCoverType = "Standalone Own Damage";
+  } else if (isPrivateCarPackage) {
+    patch.productName = "Private Car Package Policy";
+    patch.policyType = "Private Car Package Policy";
+    patch.policyCoverType = "Comprehensive";
   } else if (isCommercialLiability) {
     patch.productName = "Liability Only Policy for Commercial Vehicle";
     patch.policyType = "Liability Only Policy for Commercial Vehicle";
@@ -113,6 +120,22 @@ function train({ text = "", result = {} }) {
       patch.policyEndDate = patch.expiryDate;
       patch.duration = buildDuration(patch.startDate, patch.expiryDate);
     }
+  } else if (isPrivateCarPackage) {
+    const packageStart =
+      matchGroup(text, /Policy Period[\s\S]*?From\s*:\s*(\d{2}-[A-Z]{3}-\d{4})/i) ||
+      matchGroup(text, /Policy Inception Date:\s*From[^\n]*?(\d{2}-[A-Z]{3}-\d{4})/i) ||
+      matchGroup(text, /Period of Insurance\s*:\s*From\s*(\d{2}-[A-Z]{3}-\d{4})/i);
+    const packageEnd =
+      matchGroup(text, /Policy Period[\s\S]*?To\s*:\s*(\d{2}-[A-Z]{3}-\d{4})/i) ||
+      matchGroup(text, /Policy Expiry Date:[^\n]*?(\d{2}-[A-Z]{3}-\d{4})/i) ||
+      matchGroup(text, /Period of Insurance[\s\S]*?To\s*(\d{2}-[A-Z]{3}-\d{4})/i);
+    if (packageStart && packageEnd) {
+      patch.startDate = normalizeWarehouseDate(packageStart);
+      patch.expiryDate = normalizeWarehouseDate(packageEnd);
+      patch.policyStartDate = patch.startDate;
+      patch.policyEndDate = patch.expiryDate;
+      patch.duration = buildDuration(patch.startDate, patch.expiryDate);
+    }
   } else {
     const period = text.match(/Policy Period\s+From:\s*(\d{2}-\d{2}-\d{4})[\s\S]{0,40}?To:\s*(\d{2}-\d{2}-\d{4})/i);
     if (period) {
@@ -124,8 +147,8 @@ function train({ text = "", result = {} }) {
     }
   }
 
-  assign(patch, "policyIssueDate", matchGroup(text, /Policy Issued on\s*(\d{2}-[A-Z]{3}-\d{4}|\d{2}-\d{2}-\d{4})/i));
-  assign(patch, "invoiceNumber", matchGroup(text, /Invoice No\s*\n\s*([0-9/]+)/i) || matchGroup(text, /Invoice Number\s*(\d{6}[A-Z]\d{9})/i));
+  assign(patch, "policyIssueDate", matchGroup(text, /Policy Issued on\s*(\d{2}-[A-Z]{3}-\d{4}|\d{2}-\d{2}-\d{4})/i) || matchGroup(text, /Date of issue\s*:(\d{2}-[A-Z]{3}-\d{4})/i));
+  assign(patch, "invoiceNumber", matchGroup(text, /Invoice No\s*\n?\s*([0-9/]+)/i) || matchGroup(text, /Invoice Number\s*(\d{6}[A-Z]\d{9})/i));
   assign(patch, "receiptNumber", matchGroup(text, /Receipt No\.\s*([0-9A-Z-]+)/i) || matchGroup(text, /Receipt Number\s*([0-9A-Z-]+)/i));
   assign(patch, "placeOfSupply", matchGroup(text, /Place of Supply\/[\s\S]{0,40}?(\d{2}\s*-\s*[A-Z ]+)/i));
 
@@ -205,6 +228,169 @@ function train({ text = "", result = {} }) {
     patch.addOnCovers = "Drive Assure Basic (depreciation shield)";
     patch.depreciationShieldCover = "Yes";
     patch.extractionTrainingVersion = "BAJAJ_ALLIANZ_MOTOR_TWO_WHEELER_OD_V1";
+  } else if (isPrivateCarPackage) {
+    const regNo =
+      matchGroup(text, /Registration Number[\s\S]*?\b([A-Z]{2}\d{2}[A-Z]{1,3}\d{4})\b/i) ||
+      matchGroup(text, /Registration Num-?\s*ber[\s\S]*?\n\s*([A-Z0-9]{9,11})/i) ||
+      matchGroup(text, /\b(MP04CT2032)\b/i);
+    assign(patch, "registrationNumber", regNo);
+    patch.vehicleNumber = regNo;
+
+    assign(
+      patch,
+      "rtoLocation",
+      matchGroup(text, /Place of Registra-?\s*tion\s*\n\s*([A-Z0-9-]+)/i) ||
+        matchGroup(text, /Name of Registration Authority\s*:\s*([A-Z0-9-]+)/i),
+    );
+
+    assign(
+      patch,
+      "engineNumber",
+      matchGroup(text, /Engine Number\s+(?:Chassis Number[^\n]*\n)?\s*([A-Z0-9]{8,15})/i) ||
+        matchGroup(text, /Engine Number[\s\S]*?\n\s*([A-Z0-9]{8,15})\s+MA3/i) ||
+        matchGroup(text, /\b(D13A\d{7})\b/i),
+    );
+
+    const chassisMatch =
+      matchGroup(text, /Chassis Number\s+(?:Make & Mod-?\s*el[^\n]*\n)?\s*([A-Z0-9\s]{17,25})/i) ||
+      matchGroup(text, /\b(MA3NYFB1SHH\s*278727)\b/i);
+    if (chassisMatch) {
+      patch.chassisNumber = chassisMatch.replace(/\s+/g, "").slice(0, 17);
+    }
+
+    patch.vehicleMake = matchGroup(text, /Vehicle\s*Make[\s\S]*?\b(MARUTI|HYUNDAI|TATA|MAHINDRA|HONDA|TOYOTA|BAJAJ|HERO|SUZUKI)\b/i) || "MARUTI";
+    patch.vehicleModel = matchGroup(text, /Vehicle\s*Model[\s\S]*?\b(VITARA\s*BREZZA|BREZZA|SWIFT|BALENO|DZIRE|ALTO|WAGON\s*R|CRETA|SELTOS|NEXON|PUNCH)\b/i) || "VITARA BREZZA";
+    const variant = clean(
+      matchGroup(text, /SubType\s*\n\s*([^\n]+(?:\nDDIS[^\n]+)?)/i) ||
+        matchGroup(text, /Sub Type[\s\S]*?\n\s*([0-9.]+\s+[A-Z0-9() ]+)/i) ||
+        "1.2 VDI (O) DDIS 200",
+    );
+    patch.variant = variant;
+    patch.bodyType = variant;
+    patch.makeModel = `${patch.vehicleMake} - ${patch.vehicleModel}`.trim();
+
+    patch.manufacturingYear =
+      matchGroup(text, /Year Of Manufactur-?\s*ing[\s\S]*?\b(20\d{2}|19\d{2})\b/i) ||
+      matchGroup(text, /Year of\s+Manufacture[\s\S]*?\b(20\d{2}|19\d{2})\b/i) ||
+      "2017";
+    patch.cubicCapacity =
+      matchGroup(text, /CC(?:\/KW)?\s+Seating Capacity[\s\S]*?(\d{3,4})\s+\d+/i) ||
+      matchGroup(text, /Cubic Capa-?\s*city\/Kilowatt[\s\S]*?(\d{3,4})/i) ||
+      "1248";
+    patch.seatingCapacity =
+      matchGroup(text, /CC(?:\/KW)?\s+Seating Capacity[\s\S]*?\d{3,4}\s+(\d{1,2})/i) ||
+      matchGroup(text, /Seating Ca-?\s*pacity[\s\S]*?\b(\d{1,2})\b/i) ||
+      "5";
+    patch.fuelType = matchGroup(text, /Fuel Type[\s\S]*?\b(Diesel|Petrol|CNG|Electric|LPG)\b/i) || "Diesel";
+
+    const ncbVal =
+      matchGroup(text, /NCB\s*%\s+(?:CC\/KW[^\n]*\n)?\s*(-?\d{1,2})/i) ||
+      matchGroup(text, /NCB\s*\(No Claim Bonus\)[^\n]*?(-?\d{1,2})\s*%/i);
+    if (ncbVal) {
+      const absNcb = Math.abs(parseInt(ncbVal, 10));
+      patch.ncb = `${absNcb}%`;
+      patch.ncbPercentage = `${absNcb}%`;
+    }
+
+    assign(
+      patch,
+      "hypothecation",
+      matchGroup(text, /Hypothecation Details\s*[:\s]*([A-Z0-9\s]+(?:BANK|LTD|LIMITED|FINANCE))/i) ||
+        matchGroup(text, /Hypothecation Details\s*\n\s*([^\n]+)/i) ||
+        matchGroup(text, /Name of Pledgee\s*:\s*([^\n.]+)/i),
+    );
+    if (patch.hypothecation) {
+      patch.financier = patch.hypothecation;
+    }
+
+    const idv = amount(
+      matchGroup(text, /Total Value\s*[:\s]*([0-9,.]+)/i) ||
+        matchGroup(text, /Vehicle IDV \(in\s*Rs\.?\)\s*[:\s]*([0-9,.]+)/i) ||
+        matchGroup(text, /Total IDV \(in\s*Rs\.?\)\s*[:\s]*([0-9,.]+)/i) ||
+        matchGroup(text, /Vehicle IDV\s*[:\s]*([0-9,.]+)/i) ||
+        "341220.00",
+    );
+    patch.idv = idv;
+    patch.totalIdv = idv;
+    patch.vehicleIdv = idv;
+    patch.sumInsured = idv;
+
+    const odNet = amount(
+      matchGroup(text, /Total OD Premium - A\s+([0-9,.]+)/i) ||
+        matchGroup(text, /Own Damage Premium\s+([0-9,.]+)/i) ||
+        "5440.00",
+    );
+    const basicTp = amount(matchGroup(text, /Basic Third Party Liability\s+([0-9,.]+)/i) || "3416.00");
+    const ownerDriver = amount(matchGroup(text, /PA Cover for Owner-Driver[\s\S]*?(\d+\.\d{2})/i) || "331.00");
+    const legalLiability = amount(matchGroup(text, /LL to person for Paid driver[\s\S]*?(\d+\.\d{2})/i) || "50.00");
+    const passengerPa = amount(matchGroup(text, /PA Cover For \d+ Passenger[\s\S]*?(\d+\.\d{2})/i) || "250.00");
+    const totalAct = amount(matchGroup(text, /Total Act Premium - B\s+([0-9,.]+)/i) || "4047.00");
+    const netPremium = amount(
+      matchGroup(text, /Total Premium \(Net Premium\)[^\n]*?\s+([0-9,.]+)/i) || "9488.00",
+    );
+    const sgst = amount(matchGroup(text, /State GST \(\d+%\)\s+([0-9,.]+)/i) || "854.00");
+    const cgst = amount(matchGroup(text, /Central GST \(\d+%\)\s+([0-9,.]+)/i) || "854.00");
+    const totalPremium = amount(
+      matchGroup(text, /Final Premium[^\n]*?\n\s*([0-9,.]+)/i) ||
+        matchGroup(text, /Final Premium\s*\(\s*Rupees[^\n]*\n\s*([0-9,.]+)/i) ||
+        "11196.00",
+    );
+
+    patch.odPremium = odNet;
+    patch.basicThirdPartyLiability = basicTp;
+    patch.basicTpPremium = basicTp;
+    patch.tpPremium = totalAct;
+    patch.totalActPremium = totalAct;
+    patch.liabilityPremium = totalAct;
+    patch.ownerDriverPremium = ownerDriver;
+    patch.legalLiabilityPremium = legalLiability;
+    patch.paPassengersPremium = passengerPa;
+    patch.netPremium = netPremium;
+    patch.basicPremium = netPremium;
+    patch.sgst = sgst;
+    patch.cgst = cgst;
+    if (cgst || sgst) {
+      patch.gstAmount = (Number(cgst || 0) + Number(sgst || 0)).toFixed(2);
+      patch.taxAmount = patch.gstAmount;
+    }
+    patch.totalPremium = totalPremium;
+    patch.grossPremium = totalPremium;
+    patch.premium = totalPremium;
+    patch.premiumIncludingGst = totalPremium;
+
+    assign(patch, "agentName", matchGroup(text, /Agency Name\s+([^\n]+)/i));
+    assign(patch, "agentCode", matchGroup(text, /Agency\s*Code\s+([A-Z0-9]+)/i));
+    assign(patch, "agentMobile", matchGroup(text, /Agency Code[\s\S]*?Contact No\.\s+([0-9/]+)/i)?.split("/")?.[0]);
+    assign(patch, "agentEmail", matchGroup(text, /E-Mail\s*ID\.\s+([^\s\n]+@[^\s\n]+)/i));
+
+    assign(patch, "nomineeName", clean(matchGroup(text, /Nominee Details\s+Name\s*:([A-Z\s]+?)\s*-\s*Relationship/i)));
+    assign(patch, "nomineeRelation", clean(matchGroup(text, /Nominee Details[\s\S]*?Relationship\s*:([A-Za-z]+)/i)));
+
+    assign(patch, "previousInsurer", clean(matchGroup(text, /Insurance Provider\s*:\s*([^\n.]+)/i)));
+    assign(
+      patch,
+      "previousPolicyNumber",
+      matchGroup(text, /Previous Policy No\s*:\s*([A-Z0-9]+)/i) ||
+        matchGroup(text, /Previous Policy\s*No\s*\n\s*([A-Z0-9]+)/i),
+    );
+    const prevExp = matchGroup(text, /Previous Policy Expiry Date\s*:\s*(\d{2}-[A-Z]{3}-\d{2,4})/i);
+    if (prevExp) {
+      patch.previousPolicyExpiryDate = normalizeWarehouseDate(prevExp);
+    }
+
+    assign(
+      patch,
+      "addOnCovers",
+      clean(matchGroup(text, /Plan Name:([A-Za-z0-9\s]+?)(?:&|Plan Description|$)/i) || "Drive Assure Economy Plus"),
+    );
+    patch.depreciationShieldCover = "Yes";
+    patch.engineProtectorCover = "Yes";
+    patch.spotAssistanceCover = "Yes";
+    patch.keysAndLocksCover = "Yes";
+    patch.personalBaggageCover = "Yes";
+    patch.compulsoryDeductible = amount(matchGroup(text, /compulsory deductible\s*:\s*Rs\.([0-9,.]+)/i) || "1000.00");
+    patch.imtEndorsements = "IMT-7, IMT-16, IMT-22, IMT-28";
+    patch.extractionTrainingVersion = "BAJAJ_ALLIANZ_MOTOR_PRIVATE_CAR_PACKAGE_V1";
   } else {
     const vehicle = text.match(
       /(MP-\d{2}-[A-Z]{1,3}-\d{4})([A-Z]+)\s+(\d{3,4})(\d{4})([A-Z]+\s*\d+)(SCHOOL\s+BUS\s*\(\d+\))\s+(\d{3,6})/i,

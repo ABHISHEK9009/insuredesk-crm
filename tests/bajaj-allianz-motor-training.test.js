@@ -63,6 +63,86 @@ IMT-Endorsements/
 28
 `;
 
+const privateCarPackageText = `
+Bajaj General Insurance Limited
+(Formerly known as Bajaj Allianz General Insurance Co. Ltd.)
+Registered and Head Office: Bajaj Insurance House, Airport Road, Yerwada, Pune - 411006(India)
+Transcript of Proposal for Private Car Package Policy
+Dear AMRIT LAL PARWANI,
+We wish to inform you that the contract under policy number 'OG-27-2301-1801-00000509' has been finalized
+A. Proposer details
+1. Proposer Name : AMRIT LAL PARWANI
+2. Proposer Address : HOUSE NO 321/1 BHAGAT SINGH WARD NO 01, BANARJI COLONY 61 PIPARIYA TEHSIL PIPARIYA, , HOSHANGABAD, MADHYA PRADESH-461775
+3. Proposer Mobile Number :
+5. Proposer e-mail id : *************pal@gmail.com
+B.Vehicle Details
+Registration Number MP04CT2032
+Month / Year of Regn SEP/2017
+Vehicle Make MARUTI
+Vehicle Model VITARA BREZZA
+Vehicle Sub Type 1.2 VDI (O) DDIS 200
+Cubic Capacity/Kilowatt 1248
+Fuel Type Diesel
+Year of Manufacture 2017
+Seating Capacity 5
+Engine Number D13A5503389
+Chassis Number MA3NYFB1SHH278727
+Vehicle IDV (in Rs.) 3,41,220.00
+Total IDV (in Rs.) 3,41,220.00
+Certificate of Insurance ( PRIVATE CAR PACKAGE POLICY)
+UIN : IRDAN113RP0025V01200102
+Policy Number: OG-27-2301-1801-00000509 Customer ID: 510138540
+Place of Registration MP04-BHOPAL
+Name of Registration Authority : MP04-BHOPAL
+Name and Address of Insured : AMRIT LAL PARWANI
+Policy Inception Date: From 00:01 O' Clock on 04-AUG-2026
+Policy Expiry Date: Midnight on 03-AUG-2027
+PRIVATE CAR PACKAGE POLICY SCHEDULE
+Policy Issued on 03-AUG-2026 19:38 PM
+Policy Period
+From : 04-AUG-2026 00:01
+(Hrs)
+To : 03-AUG-2027 Midnight
+Previous Policy No D217171051
+Invoice No 491815852/1
+Company GST No 23AABCB5730G1Z5
+Place of Supply/ State Code/Name 23 - Madhya Pradesh
+Registration Number MP04CT2032
+Place of Registration MP04-BHOPAL
+Engine Number D13A5503389
+Chassis Number MA3NYFB1SHH278727
+Make & Model MARUTI - VITARA BREZZA
+SubType 1.2 VDI (O) DDIS 200
+NCB % -45
+CC/KW 1248
+Seating Capacity 5
+Year Of Manufacturing 2017
+Hypothecation Details HDFC BANK LTD
+Vehicle IDV 3,41,220.00
+Total Value 3,41,220.00
+Own Damage Premium 5,440.00
+Total OD Premium - A 5,440.00
+Total Premium (Net Premium) (A+B) 9,488.00
+State GST (9%) 854.00
+Central GST (9%) 854.00
+Final Premium ( Rupees Eleven Thousand One Hundred Ninety Six Only ) 11,196.00
+Basic Third Party Liability 3,416.00
+PA Cover for Owner-Driver - SI - Rs.1500000 Period: From 04-Aug-2026 To 03-AUG-2027 331.00
+LL to person for Paid driver/Operation/Maintenance 50.00
+PA Cover For 5 Passenger Of Rs. 100000 each 250.00
+Total Act Premium - B 4,047.00
+Agency Code BAG10107590 Contact No. 08818889660/08818889660
+Agency Name PRAGATI PANDEY
+E-Mail ID. ANAND.SONI10@GMAIL.COM
+Nominee Details Name :MRS PARWANI - Relationship :Spouse
+Subject to Warranties/ IMT-Endorsements/ Add on Package
+7, 16, 22, 28, & Plan Name:Drive Assure Economy Plus & Plan Description: 24x7 spot assistance , depreciation shield , engine protector , ,keys and locks replacement cover with sum insured Rs.50000 ,personal baggage cover with sum insured Rs.30000
+Receipt No. 2301-00361759, Date 03-AUG-26
+About the last insurance company
+(i) Insurance Provider : Go Digit General Insurance Limited.
+(ii) Previous Policy No : D217171051, Previous Policy Expiry Date :03-AUG-26
+`;
+
 describe("Bajaj Allianz motor scoped training", () => {
   it("extracts the commercial liability policy field by field", () => {
     const result = trainer.train({ text: commercialLiabilityText, result: {} });
@@ -102,6 +182,72 @@ describe("Bajaj Allianz motor scoped training", () => {
       previousPolicyExpiryDate: "25/07/2026",
       imtEndorsements: "IMT-28",
       extractionTrainingVersion: "BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_LIABILITY_V1",
+    });
+  });
+
+  it("extracts AMRIT LAL PARWANI Private Car Package Policy correctly", () => {
+    const result = trainer.train({ text: privateCarPackageText, result: {} });
+
+    expect(result).toMatchObject({
+      productName: "Private Car Package Policy",
+      policyType: "Private Car Package Policy",
+      policyCoverType: "Comprehensive",
+      uinNumber: "IRDAN113RP0025V01200102",
+      policyNumber: "OG-27-2301-1801-00000509",
+      customerId: "510138540",
+      insuredName: "AMRIT LAL PARWANI",
+      customerName: "AMRIT LAL PARWANI",
+      startDate: "04/08/2026",
+      expiryDate: "03/08/2027",
+      registrationNumber: "MP04CT2032",
+      vehicleNumber: "MP04CT2032",
+      rtoLocation: "MP04-BHOPAL",
+      engineNumber: "D13A5503389",
+      chassisNumber: "MA3NYFB1SHH278727",
+      vehicleMake: "MARUTI",
+      vehicleModel: "VITARA BREZZA",
+      variant: "1.2 VDI (O) DDIS 200",
+      makeModel: "MARUTI - VITARA BREZZA",
+      manufacturingYear: "2017",
+      cubicCapacity: "1248",
+      seatingCapacity: "5",
+      fuelType: "Diesel",
+      ncb: "45%",
+      ncbPercentage: "45%",
+      hypothecation: "HDFC BANK LTD",
+      financier: "HDFC BANK LTD",
+      idv: "341220.00",
+      totalIdv: "341220.00",
+      odPremium: "5440.00",
+      basicTpPremium: "3416.00",
+      ownerDriverPremium: "331.00",
+      legalLiabilityPremium: "50.00",
+      paPassengersPremium: "250.00",
+      tpPremium: "4047.00",
+      netPremium: "9488.00",
+      cgst: "854.00",
+      sgst: "854.00",
+      gstAmount: "1708.00",
+      totalPremium: "11196.00",
+      grossPremium: "11196.00",
+      agentName: "PRAGATI PANDEY",
+      agentCode: "BAG10107590",
+      agentMobile: "08818889660",
+      agentEmail: "ANAND.SONI10@GMAIL.COM",
+      nomineeName: "MRS PARWANI",
+      nomineeRelation: "Spouse",
+      previousInsurer: "Go Digit General Insurance Limited",
+      previousPolicyNumber: "D217171051",
+      previousPolicyExpiryDate: "03/08/2026",
+      addOnCovers: "Drive Assure Economy Plus",
+      depreciationShieldCover: "Yes",
+      engineProtectorCover: "Yes",
+      spotAssistanceCover: "Yes",
+      keysAndLocksCover: "Yes",
+      personalBaggageCover: "Yes",
+      compulsoryDeductible: "1000.00",
+      imtEndorsements: "IMT-7, IMT-16, IMT-22, IMT-28",
+      extractionTrainingVersion: "BAJAJ_ALLIANZ_MOTOR_PRIVATE_CAR_PACKAGE_V1",
     });
   });
 
