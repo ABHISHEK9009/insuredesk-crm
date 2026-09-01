@@ -1,9 +1,13 @@
+/* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
+import path from "node:path";
+import fs from "node:fs";
 
 const require = createRequire(import.meta.url);
+const pdf = require("pdf-parse");
 const { extractPolicyFromText } = require("../src/lib/policies/pdf/extractor.cjs");
-const { selectScopedTraining, deriveTrainingScope } = require("../src/lib/policies/pdf/training/registry.cjs");
+const { applyScopedTraining, selectScopedTraining, deriveTrainingScope } = require("../src/lib/policies/pdf/training/registry.cjs");
 
 describe("Royal Sundaram Motor Policy Training", () => {
   const ocrSampleText = `
@@ -70,6 +74,102 @@ Contact: 9981667989
     expect(result.cubicCapacity).toBe("5883");
     expect(result.idv).toBe("760000.00");
     expect(result.grossVehicleWeight).toBe("3,50,00.00");
+  });
+
+  it("extracts SHREE BAHORA CONSTRUCTIONS real Goods Carrying Vehicle Policy PDF accurately", async () => {
+    const filePath = path.join(process.cwd(), "storage", "Ms.SHREEBAHORACONSTRUCTIONSPRIVATELIMITED_UP85CT2063_2026-27.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining(
+      { insuranceCompany: "Royal Sundaram General Insurance Co. Limited", documentCategory: "Motor Insurance" },
+      { text: data.text }
+    );
+
+    expect(result.insuranceCompany).toBe("Royal Sundaram General Insurance Co. Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.policyNumber).toBe("VGC1605266000100");
+    expect(result.taxInvoiceNumber).toBe("VGC160526600000");
+    expect(result.insuredName).toBe("M/s.SHREE BAHORA CONSTRUCTIONS PRIVATE LIMITED");
+    expect(result.registrationNumber).toBe("UP85CT2063");
+    expect(result.vehicleMake).toBe("Tata Motors Ltd.");
+    expect(result.vehicleModel).toBe("SIGNA 2823.TK BSVI");
+    expect(result.makeModel).toBe("Tata Motors Ltd. SIGNA 2823.TK BSVI");
+    expect(result.engineNumber).toBe("B56B6A220D06102K63845102");
+    expect(result.chassisNumber).toBe("MAT797028L3K10794");
+    expect(result.manufacturingYear).toBe("2020");
+    expect(result.grossVehicleWeight).toBe("28,000.00");
+    expect(result.idv).toBe("2300000.00");
+    expect(result.productName).toBe("Goods Carrying Vehicle Policy");
+    expect(result.startDate).toBe("07/08/2026");
+    expect(result.expiryDate).toBe("06/08/2027");
+    expect(result.policyIssueDate).toBe("07/08/2026");
+    expect(result.financerName).toBe("TATA MOTORS FINANCE LTD");
+    expect(result.previousPolicyNumber).toBe("3003/394189735/00/B00");
+    expect(result.previousInsurer).toBe("ICICI LOMBARD GENERAL INSURANCE CO LTD");
+    expect(result.gstin).toBe("09AAKCS9455N1ZC");
+    expect(result.odPremium).toBe("5062.00");
+    expect(result.tpPremium).toBe("44050.00");
+    expect(result.netPremium).toBe("49112.00");
+    expect(result.totalPremium).toBe("52,239.00");
+    expect(result.gstAmount).toBe("3127.00");
+  });
+
+  it("extracts SHUKLA AGRITECH real UP70FT3435 and UP70FT3437 PDFs accurately", async () => {
+    // 1. UP70FT3435
+    const f1 = path.join(process.cwd(), "storage", "Ms.SHUKLA AGRITECH PRIVATE LIMITED_UP70FT3435_2026-27.pdf");
+    if (fs.existsSync(f1)) {
+      const d1 = await pdf(fs.readFileSync(f1));
+      const res1 = applyScopedTraining(
+        { insuranceCompany: "Royal Sundaram General Insurance Co. Limited", documentCategory: "Motor Insurance" },
+        { text: d1.text }
+      );
+      expect(res1.policyNumber).toBe("VGC1609867000100");
+      expect(res1.taxInvoiceNumber).toBe("VGC160986700000");
+      expect(res1.insuredName).toBe("M/s.SHUKLA AGRITECH PRIVATE LIMITED");
+      expect(res1.registrationNumber).toBe("UP70FT3435");
+      expect(res1.vehicleMake).toBe("Tata Motors Ltd.");
+      expect(res1.vehicleModel).toBe("LPT 3718");
+      expect(res1.engineNumber).toBe("ISBE591804071H63612141");
+      expect(res1.chassisNumber).toBe("MAT541025H3H18812");
+      expect(res1.manufacturingYear).toBe("2017");
+      expect(res1.idv).toBe("1410750.00");
+      expect(res1.ncb).toBe("45%");
+      expect(res1.netPremium).toBe("47642.00");
+      expect(res1.totalPremium).toBe("50,466.00");
+      expect(res1.gstAmount).toBe("2824.00");
+      expect(res1.previousPolicyNumber).toBe("1914013125P107788503");
+      expect(res1.previousInsurer).toBe("UNITED INDIA INSURANCE COMPANY LTD");
+      expect(res1.gstin).toBe("23AASCS5782L1ZK");
+    }
+
+    // 2. UP70FT3437
+    const f2 = path.join(process.cwd(), "storage", "Ms.SHUKLA AGRITECH PRIVATE LIMITED_UP70FT3437_2026-27.pdf");
+    if (fs.existsSync(f2)) {
+      const d2 = await pdf(fs.readFileSync(f2));
+      const res2 = applyScopedTraining(
+        { insuranceCompany: "Royal Sundaram General Insurance Co. Limited", documentCategory: "Motor Insurance" },
+        { text: d2.text }
+      );
+      expect(res2.policyNumber).toBe("VGC1609866000100");
+      expect(res2.taxInvoiceNumber).toBe("VGC160986600000");
+      expect(res2.insuredName).toBe("M/s.SHUKLA AGRITECH PRIVATE LIMITED");
+      expect(res2.registrationNumber).toBe("UP70FT3437");
+      expect(res2.vehicleMake).toBe("Tata Motors Ltd.");
+      expect(res2.vehicleModel).toBe("LPT 3718");
+      expect(res2.engineNumber).toBe("ISBE591804071H63612081");
+      expect(res2.chassisNumber).toBe("MAT541025H3H18749");
+      expect(res2.manufacturingYear).toBe("2017");
+      expect(res2.idv).toBe("1410750.00");
+      expect(res2.ncb).toBe("35%");
+      expect(res2.netPremium).toBe("48242.00");
+      expect(res2.totalPremium).toBe("51,174.00");
+      expect(res2.gstAmount).toBe("2932.00");
+      expect(res2.previousPolicyNumber).toBe("1914013125P107788601");
+      expect(res2.previousInsurer).toBe("UNITED INDIA INSURANCE COMPANY LTD");
+      expect(res2.gstin).toBe("23AASCS5782L1ZK");
+    }
   });
 
   it("preserves strict scope isolation so Royal Sundaram motor trainer does not trigger for other scopes", () => {
