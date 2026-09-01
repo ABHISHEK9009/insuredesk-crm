@@ -122,8 +122,10 @@ function extractRoyalSundaramMotor(text, _sourceFile = "") {
 
 // Start of isRoyalSundaramMotor (Lines 2680-2686)
 function isRoyalSundaramMotor(text) {
+  const header = text.slice(0, 3000);
+  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE/i.test(header)) return false;
   return (
-    /Royal\s+Sundaram\s+General\s+Insurance/i.test(text) &&
+    /Royal\s+Sundaram\s+General\s+Insurance|ROYAL\s+SUNDARAM\s+ALLIANCE/i.test(header) &&
     /Certificate\s*of\s*Insurance|CERTIFICATEOFINSURANCE/i.test(text) &&
     /Registration Number|Vehicle Details|Motor Vehicles Act/i.test(text)
   );

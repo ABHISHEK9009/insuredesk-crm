@@ -13,6 +13,7 @@ const goDigitMotor = require("./go-digit/motor.cjs");
 const newIndiaMotor = require("./new-india/motor.cjs");
 const bajajAllianzMotor = require("./bajaj-allianz/motor.cjs");
 const royalSundaramMotor = require("./royal-sundaram/motor.cjs");
+const futureGeneraliMotor = require("./future-generali/motor.cjs");
 const unitedIndiaWarehouse = require("./united-india/warehouse.cjs");
 const unitedIndiaBurglary = require("./united-india/burglary.cjs");
 
@@ -32,6 +33,7 @@ const trainers = [
   newIndiaMotor,
   bajajAllianzMotor,
   royalSundaramMotor,
+  futureGeneraliMotor,
   unitedIndiaWarehouse,
   unitedIndiaBurglary,
 ];
@@ -55,7 +57,7 @@ function normalizeInsurer(value = "") {
     [/New\s+India/i, "new-india"],
     [/HDFC\s*ERGO/i, "hdfc-ergo"],
     [/Care\s*Health|Religare/i, "care-health"],
-    [/(?:Future\s+)?Generali/i, "generali"],
+    [/(?:Future\s+)?Generali|Generali\s+Central/i, "future-generali"],
     [/Royal\s+Sundaram/i, "royal-sundaram"],
     [/Shriram/i, "shriram"],
     [/Liberty/i, "liberty"],
@@ -174,10 +176,12 @@ function isNewIndiaMotor(result = {}, context = {}) {
   const category = normalizeCategory(result.documentCategory);
   if (category && category !== "motor") return false;
   const insurer = result.insuranceCompany || result.companyName || "";
-  if (insurer && /TATA\s*AIG|ICICI\s*Lombard|Bajaj|HDFC\s*ERGO|Shriram|Liberty|Digit|IFFCO/i.test(insurer)) {
+  if (insurer && /TATA\s*AIG|ICICI\s*Lombard|Bajaj|HDFC\s*ERGO|Shriram|Liberty|Digit|IFFCO|Generali|Royal\s+Sundaram/i.test(insurer)) {
     return false;
   }
-  if (/IFFCO\s*[- ]?\s*TOKIO/i.test(text.slice(0, 3000))) return false;
+  const header = text.slice(0, 3000);
+  if (/Future\s+Generali|generalicentral|generali/i.test(header)) return false;
+  if (/IFFCO\s*[- ]?\s*TOKIO/i.test(header)) return false;
   return (
     /THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(text) &&
     /Motor|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
@@ -252,6 +256,20 @@ function isBajajAllianzMotor(result = {}, context = {}) {
   );
 }
 
+function isFutureGeneraliMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const header = text.slice(0, 3000);
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  if (/ICICI\s*Lombard|TATA\s*AIG|HDFC\s*ERGO|Bajaj\s*Allianz|THE\s+NEW\s+INDIA|IFFCO\s*[- ]?\s*TOKIO|Royal\s+Sundaram/i.test(header)) {
+    return false;
+  }
+  return (
+    /\b(?:Future\s+Generali|Generali\s+Central|generalicentral\.com)\b/i.test(header) &&
+    /Motor\s+Secure|Motor\s+Protect|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Vehicle\s+Details|Chassis\s+No|132\/\d{2}\/\d{2}/i.test(text)
+  );
+}
+
 function deriveTrainingScope(result = {}, context = {}) {
   if (isIciciLombardHealth(result, context)) {
     return { insurer: "icici-lombard", category: "health" };
@@ -267,6 +285,9 @@ function deriveTrainingScope(result = {}, context = {}) {
   }
   if (isBajajAllianzMotor(result, context)) {
     return { insurer: "bajaj-allianz", category: "motor" };
+  }
+  if (isFutureGeneraliMotor(result, context)) {
+    return { insurer: "future-generali", category: "motor" };
   }
   if (isIffcoTokioMotor(result, context)) {
     return { insurer: "iffco-tokio", category: "motor" };
@@ -290,7 +311,9 @@ function deriveTrainingScope(result = {}, context = {}) {
     ? "go-digit"
     : isNewIndiaMotor(result, context)
       ? "new-india"
-      : normalizeInsurer(result.insuranceCompany || result.companyName);
+      : isFutureGeneraliMotor(result, context)
+        ? "future-generali"
+        : normalizeInsurer(result.insuranceCompany || result.companyName);
   return {
     insurer,
     category: normalizeCategory(result.documentCategory),
@@ -411,6 +434,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       documentCategory: "Motor Insurance",
       documentFormat: "IFFCO_TOKIO_MOTOR_V1",
       sourceDocumentType: "IFFCO_TOKIO_MOTOR_V1",
+    };
+  }
+  if (isFutureGeneraliMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Future Generali India Insurance Company Limited",
+      companyName: "Future Generali India Insurance Company Limited",
+      documentCategory: "Motor Insurance",
+      documentFormat: "FUTURE_GENERALI_MOTOR_V1",
+      sourceDocumentType: "FUTURE_GENERALI_MOTOR_V1",
     };
   }
   return result;

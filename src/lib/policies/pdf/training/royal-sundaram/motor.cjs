@@ -6,7 +6,11 @@ const scope = { insurer: "royal-sundaram", category: "motor" };
 function matches({ text = "", result = {} }) {
   const company = String(result.insuranceCompany || result.companyName || "");
   if (/Royal\s+Sundaram/i.test(company)) return true;
-  return /Royal\s+Sundaram\s+General\s+Insurance|ROYAL\s+SUNDARAM\s+INSURANCE|Royal\s+Sundaram\s+Alliance/i.test(text);
+  const header = text.slice(0, 3000);
+  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|TATA\s*AIG|ICICI\s*Lombard|HDFC\s*ERGO|Bajaj\s*Allianz|IFFCO\s*[- ]?\s*TOKIO|Future\s+Generali/i.test(header)) {
+    return false;
+  }
+  return /Royal\s+Sundaram\s+General\s+Insurance|ROYAL\s+SUNDARAM\s+INSURANCE|Royal\s+Sundaram\s+Alliance/i.test(header);
 }
 
 function cleanAmount(val) {
@@ -67,9 +71,10 @@ function train({ text = "", result = {}, sourceFile = "" }) {
 
   // 1. Policy Number & Invoices
   const policyNoMatch =
-    matchGroup(text, /\b(VGC\d{10,20})\b/i) ||
-    matchGroup(text, /Policy\s+Number\s*:?\s*([A-Z0-9]+)/i) ||
-    matchGroup(text, /Policy\s+No\.?[\s\S]{0,30}?\b([A-Z0-9]+)/i);
+    matchGroup(text, /Certificate\s+of\s+Insurance\s+and\s+Policy\s+No\.?[\s\S]{0,50}?\b(VGC\d{10,20})\b/i) ||
+    matchGroup(text, /Goods\s+Carrying\s+Vehicle\s+Policy\s+No\.?\s*(VGC\d{10,20})/i) ||
+    matchGroup(text, /Policy\s+Number\s*:?\s*(VGC[A-Z0-9]{10,20})/i) ||
+    matchGroup(text, /\b(VGC\d{12,18})\b/i);
 
   if (policyNoMatch) {
     patch.policyNumber = policyNoMatch.trim();
