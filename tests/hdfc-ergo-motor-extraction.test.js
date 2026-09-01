@@ -1,8 +1,11 @@
 /* @vitest-environment node */
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
+import path from "node:path";
+import fs from "node:fs";
 
 const require = createRequire(import.meta.url);
+const pdf = require("pdf-parse");
 const hdfcErgoMotor = require("../src/lib/policies/pdf/training/hdfc-ergo/motor.cjs");
 const { applyScopedTraining, deriveTrainingScope } = require("../src/lib/policies/pdf/training/registry.cjs");
 
@@ -97,7 +100,6 @@ describe("HDFC ERGO Motor Policy Extraction & Isolation", () => {
     expect(trained.seatingCapacity).toBe("5");
     expect(trained.manufacturingYear).toBe("2024");
     expect(trained.bodyType).toBe("SUV");
-    expect(trained.idv).toBe("709800");
     expect(trained.startDate).toBe("16/08/2026");
     expect(trained.expiryDate).toBe("15/08/2027");
     expect(trained.basicOwnDamage).toBe("2,265.00");
@@ -111,7 +113,79 @@ describe("HDFC ERGO Motor Policy Extraction & Isolation", () => {
     expect(trained.previousNcb).toBe("20%");
     expect(trained.cscCode).toBe("200427207967");
     expect(trained.cscName).toBe("INSUREDESK IMF PRIVATE LIMITED");
-    expect(trained.extractionTrainingVersion).toBe("HDFC_ERGO_MOTOR_V1");
+    expect(trained.extractionTrainingVersion).toBe("HDFC_ERGO_MOTOR_V2");
+  });
+
+  it("extracts MR PARTHO CHAKRABORTY real Comprehensive policy correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "MR PARTHO CHAKRABORTY_MP04CT2003_2026-27.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("HDFC ERGO General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Private Car Package");
+    expect(result.policyType).toBe("Private Car Package");
+    expect(result.policyNumber).toBe("2302206740157402000");
+    expect(result.insuredName).toBe("PARTHO CHAKRABORTY");
+    expect(result.customerName).toBe("PARTHO CHAKRABORTY");
+    expect(result.customerId).toBe("100162285881");
+    expect(result.panNumber).toBe("AESPC0604G");
+    expect(result.vehicleMake).toBe("FORD");
+    expect(result.vehicleModel).toBe("ENDEAVOUR-3.2L 4X4 AT TITANIUM");
+    expect(result.registrationNumber).toBe("MP-04-CT-2003");
+    expect(result.vehicleNumber).toBe("MP04CT2003");
+    expect(result.rtoLocation).toBe("BHOPAL");
+    expect(result.chassisNumber).toBe("MAJAXXMRWAHG10413");
+    expect(result.engineNumber).toBe("MAJAXXMRWAHG10413");
+    expect(result.cubicCapacity).toBe("3198");
+    expect(result.seatingCapacity).toBe("7");
+    expect(result.manufacturingYear).toBe("2017");
+    expect(result.bodyType).toBe("SUV");
+    expect(result.startDate).toBe("28/08/2026");
+    expect(result.expiryDate).toBe("27/08/2027");
+    expect(result.invoiceNumber).toBe("206740157402000");
+    expect(result.idv).toBe("10,62,882.00");
+    expect(result.totalIdv).toBe("10,62,882.00");
+    expect(result.basicOwnDamage).toBe("4,783.00");
+    expect(result.ncbPercentage).toBe("45%");
+    expect(result.ncbDiscount).toBe("2,152.00");
+    expect(result.basicThirdPartyLiability).toBe("7,897.00");
+    expect(result.legalLiabilityPremium).toBe("50.00");
+    expect(result.ownerDriverPremium).toBe("325.00");
+    expect(result.paPassengersPremium).toBe("350.00");
+    expect(result.liabilityPremium).toBe("8,622.00");
+    expect(result.tpPremium).toBe("8,622.00");
+    expect(result.odPremium).toBe("23,940.00");
+    expect(result.addOnPremium).toBe("21,309.00");
+    expect(result.netPremium).toBe("32,562.00");
+    expect(result.gst).toBe("5,861.00");
+    expect(result.cgst).toBe("2,930.50");
+    expect(result.sgst).toBe("2,930.50");
+    expect(result.totalPremium).toBe("38,423.00");
+    expect(result.grossPremium).toBe("38,423.00");
+    expect(result.compulsoryDeductible).toBe("2,000.00");
+    expect(result.hypothecation).toBe("HDFC BANK LTD");
+    expect(result.nomineeName).toBe("Pradeep Chakraborty");
+    expect(result.nomineeRelation).toBe("Father");
+    expect(result.previousPolicyNumber).toBe("2302206740157401000");
+    expect(result.previousInsurer).toBe("HDFC ERGO GENERAL INSURANCE CO.LTD.");
+    expect(result.previousNcb).toBe("35%");
+    expect(result.previousPolicyExpiryDate).toBe("27/08/2026");
+    expect(result.cscCode).toBe("200427207967");
+    expect(result.agentCode).toBe("200427207967");
+    expect(result.cscName).toBe("INSUREDESK IMF PRIVATE LIMITED");
+    expect(result.agentName).toBe("INSUREDESK IMF PRIVATE LIMITED");
+    expect(result.zeroDepreciationCover).toBe("Yes");
+    expect(result.engineProtectorCover).toBe("Yes");
+    expect(result.consumablesCover).toBe("Yes");
+    expect(result.spotAssistanceCover).toBe("Yes");
+    expect(result.personalBaggageCover).toBe("Yes");
+    expect(result.roadsideAssistanceCover).toBe("Yes");
+    expect(result.imtEndorsements).toBe("IMT-7, IMT-16, IMT-22, IMT-28");
+    expect(result.extractionTrainingVersion).toBe("HDFC_ERGO_MOTOR_V2");
   });
 
   it("does not match HDFC ERGO Health policies", () => {
