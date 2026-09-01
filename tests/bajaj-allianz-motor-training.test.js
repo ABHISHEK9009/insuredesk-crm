@@ -181,7 +181,7 @@ describe("Bajaj Allianz motor scoped training", () => {
       previousPolicyNumber: "230222523550000313",
       previousPolicyExpiryDate: "25/07/2026",
       imtEndorsements: "IMT-28",
-      extractionTrainingVersion: "BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_LIABILITY_V1",
+      extractionTrainingVersion: "BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_LIABILITY_V2",
     });
   });
 
@@ -353,6 +353,60 @@ describe("Bajaj Allianz motor scoped training", () => {
     expect(result.activeTpExpiryDate).toBe("27/04/2028");
     expect(result.addOnCovers).toBe("Drive Assure Basic (depreciation shield)");
     expect(result.depreciationShieldCover).toBe("Yes");
+  });
+
+  it("extracts Ms Siddharth Indane Commercial Vehicle Liability policy correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "Ms Siddharth Indane_MP04ZJ0844_2026-27 POLICY.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("Bajaj Allianz General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Liability Only Policy for Commercial Vehicle");
+    expect(result.policyType).toBe("Liability Only Policy for Commercial Vehicle");
+    expect(result.policyCoverType).toBe("Third Party");
+    expect(result.uinNumber).toBe("IRDAN113RP0042V01200102");
+    expect(result.policyNumber).toBe("12-1831-0010525157-00");
+    expect(result.insuredName).toBe("Ms Siddharth Indane");
+    expect(result.customerName).toBe("Ms Siddharth Indane");
+    expect(result.customerId).toBe("PO40121953");
+    expect(result.gstin).toBe("23ACRFS4386A1Z0");
+    expect(result.registrationNumber).toBe("MP-04-ZJ-0844");
+    expect(result.vehicleNumber).toBe("MP-04-ZJ-0844");
+    expect(result.vehicleMake).toBe("TATA");
+    expect(result.vehicleModel).toBe("ACE GOLD");
+    expect(result.variant).toBe("HALF DECK LOAD BODY");
+    expect(result.bodyType).toBe("HALF DECK LOAD BODY");
+    expect(result.grossVehicleWeight).toBe("1615");
+    expect(result.cubicCapacity).toBe("694");
+    expect(result.manufacturingYear).toBe("2023");
+    expect(result.seatingCapacity).toBe("2");
+    expect(result.chassisNumber).toBe("MAT559034PVC18117");
+    expect(result.engineNumber).toBe("275MPFI03CWXS41386");
+    expect(result.fuelType).toBe("Diesel");
+    expect(result.rtoLocation).toBe("MP04-BHOPAL");
+    expect(result.startDate).toBe("05-08-2026");
+    expect(result.expiryDate).toBe("04-08-2027");
+    expect(result.hypothecation).toBe("EQUITAS SMALL FINANCE BANK LTD");
+    expect(result.basicThirdPartyLiability).toBe("16049.00");
+    expect(result.legalLiabilityPremium).toBe("100.00");
+    expect(result.tpPremium).toBe("16049.00");
+    expect(result.netPremium).toBe("16149.00");
+    expect(result.liabilityPremium).toBe("16149.00");
+    expect(result.cgst).toBe("410.00");
+    expect(result.sgst).toBe("410.00");
+    expect(result.gstAmount).toBe("820.00");
+    expect(result.totalPremium).toBe("16969.00");
+    expect(result.grossPremium).toBe("16969.00");
+    expect(result.agentName).toBe("PRAGATI PANDEY");
+    expect(result.agentCode).toBe("10107590");
+    expect(result.agentMobile).toBe("8818889660");
+    expect(result.agentEmail).toBe("anand.soni10@gmail.com");
+    expect(result.imtEndorsements).toBe("IMT-7, IMT-28");
+    expect(result.extractionTrainingVersion).toBe("BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_LIABILITY_V2");
   });
 
   it("is isolated from Bajaj non-motor and other motor insurers", () => {
