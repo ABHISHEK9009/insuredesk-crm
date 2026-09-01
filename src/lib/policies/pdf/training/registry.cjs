@@ -1,3 +1,4 @@
+const iciciLombardMotor = require("./icici-lombard/motor.cjs");
 const tataAigWarehouse = require("./tata-aig/warehouse.cjs");
 const iciciLombardHealth = require("./icici-lombard/health.cjs");
 const hdfcErgoHealth = require("./hdfc-ergo/health.cjs");
@@ -16,6 +17,7 @@ const unitedIndiaWarehouse = require("./united-india/warehouse.cjs");
 const unitedIndiaBurglary = require("./united-india/burglary.cjs");
 
 const trainers = [
+  iciciLombardMotor,
   tataAigWarehouse,
   iciciLombardHealth,
   hdfcErgoHealth,
@@ -201,11 +203,30 @@ function isIffcoTokioMotor(result = {}, context = {}) {
 
 function isTataAigMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
+  const header = text.slice(0, 3000);
   const category = normalizeCategory(result.documentCategory || result.policyType);
   if (category && category !== "motor") return false;
+  if (/ICICI\s*Lombard|icicilombard\.com/i.test(header)) return false;
+  if (/HDFC\s*ERGO/i.test(header)) return false;
+  if (/Bajaj\s*(?:Allianz|General)/i.test(header)) return false;
+  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE/i.test(header)) return false;
   return (
-    /TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text) &&
+    /TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(header) &&
     /Auto\s*Secure|Private\s+Car\s+Package\s+Policy|Vehicle\s+Details|Chassis\s+No/i.test(text)
+  );
+}
+
+function isIciciLombardMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  const header = text.slice(0, 3000);
+  const category = normalizeCategory(result.documentCategory || result.policyType);
+  if (category && category !== "motor") return false;
+  if (!/ICICI\s*Lombard|icicilombard\.com/i.test(header)) return false;
+  if (/ELEVATE|ICIHLIP|Complete\s+Health|Health\s+Shield/i.test(header)) return false;
+  return (
+    /Stand-Alone\s+Own\s+Damage|Own\s+Damage\s+Private\s+Car|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Motor\s+Vehicle|3001\/[A-Z0-9]+|IRDAN115/i.test(
+      result.documentCategory || result.policyType || text,
+    )
   );
 }
 
@@ -234,6 +255,9 @@ function isBajajAllianzMotor(result = {}, context = {}) {
 function deriveTrainingScope(result = {}, context = {}) {
   if (isIciciLombardHealth(result, context)) {
     return { insurer: "icici-lombard", category: "health" };
+  }
+  if (isIciciLombardMotor(result, context)) {
+    return { insurer: "icici-lombard", category: "motor" };
   }
   if (isHdfcErgoHealth(result, context)) {
     return { insurer: "hdfc-ergo", category: "health" };
@@ -282,6 +306,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       documentCategory: "Health Insurance",
       documentFormat: "ICICI_LOMBARD_HEALTH_ELEVATE_V1",
       sourceDocumentType: "ICICI_LOMBARD_HEALTH_ELEVATE_V1",
+    };
+  }
+  if (isIciciLombardMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Motor Insurance",
+      documentFormat: "ICICI_LOMBARD_MOTOR_V1",
+      sourceDocumentType: "ICICI_LOMBARD_MOTOR_V1",
     };
   }
   if (isHdfcErgoHealth(result, context)) {
