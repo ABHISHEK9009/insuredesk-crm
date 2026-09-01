@@ -73,6 +73,28 @@ export async function POST(request) {
           throw new Error(formatReviewValidationError(validation.missingRequired));
         }
 
+        const incomingPolicyNumber = (data.policyNumber || data["Policy No."] || "").trim();
+        if (incomingPolicyNumber) {
+          const existingRecord = await prisma.policyRecord.findFirst({
+            where: {
+              deletedAt: null,
+              organizationId: user.organizationId,
+              OR: [
+                { reviewedData: { path: ["policyNumber"], equals: incomingPolicyNumber } },
+                { data: { path: ["policyNumber"], equals: incomingPolicyNumber } },
+                { data: { path: ["Policy No."], equals: incomingPolicyNumber } },
+              ],
+            },
+            select: { id: true, sourceFile: true, pdfFileName: true },
+          });
+
+          if (existingRecord) {
+            throw new Error(
+              `Policy number "${incomingPolicyNumber}" already exists in the system (File: "${existingRecord.pdfFileName || existingRecord.sourceFile || "existing record"}"). Duplicate upload skipped.`,
+            );
+          }
+        }
+
         const customerNameFields = buildPolicyCustomerNameFields(data);
         const uploadedFile = await prisma.uploadedFile.create({
           data: {

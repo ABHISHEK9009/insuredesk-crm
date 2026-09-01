@@ -76,6 +76,28 @@ export async function POST(request) {
         // A value printed on an insurer PDF is not a verified portal Client ID.
         // Keep this field empty until the agent selects or auto-matches an active client.
         const extractedData = { ...sanitizeRecordPayload(extraction.data), clientId: "" };
+        const incomingPolicyNumber = (extractedData.policyNumber || extractedData["Policy No."] || "").trim();
+        if (incomingPolicyNumber) {
+          const existingRecord = await prisma.policyRecord.findFirst({
+            where: {
+              deletedAt: null,
+              organizationId: user.organizationId,
+              OR: [
+                { reviewedData: { path: ["policyNumber"], equals: incomingPolicyNumber } },
+                { data: { path: ["policyNumber"], equals: incomingPolicyNumber } },
+                { data: { path: ["Policy No."], equals: incomingPolicyNumber } },
+              ],
+            },
+            select: { id: true, sourceFile: true, pdfFileName: true },
+          });
+
+          if (existingRecord) {
+            throw new Error(
+              `Policy number "${incomingPolicyNumber}" already exists in the system (File: "${existingRecord.pdfFileName || existingRecord.sourceFile || "existing record"}"). Duplicate upload skipped.`,
+            );
+          }
+        }
+
         const detection = buildUploadDetection(extractedData);
 
         // 3. Save UploadedFile record to database, referencing storage path and excluding binary bytes

@@ -589,6 +589,35 @@ export async function POST(request) {
       );
     }
 
+    const incomingPolicyNumber = (reviewedData.policyNumber || legacyPayload.policyNumber || "").trim();
+    if (incomingPolicyNumber) {
+      const existingPolicy = await prisma.policyRecord.findFirst({
+        where: {
+          deletedAt: null,
+          ...getTenantFilter(user, "read"),
+          OR: [
+            { reviewedData: { path: ["policyNumber"], equals: incomingPolicyNumber } },
+            { data: { path: ["policyNumber"], equals: incomingPolicyNumber } },
+            { data: { path: ["Policy No."], equals: incomingPolicyNumber } },
+          ],
+        },
+        select: {
+          id: true,
+          pdfFileName: true,
+          sourceFile: true,
+        },
+      });
+
+      if (existingPolicy) {
+        return Response.json(
+          {
+            error: `Policy number "${incomingPolicyNumber}" already exists in the system (Record ID: ${existingPolicy.id}). Duplicate policy cannot be saved.`,
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     const createRecord = (database) => {
       const customerNameFields = buildPolicyCustomerNameFields(reviewedData, legacyPayload, extractedData);
       return database.policyRecord.create({
@@ -633,13 +662,6 @@ export async function POST(request) {
     };
 
     const persistRecord = async (database) => {
-      if (reviewedData.clientId) {
-        clientIdRequest = null;
-        clientIdRequestId = null;
-        clientIdPending = false;
-        return { record: await createRecord(database) };
-      }
-
       const matchingActiveRequest =
         policyCustomerName && policyCustomerMobile
           ? await database.task.findFirst({
@@ -652,6 +674,20 @@ export async function POST(request) {
               },
             })
           : null;
+
+      if (matchingActiveRequest && incomingClientId) {
+        return {
+          error: "An active Client ID request already exists for this client and must be resolved first.",
+          status: 409,
+        };
+      }
+
+      if (reviewedData.clientId) {
+        clientIdRequest = null;
+        clientIdRequestId = null;
+        clientIdPending = false;
+        return { record: await createRecord(database) };
+      }
 
       if (matchingActiveRequest && matchingActiveRequest.id !== clientIdRequest?.id) {
         clientIdRequest = matchingActiveRequest;

@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 const { logAuditMock, prismaMock, verifyJWTMock } = vi.hoisted(() => {
   const database = {
     clientAccount: { findFirst: vi.fn() },
-    policyRecord: { create: vi.fn(), findMany: vi.fn() },
+    policyRecord: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
     task: { findFirst: vi.fn() },
     uploadedFile: { findFirst: vi.fn(), update: vi.fn() },
   };
