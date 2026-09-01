@@ -1,6 +1,14 @@
-/* global describe, it, expect */
+/* @vitest-environment node */
+import { createRequire } from "node:module";
+import { describe, expect, it } from "vitest";
+import path from "node:path";
+import fs from "node:fs";
+
+const require = createRequire(import.meta.url);
+const pdf = require("pdf-parse");
 const { extractPolicyFromText } = require("../src/lib/policies/pdf/extractor.cjs");
-const { selectScopedTraining } = require("../src/lib/policies/pdf/training/registry.cjs");
+const { applyScopedTraining, selectScopedTraining } = require("../src/lib/policies/pdf/training/registry.cjs");
+const trainer = require("../src/lib/policies/pdf/training/new-india/motor.cjs");
 
 describe("New India Commercial Vehicle Motor Policy extraction", () => {
   const sampleText = `
@@ -95,7 +103,7 @@ describe("New India Commercial Vehicle Motor Policy extraction", () => {
   Total Payable in Rs(in words): RUPEES EIGHTEEN THOUSAND EIGHT HUNDRED THIRTY-ONE ONLY
   `;
 
-  it("extracts New India commercial vehicle fields correctly", () => {
+  it("extracts New India commercial vehicle package fields correctly", () => {
     const result = extractPolicyFromText(sampleText, "new-india-commercial.pdf");
 
     expect(result).toMatchObject({
@@ -112,25 +120,80 @@ describe("New India Commercial Vehicle Motor Policy extraction", () => {
       grossVehicleWeight: "1600",
       seatingCapacity: "2",
       commercialVehicleSubType: "Other than 3 wheeler - Public Carrier",
-      financerName: "",
       previousInsurer: "ROYAL SUNDARAM GENERAL INSURANCE CO.LTD.",
       previousPolicyNumber: "VGC1191052000100",
       basicOwnDamage: "1325.00",
       basicThirdPartyLiability: "16049.00",
       odPremium: "1524.00",
       tpPremium: "16209.00",
-      netPremium: "17,733.00",
-      gstAmount: "1,098.00",
-      totalPremium: "18,831.00",
+      netPremium: "17733.00",
+      gstAmount: "1098.00",
+      totalPremium: "18831.00",
       idv: "400000.00",
       variant: "STD CNG",
       rtoLocation: "Bhopal",
-      gstin: "NA",
       startDate: "24/07/2026",
       expiryDate: "23/07/2027",
-      extractionTrainingVersion: "NEW_INDIA_MOTOR_V1",
+      extractionTrainingVersion: "NEW_INDIA_MOTOR_V2",
     });
     expect(result.customerEmail).toBe("insuredeskbhopal@gmail.com");
+  });
+
+  it("extracts VIJAY KUMAR MISHRA CONST PVT LTD real PDF correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "VKMCPL_MH06AC6985_2026-27 POLICY (1).pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("The New India Assurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Commercial Vehicle Liability Only Policy");
+    expect(result.policyType).toBe("Commercial Vehicle Liability Only Policy");
+    expect(result.policyCoverType).toBe("Third Party");
+    expect(result.uinNumber).toBe("IRDAN190RP0004V01200203");
+    expect(result.policyNumber).toBe("45140031260200004025");
+    expect(result.insuredName).toBe("VIJAY KUMAR MISHRA CONST PVT LTD");
+    expect(result.customerName).toBe("VIJAY KUMAR MISHRA CONST PVT LTD");
+    expect(result.customerId).toBe("POA4760411");
+    expect(result.registrationNumber).toBe("MH-06-AC-6985");
+    expect(result.vehicleNumber).toBe("MH-06-AC-6985");
+    expect(result.vehicleMake).toBe("TATA MOTOR");
+    expect(result.vehicleModel).toBe("LPS 4018");
+    expect(result.variant).toBe("TC_EX BS-III");
+    expect(result.chassisNumber).toBe("447207CSZ303992");
+    expect(result.engineNumber).toBe("70C6258083");
+    expect(result.manufacturingYear).toBe("2007");
+    expect(result.fuelType).toBe("Diesel");
+    expect(result.grossVehicleWeight).toBe("45500");
+    expect(result.seatingCapacity).toBe("3");
+    expect(result.bodyType).toBe("Closed");
+    expect(result.rtoLocation).toBe("Pen");
+    expect(result.idv).toBe("0.00");
+    expect(result.odPremium).toBe("0.00");
+    expect(result.basicTpPremium).toBe("44242.00");
+    expect(result.legalLiabilityPremium).toBe("100.00");
+    expect(result.tpPremium).toBe("44342.00");
+    expect(result.netPremium).toBe("44342.00");
+    expect(result.sgst).toBe("1115.00");
+    expect(result.cgst).toBe("1115.00");
+    expect(result.gstAmount).toBe("2230.00");
+    expect(result.totalPremium).toBe("46572.00");
+    expect(result.grossPremium).toBe("46572.00");
+    expect(result.gstin).toBe("23AABCV9626P1ZR");
+    expect(result.startDate).toBe("23/07/2026");
+    expect(result.expiryDate).toBe("22/07/2027");
+    expect(result.receiptNumber).toBe("45140081260000003292 - 23/07/26");
+    expect(result.taxInvoiceNo).toBe("45140026P0005724");
+    expect(result.previousInsurer).toBe("GO DIGIT GENERAL INSURANCE CO. LTD");
+    expect(result.previousPolicyNumber).toBe("D214548522");
+    expect(result.agentCode).toBe("NIAAG00157185");
+    expect(result.agentName).toBe("Mr. Anand Soni");
+    expect(result.agentMobile).toBe("8818889660");
+    expect(result.agentEmail).toBe("anand.soni10@gmail.com");
+    expect(result.imtEndorsements).toBe("IMT-21, IMT-37, IMT-38");
+    expect(result.extractionTrainingVersion).toBe("NEW_INDIA_MOTOR_V2");
   });
 
   it("isolates New India Motor trainer from non-motor and other insurers", () => {

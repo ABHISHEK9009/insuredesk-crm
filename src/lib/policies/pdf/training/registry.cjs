@@ -154,6 +154,7 @@ function isGoDigitMotor(result = {}, context = {}) {
   if (/TATA\s*AIG|tataaig\.com|customersupport@tataaig\.com/i.test(text)) return false;
   if (/HDFC\s*ERGO/i.test(text)) return false;
   if (/Bajaj\s*(?:Allianz|General)/i.test(text.slice(0, 3000))) return false;
+  if (/THE\s+NEW\s+INDIA\s+ASSURANCE|NEW\s+INDIA\s+ASSURANCE|newindia\.co\.in/i.test(text.slice(0, 3000))) return false;
   return (
     /Go\s+Digit|godigit\.com|Digit\s+Two-Wheeler/i.test(text) &&
     /Motor|Two-Wheeler|Private\s+Car|Commercial\s+Vehicle/i.test(result.documentCategory || result.policyType || text)
@@ -249,6 +250,9 @@ function deriveTrainingScope(result = {}, context = {}) {
   if (isCareHealth(result, context)) {
     return { insurer: "care-health", category: "health" };
   }
+  if (isNewIndiaMotor(result, context)) {
+    return { insurer: "new-india", category: "motor" };
+  }
 
   const insurer = isTataAigMotor(result, context)
     ? "tata-aig"
@@ -335,6 +339,8 @@ function establishTrainingIdentity(result = {}, context = {}) {
       insuranceCompany: "The New India Assurance Company Limited",
       companyName: "The New India Assurance Company Limited",
       documentCategory: "Motor Insurance",
+      documentFormat: "NEW_INDIA_MOTOR_V1",
+      sourceDocumentType: "NEW_INDIA_MOTOR_V1",
     };
   }
   if (isHdfcErgoMotor(result, context)) {
