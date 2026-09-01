@@ -306,4 +306,81 @@ Amount Received 27561.00
     expect(trained.bankName).toBe("HDFC BANK");
     expect(trained.extractionTrainingVersion).toBe("IFFCO_TOKIO_MOTOR_V2");
   });
+
+  it("extracts real PDF files accurately for all 4 user policies", async () => {
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const pdf = require("pdf-parse");
+
+    // 1. VIJAY KUMAR MISHRA MP04YR6085
+    const f1 = path.join(process.cwd(), "storage", "VIJAY KUMAR MISHRA CONSTRUCTION PVT. LTD._MP04YR6085_2026-27.pdf");
+    if (fs.existsSync(f1)) {
+      const d1 = await pdf(fs.readFileSync(f1));
+      const res1 = applyScopedTraining({}, { text: d1.text });
+      expect(res1.policyNumber).toBe("N8442949");
+      expect(res1.insuredName).toBe("VIJAY KUMAR MISHRA CONSTRUCTION PVT. LTD.");
+      expect(res1.registrationNumber).toBe("MP04YR6085");
+      expect(res1.vehicleMake).toBe("TATA");
+      expect(res1.vehicleModel).toBe("SIGNA 2823.K BSVI 39W 7CUM TM");
+      expect(res1.engineNumber).toBe("B56B62220D01152E64478189");
+      expect(res1.chassisNumber).toBe("DTRMXMAT802301S2E08653");
+      expect(res1.netPremium).toBe("23357.00");
+      expect(res1.totalPremium).toBe("27561.26");
+    }
+
+    // 2. VIJAY KUMAR MISHRA MP04YR6027
+    const f2 = path.join(process.cwd(), "storage", "VIJAY KUMAR MISHRA CONSTRUCTION PVT. LTD._MP04YR6027_2026-27.pdf");
+    if (fs.existsSync(f2)) {
+      const d2 = await pdf(fs.readFileSync(f2));
+      const res2 = applyScopedTraining({}, { text: d2.text });
+      expect(res2.policyNumber).toBe("N8440049");
+      expect(res2.insuredName).toBe("VIJAY KUMAR MISHRA CONSTRUCTION PVT. LTD.");
+      expect(res2.registrationNumber).toBe("MP04YR6027");
+      expect(res2.vehicleMake).toBe("TATA");
+      expect(res2.vehicleModel).toBe("SIGNA 2823.K BSVI 39W 7CUM TM");
+      expect(res2.engineNumber).toBe("B56B62220D01152E64477688");
+      expect(res2.chassisNumber).toBe("DTRMXMAT802301S2E08652");
+      expect(res2.netPremium).toBe("23357.00");
+      expect(res2.totalPremium).toBe("27561.26");
+    }
+
+    // 3. LION ENGINEERING MP04ZF4664
+    const f3 = path.join(process.cwd(), "storage", "LION ENGINEERING CONSULTANTS PRIVATE LIMITED_MP04ZF4664_2026-27.pdf");
+    if (fs.existsSync(f3)) {
+      const d3 = await pdf(fs.readFileSync(f3));
+      const res3 = applyScopedTraining({}, { text: d3.text });
+      expect(res3.policyNumber).toBe("N8294142");
+      expect(res3.insuredName).toBe("LION ENGINEERING CONSULTANTS PRIVATE LIMITED");
+      expect(res3.registrationNumber).toBe("MP04ZF4664");
+      expect(res3.vehicleMake).toBe("HONDA");
+      expect(res3.vehicleModel).toBe("ACTIVA DLX OBD2");
+      expect(res3.engineNumber).toBe("JK15EW5005614");
+      expect(res3.chassisNumber).toBe("ME4JK156BPW005568");
+      expect(res3.idv).toBe("54000.00");
+      expect(res3.productName).toBe("Two Wheeler Policy");
+      expect(res3.policyCoverType).toBe("Stand Alone OD");
+      expect(res3.netPremium).toBe("583.00");
+      expect(res3.totalPremium).toBe("687.94");
+    }
+
+    // 4. ABHISHEK CHAUDA MP04CB0912
+    const f4 = path.join(process.cwd(), "storage", "ABHISHEK CHAUDA POLICY.pdf");
+    if (fs.existsSync(f4)) {
+      const d4 = await pdf(fs.readFileSync(f4));
+      const res4 = applyScopedTraining({}, { text: d4.text });
+      expect(res4.policyNumber).toBe("N8491786");
+      expect(res4.insuredName).toBe("ABHISHEK CHAUDA");
+      expect(res4.registrationNumber).toBe("MP04CB0912");
+      expect(res4.vehicleMake).toBe("MARUTI SUZUKI");
+      expect(res4.vehicleModel).toBe("WAGON R LXI LPG");
+      expect(res4.engineNumber).toBe("F10DN4338984");
+      expect(res4.chassisNumber).toBe("MA3EED81S00515012");
+      expect(res4.cubicCapacity).toBe("1061");
+      expect(res4.idv).toBe("46980.00");
+      expect(res4.productName).toBe("Private Car Package Policy");
+      expect(res4.policyCoverType).toBe("Comprehensive");
+      expect(res4.netPremium).toBe("4095.00");
+      expect(res4.totalPremium).toBe("4832.10");
+    }
+  });
 });

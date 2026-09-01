@@ -99,10 +99,12 @@ function train({ text = "", result = {} }) {
   if (!result || typeof result !== "object") return result;
 
   const patch = {};
+  const header = text.slice(0, 3000);
 
   // 1. Policy Number & Invoices
   const p400Match = text.match(/P400\s+Policy\s*#\s*:?\s*([A-Z0-9]+)/i);
-  const polScheduleMatch = text.match(/Policy\s+No\.?[\s….:]+([A-Z0-9]+)/i);
+  const polScheduleMatch = text.match(/Policy\s+No[^\w\r\n]*[:\s]+([A-Z0-9]+)/iu) ||
+    text.match(/Policy\s+Number\s+([A-Z0-9]+)/i);
   const polNumMatch = text.match(/Policy\s*#\s*:?\s*([A-Z0-9-]+)/i);
   
   if (p400Match) {
@@ -176,6 +178,12 @@ function train({ text = "", result = {} }) {
     text.match(/Phone\s*#?\s*:\s*([0-9X]+)/i);
   if (phoneMatch) patch.contactNumber = phoneMatch[1].trim();
 
+  const gstinMatch = text.match(/Place\s+Of\s+Supply[\s\S]*?GSTIN[\s\S]*?\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1})\b/i);
+  if (gstinMatch) {
+    patch.gstin = gstinMatch[1].trim();
+    patch.customerGstin = patch.gstin;
+  }
+
   // 4. Dates
   const issueDateMatch = text.match(/(?:Invoice\/Issuance\s+Date|Date\s+of\s+Issuance)\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
   if (issueDateMatch) patch.policyIssueDate = normalizeDate(issueDateMatch[1]);
@@ -219,6 +227,20 @@ function train({ text = "", result = {} }) {
     text.match(/Year\s+of\s+Manuf\.?[\s\S]{0,50}?\b(20\d{2})\b/i);
   if (yomMatch) patch.manufacturingYear = yomMatch[1].trim();
 
+  // Engine Number
+  const wrappedEng = text.match(/\b(B56B[A-Z0-9]+)\s*\n\s*(\d)\b/i);
+  const directEng =
+    text.match(/-\s*([A-Z0-9]{6,30})\s*\n\s*([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})/i) ||
+    text.match(/(KG5GS\d+[\s\r\n]*\d+)/i) ||
+    text.match(/Engine\s+No\.?[\s\S]{0,30}?-?\s*([A-Z0-9]{6,25})/i);
+  if (wrappedEng) {
+    patch.engineNumber = (wrappedEng[1] + wrappedEng[2]).trim();
+  } else if (directEng) {
+    const rawEng = directEng[1] || directEng[0] || "";
+    patch.engineNumber = rawEng.replace(/^-/, "").replace(/\s+/g, "").trim();
+  }
+
+  // Chassis Number & Vehicle Make / Model
   const signaMatch = text.match(/SIGNA\s+[A-Z0-9.\s]+?(?:7CUM\s+TM|BSVI[A-Z0-9.\s]*?TM|\bTM\b)/i);
   const mmChassMatch = text.match(/(TVS\s+JUPITER\s+DRUM|TVS\s+[A-Z0-9\s-]+?)(MD\d{3}[A-Z0-9]{12}|[A-Z0-9]{17})/i);
 
@@ -227,6 +249,9 @@ function train({ text = "", result = {} }) {
     patch.vehicleMake = "TATA";
     patch.vehicleModel = rawModel;
     patch.makeModel = `TATA ${rawModel}`;
+    const chassMatch = text.match(/\b(DTRMX\s*MAT[A-Z0-9]{10,20}|MAT[A-Z0-9]{14,18})\b/i);
+    patch.chassisNumber = chassMatch ? chassMatch[1].replace(/\s+/g, "") : "";
+    patch.seatingCapacity = "2";
   } else if (mmChassMatch) {
     const rawMm = mmChassMatch[1].replace(/\s+/g, " ").trim();
     patch.makeModel = rawMm;
@@ -234,32 +259,105 @@ function train({ text = "", result = {} }) {
     patch.vehicleMake = parts[0] || rawMm;
     patch.vehicleModel = parts.slice(1).join(" ") || rawMm;
     patch.chassisNumber = mmChassMatch[2].replace(/\s+/g, "").slice(0, 17);
+    const seatsMatch = text.match(/Chassis\s+No\.?[^\w\n]*[:\s]*(\d{1,2})/i);
+    if (seatsMatch) patch.seatingCapacity = seatsMatch[1].trim();
   } else {
-    const makeModelMatch = text.match(/Make\s+of\s+Vehicle[\s\S]{0,40}?(TVS\s+[A-Z0-9\s]+?)(?=\s+MD626|\s+KG5GS|\s+Own|\n)/i) ||
-      text.match(/-\s*([A-Z0-9\s]+?)\s+(\d{2,4})\s+Own/i) ||
-      text.match(/Make\s+of\s+Vehicle[\s\S]{0,80}?\n\s*(?:-\s*)?([A-Z0-9\s]+?)(?=\s+\d{2,4}|\n)/i);
-    if (makeModelMatch) {
-      const rawMm = makeModelMatch[1].replace(/\s+/g, " ").trim();
-      patch.makeModel = rawMm;
-      const parts = rawMm.split(" ");
-      patch.vehicleMake = parts[0] || rawMm;
-      patch.vehicleModel = parts.slice(1).join(" ") || rawMm;
+    const chassMatch = text.match(/(ME4[A-Z0-9\s]{14,20}|MA3[A-Z0-9\s]{14,20}|MD6[A-Z0-9\s]{14,20}|MBJ[A-Z0-9\s]{14,20}|DTRMXMAT[A-Z0-9\s]{14,20}|MAT[A-Z0-9\s]{14,20})/i);
+    if (chassMatch) patch.chassisNumber = chassMatch[1].replace(/\s+/g, "").trim().slice(0, 17);
+
+    const chassBlockMatch = text.match(
+      /Chassis\s+No\.?[^\w\n]*[:\s]*(\d{1,2})[\s\n]+([^\n]+)(?:\n\s*([A-Z0-9\s]+?))?(?=\n\s*(?:Registration\s+Authority|Vehicle|ME4|MA3|MAT|\d{4,}))/i
+    );
+    if (chassBlockMatch) {
+      patch.seatingCapacity = chassBlockMatch[1].trim();
+      let rawModel = chassBlockMatch[2].replace(/\s+/g, " ").trim();
+      if (chassBlockMatch[3] && !/^(?:Registration|Vehicle|ME4|MA3|MAT|\d{4,})/i.test(chassBlockMatch[3].trim())) {
+        rawModel = (rawModel + " " + chassBlockMatch[3].trim()).trim();
+      }
+      if (patch.chassisNumber) {
+        rawModel = rawModel.replace(patch.chassisNumber, "").trim();
+      }
+      rawModel = rawModel.replace(/MA3[A-Z0-9]{14}|ME4[A-Z0-9]{14}|MD6[A-Z0-9]{14}|[A-Z0-9]{17}/g, "").trim();
+
+      if (/HONDA/i.test(rawModel)) {
+        patch.vehicleMake = "HONDA";
+        patch.vehicleModel = rawModel.replace(/^HONDA\s+/i, "");
+      } else if (/WAGON\s*R|MARUTI|SWIFT|ALTO|BALENO|DZIRE|BREZZA|ERTIGA/i.test(rawModel)) {
+        patch.vehicleMake = "MARUTI SUZUKI";
+        patch.vehicleModel = rawModel;
+      } else if (/TATA/i.test(rawModel)) {
+        patch.vehicleMake = "TATA";
+        patch.vehicleModel = rawModel.replace(/^TATA\s+/i, "");
+      } else if (/TVS/i.test(rawModel)) {
+        patch.vehicleMake = "TVS";
+        patch.vehicleModel = rawModel.replace(/^TVS\s+/i, "");
+      } else if (/HERO/i.test(rawModel)) {
+        patch.vehicleMake = "HERO";
+        patch.vehicleModel = rawModel.replace(/^HERO\s+/i, "");
+      } else if (/BAJAJ/i.test(rawModel)) {
+        patch.vehicleMake = "BAJAJ";
+        patch.vehicleModel = rawModel.replace(/^BAJAJ\s+/i, "");
+      } else if (/HYUNDAI/i.test(rawModel)) {
+        patch.vehicleMake = "HYUNDAI";
+        patch.vehicleModel = rawModel.replace(/^HYUNDAI\s+/i, "");
+      } else {
+        patch.vehicleMake = rawModel.split(" ")[0] || rawModel;
+        patch.vehicleModel = rawModel.split(" ").slice(1).join(" ") || rawModel;
+      }
+      patch.makeModel = `${patch.vehicleMake} ${patch.vehicleModel}`.trim();
     }
   }
 
-  const ccIdvMatch = text.match(/(\d{2,4})\s*Stand\s*Alone\s*OD\s*([0-9,.]+)/i);
+  if (!patch.vehicleMake) {
+    const hyphenMatch = text.match(/-\s*([A-Z0-9\s\n]+?)(?=\n\s*\d{2,4}\s+Own|\s+\d{2,4}\s+Own)/i);
+    if (hyphenMatch) {
+      const rawModel = hyphenMatch[1].replace(/\s+/g, " ").trim();
+      if (/TVS/i.test(rawModel)) {
+        patch.vehicleMake = "TVS";
+        patch.vehicleModel = rawModel.replace(/^TVS\s+/i, "");
+      } else if (/HONDA/i.test(rawModel)) {
+        patch.vehicleMake = "HONDA";
+        patch.vehicleModel = rawModel.replace(/^HONDA\s+/i, "");
+      } else if (/HERO/i.test(rawModel)) {
+        patch.vehicleMake = "HERO";
+        patch.vehicleModel = rawModel.replace(/^HERO\s+/i, "");
+      } else if (/BAJAJ/i.test(rawModel)) {
+        patch.vehicleMake = "BAJAJ";
+        patch.vehicleModel = rawModel.replace(/^BAJAJ\s+/i, "");
+      } else {
+        patch.vehicleMake = rawModel.split(" ")[0] || rawModel;
+        patch.vehicleModel = rawModel.split(" ").slice(1).join(" ") || rawModel;
+      }
+      patch.makeModel = `${patch.vehicleMake} ${patch.vehicleModel}`.trim();
+    }
+  }
+
+  if (!patch.seatingCapacity) {
+    const seatsMatch = text.match(/Chassis\s+No\.?[^\w\n]*[:\s]*(\d{1,2})/i) ||
+      text.match(/Seating\s+Capacity[\s\S]{0,250}?\n\s*(\d{1,2})\s*\n\s*Insured\s+Declared/i) ||
+      text.match(/MD626[A-Z0-9\s]+?\n\s*(\d{1,2})\b/i) ||
+      text.match(/Seating\s+Capacity[\s\S]{0,80}?\b(\d{1,2})\b/i);
+    if (seatsMatch) patch.seatingCapacity = seatsMatch[1].trim();
+  }
+
+  // CC & IDV
+  const ccIdvMatch =
+    text.match(/(\d{2,4})\s*Stand\s*Alone\s*OD\s*([0-9,.]+)/i) ||
+    text.match(/(\d{2,4})\s*Package\s*([0-9,.]+)/i);
   if (ccIdvMatch) {
     patch.cubicCapacity = ccIdvMatch[1].trim();
     patch.idv = normalizeAmount(ccIdvMatch[2]);
     patch.totalIdv = patch.idv;
   } else {
-    const ccMatch = text.match(/\b(\d{3,5})\s+Package/i) ||
+    const ccMatch =
+      text.match(/\b(\d{3,5})\s+Package/i) ||
       text.match(/\bCC\b[\s\S]{0,60}?\b(\d{2,4})\b/i) ||
       text.match(/(\d{2,4})\s+Stand\s+Alone\s+OD/i) ||
       text.match(/(\d{2,4})\s+Own\s+Damage/i);
     if (ccMatch) patch.cubicCapacity = ccMatch[1].trim();
 
-    const idvMatch = text.match(/Package\s*(\d{5,9})/i) ||
+    const idvMatch =
+      text.match(/Package\s*(\d{5,9})/i) ||
       text.match(/Stand\s+Alone\s+OD\s+([0-9,.]+)/i) ||
       text.match(/\bOwn\s+Damage\s+only\s+(\d{4,8})\b/i) ||
       text.match(/IDV\s+in[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i) ||
@@ -270,58 +368,32 @@ function train({ text = "", result = {} }) {
     }
   }
 
-  // Engine Number
-  const wrappedEngMatch = text.match(/\b(B56B[A-Z0-9]+)(?:[\r\n]+(\d))?\b/i);
-  const engMatch = text.match(/KG5GS\d+[\s\r\n]*\d+/i) ||
-    text.match(/Engine\s+No\.?[\s\S]{0,40}?([A-Z0-9\s]{6,25})(?=\s+MD626|MD|\n\d)/i);
-
-  if (wrappedEngMatch) {
-    patch.engineNumber = (wrappedEngMatch[1] + (wrappedEngMatch[2] || "")).replace(/\s+/g, "").trim();
-  } else if (engMatch) {
-    patch.engineNumber = engMatch[0].replace(/\s+/g, "").trim();
-  }
-
-  // Chassis Number
-  if (!patch.chassisNumber) {
-    const chassMatch = text.match(/MD626[A-Z0-9\s]{10,22}/i) ||
-      text.match(/\b(DTRMX\s*MAT[A-Z0-9]{10,20}|MAT[A-Z0-9]{14,18})\b/i) ||
-      text.match(/Chassis\s+No\.?[\s\S]{0,80}?([A-Z0-9\s]{14,25})(?=\s+\d|\n\s*\d)/i);
-    if (chassMatch) {
-      const rawChass = chassMatch[0].replace(/\s+/g, "").trim();
-      patch.chassisNumber = /^MD/i.test(rawChass) ? rawChass.slice(0, 17) : rawChass.slice(0, 25);
-    }
-  }
-
-  // Seating Capacity
-  const seatsMatch = text.match(/Chassis\s+No\.[\s\r\n]+(\d{1,2})[\s\r\n]+(?:DTRMX|MAT|MD)/i) ||
-    text.match(/Chassis\s+No\.[\s\S]{0,30}?\b([1-9])\b/i) ||
-    text.match(/MD626[A-Z0-9\s]+?\d{2}\s*\n+(\d)\b/i) ||
-    text.match(/Seating\s+Capacity[\s\S]{0,80}?\b([1-9])\b/i);
-  if (seatsMatch) patch.seatingCapacity = seatsMatch[1].trim();
-
   // 7. Product & Category
-  const isCommVeh = /Commercial\s+Vehicle/i.test(text);
-  const isTwoWheeler = /Two\s+Wheeler/i.test(text);
-  const isEndorsement = /Endorsement/i.test(text);
+  const isEndorsement =
+    /Endorsement\s*-\s*Two\s+Wheeler|Endorsement\s+Effec?itve\s+Date|Motor\s+Endorsement|Endorsement\s+Schedule/i.test(header) ||
+    Boolean(correctNameMatch);
+  const isCommVeh = /Commercial\s+Vehicle/i.test(header);
+  const isTwoWheeler = /Two\s+Wheeler/i.test(header);
+  const isPrivateCar = /Private\s+Car/i.test(header);
 
   patch.productName = isCommVeh
     ? "Commercial Vehicle Package Policy"
     : isTwoWheeler
     ? "Two Wheeler Policy"
+    : isPrivateCar
+    ? "Private Car Package Policy"
     : isEndorsement
     ? "Motor Endorsement"
     : "Motor Policy";
   patch.policyType = patch.productName;
   patch.policyCategory = "Motor";
-  patch.policyCoverType = isCommVeh ? "Comprehensive" : (isTwoWheeler ? "Stand Alone OD" : "Comprehensive");
+  patch.policyCoverType = isCommVeh ? "Comprehensive" : (isTwoWheeler && /Stand\s*Alone\s*OD/i.test(text) ? "Stand Alone OD" : "Comprehensive");
 
   // 8. Endorsement Remarks
-  if (isEndorsement) {
-    const remarkLines = [];
-    if (/CORRECTION\s+IN\s+NAME/i.test(text)) remarkLines.push("CORRECTION IN NAME");
-    if (correctNameMatch) remarkLines.push(`CORRECT INSURED NAME - ${clean(correctNameMatch[1])}`);
-    if (remarkLines.length > 0) patch.endorsementRemarks = remarkLines.join(" : ");
-  }
+  const remarkLines = [];
+  if (/CORRECTION\s+IN\s+NAME/i.test(text)) remarkLines.push("CORRECTION IN NAME");
+  if (correctNameMatch) remarkLines.push(`CORRECT INSURED NAME - ${clean(correctNameMatch[1])}`);
+  if (remarkLines.length > 0) patch.endorsementRemarks = remarkLines.join(" : ");
 
   // 9. Third Party (TP) Policy Details
   const tpInsurerMatch = text.match(/TP\s+Insurer\s+Name\s*:\s*([^\n]+)/i);
