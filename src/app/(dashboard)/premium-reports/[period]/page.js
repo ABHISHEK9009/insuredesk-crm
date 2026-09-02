@@ -120,8 +120,8 @@ export default async function PremiumReportPage({ params, searchParams }) {
   };
 
   return (
-    <main className="analytics-report-page">
-      <section className="glass-panel report-detail-card">
+    <main className={`analytics-report-page premium-report-page premium-report-${reportId}`}>
+      <section className="glass-panel report-detail-card premium-report-hero">
         <div className="panel-head">
           <div>
             <p className="eyebrow">{config.eyebrow}</p>
@@ -157,7 +157,7 @@ export default async function PremiumReportPage({ params, searchParams }) {
         </div>
       </section>
 
-      <form className="glass-panel" method="get" style={{ display: "flex", gap: "10px", alignItems: "end", padding: "14px 18px" }}>
+      <form className="glass-panel premium-report-filter" method="get">
         <label style={{ flex: 1 }}>
           <span>Search within this report</span>
           <input name="q" defaultValue={q} placeholder="Policyholder, policy number, company or policy type" />
@@ -174,7 +174,7 @@ export default async function PremiumReportPage({ params, searchParams }) {
       </form>
 
       {pivotRows.length ? (
-        <section className="glass-panel report-detail-table">
+        <section className="glass-panel report-detail-table premium-report-pivot">
           <div className="panel-head">
             <div>
               <p className="eyebrow">Pivot Report</p>
@@ -269,7 +269,7 @@ export default async function PremiumReportPage({ params, searchParams }) {
         </section>
       ) : null}
 
-      <section className="glass-panel report-detail-table">
+      <section className="glass-panel report-detail-table premium-report-records">
         <div className="panel-head">
           <div>
             <p className="eyebrow">Policy Records</p>
