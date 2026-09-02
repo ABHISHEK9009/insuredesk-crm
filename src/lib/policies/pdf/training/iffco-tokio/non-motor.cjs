@@ -62,6 +62,14 @@ function train({ text = "", result = {} }) {
     patch.customerName = patch.insuredName;
   }
 
+  // Address
+  const addrMatch =
+    text.match(/Corresponding\s+Address\s*\n\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*\*{3,}|\s*Client|\s*Policy|\s*Unique|\n\n)/i) ||
+    text.match(/Address\s*:\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Unique|\s*Policy|\s*Pincode|\s*Date|\n\n)/i);
+  if (addrMatch) {
+    patch.communicationAddress = addrMatch[1].replace(/\s+/g, " ").trim();
+  }
+
   // Period / Dates
   const periodMatch =
     text.match(/Policy\s+effective\s+from\s+[0-9]+\s+hrs\s+(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*(?:MidNight\s+)?(\d{1,2}\/\d{1,2}\/\d{4})/i) ||

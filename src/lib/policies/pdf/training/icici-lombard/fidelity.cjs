@@ -37,6 +37,14 @@ function train({ text = "", result = {} }) {
     patch.customerName = patch.insuredName;
   }
 
+  // Address
+  const addrMatch =
+    text.match(/2\.Mailing\s+Address\s*[:\s]*([A-Za-z0-9\s.,&/()-]+?)(?=\s*3\.|\s*Period|\n\n)/i) ||
+    text.match(/Address\s+of\s+the\s+Insured\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Telephone|\s*Email|\s*Period|\n\n)/i);
+  if (addrMatch) {
+    patch.communicationAddress = addrMatch[1].replace(/\s+/g, " ").trim();
+  }
+
   const periodMatch = text.match(/Period\s+of\s+Insurance\s*From\s*([0-9A-Za-z/-]+)\s*To\s*([0-9A-Za-z/-]+)/i);
   if (periodMatch) {
     patch.startDate = parseRobustDate(periodMatch[1]) || normalizeWarehouseDate(periodMatch[1]);

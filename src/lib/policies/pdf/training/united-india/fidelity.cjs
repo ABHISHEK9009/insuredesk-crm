@@ -42,6 +42,16 @@ function train({ text = "", result = {} }) {
     patch.customerName = patch.insuredName;
   }
 
+  // Address
+  const addrMatch =
+    text.match(/Insured\s*\n\s*M\/S[^\n]+\n\s*([\s\S]*?)(?=\s*Agent\s+Name|\s*Agent\s+Code|\n\n)/i) ||
+    text.match(/Location\s+Address[\s\S]{0,100}?SILO\s+BAG[^\n]*\n\s*([A-Za-z0-9\s.,&/()-]+?Pin-\d{6})/i) ||
+    text.match(/Location\s+Address[\s\S]{0,100}?\n\s*([A-Za-z0-9\s.,&/()-]+?Pin-\d{6})/i) ||
+    text.match(/Address\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?Pin-\d{6})/i);
+  if (addrMatch) {
+    patch.communicationAddress = addrMatch[1].replace(/\s+/g, " ").trim();
+  }
+
   // Dates
   const startDateMatch = text.match(/From\s*(?:00:00\s*hrs\s*of\s*)?(\d{1,2}\/\d{1,2}\/\d{4})/i);
   const expiryDateMatch = text.match(/To\s*(?:midnight\s*of\s*)?(\d{1,2}\/\d{1,2}\/\d{4})/i);

@@ -65,6 +65,14 @@ function train({ text = "", result = {} }) {
     patch.customerName = patch.insuredName;
   }
 
+  // Address
+  const addrMatch =
+    text.match(/Address\s+of\s+the\s+Customer\s*[:\s]*([A-Za-z0-9\s.,&/()-]+?)(?=\s*GSTIN|\s*Unique|\s*Invoice|\n\n)/i) ||
+    text.match(/Address\s+of\s+the\s+Insured\s*[:\s]*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Are\s+you|\s*Telephone|\s*Email|\n\n)/i);
+  if (addrMatch) {
+    patch.communicationAddress = addrMatch[1].replace(/\s+/g, " ").trim();
+  }
+
   const periodMatch =
     text.match(/Period\s+of\s+Insurance\s*:\s*From\s*:\s*(?:[0-9:]+\s*Hours\s*of\s*)?([A-Za-z0-9,\s]+?)\s*To\s*:\s*(?:Midnight\s*of\s*)?([A-Za-z0-9,\s]+?)(?=\n|Subject)/i) ||
     text.match(/From\s*:\s*([0-9A-Za-z,\s]+?)\s*To\s*:\s*([0-9A-Za-z,\s]+)/i);

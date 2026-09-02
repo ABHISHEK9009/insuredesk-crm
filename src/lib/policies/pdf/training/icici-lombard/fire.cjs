@@ -49,6 +49,15 @@ function train({ text = "", result = {} }) {
   }
   patch.customerName = patch.insuredName;
 
+  // Address
+  const addrMatch =
+    text.match(/Address\s+of\s+the\s+Customer\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*GSTIN|\s*Unique|\s*Invoice|\n\n)/i) ||
+    text.match(/Address\s+of\s+the\s+Insured\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Telephone|\s*Email|\s*Period|\s*Pincode|\n\n)/i) ||
+    text.match(/Date\s*:\s*[^\n]+\n\s*[^\n]+\n\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Policy\s+No|\s*Mailing|\n\n)/i);
+  if (addrMatch) {
+    patch.communicationAddress = addrMatch[1].replace(/\s+/g, " ").trim();
+  }
+
   // Period / Dates
   const periodMatch =
     text.match(/Period\s+of\s+Insurance\s*From\s*[:\s]*(?:[0-9:]+\s*Hours\s*of\s*)?(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*[:\s]*(?:[0-9:]+\s*Hours\s*of\s*)?(?:Midnight\s*of\s*)?(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
