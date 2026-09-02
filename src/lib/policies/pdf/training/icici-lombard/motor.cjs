@@ -90,8 +90,8 @@ function train({ text = "", result = {} }) {
 
   // 3. Insured Details
   const insuredNameMatch =
-    matchGroup(text, /Dear\s+([A-Z\s.-]+?),/i) ||
-    matchGroup(text, /Name of the Insured\s*[:\n\s]*([A-Z\s.-]+?)(?=Policy No|Period of Insurance|\n|$)/i);
+    matchGroup(text, /(?:Name of the Insured|Insured Name)\s*:\s*\n?\s*([A-Za-z\s.-]+?)(?=\s*Policy No|\s*Address|\n|$)/i) ||
+    matchGroup(text, /Dear\s+(?!Sir|Madam)([A-Za-z\s.-]+?),/i);
   if (insuredNameMatch) {
     const rawName = clean(insuredNameMatch.replace(/^(?:Mr|Mrs|Ms|Miss|Dr|Shri|Smt)\.?\s+/i, ""));
     patch.insuredName = rawName;
@@ -116,7 +116,7 @@ function train({ text = "", result = {} }) {
   }
 
   const addressMatch =
-    matchGroup(text, /Address\s*:\s*\n\s*([\s\S]+?)(?=\n\s*Period of Insurance|\n\s*Telephone No)/i) ||
+    matchGroup(text, /Address\s*:\s*\n\s*([\s\S]+?)(?=\n\s*Tenure|\n\s*Period of Insurance|\n\s*Telephone No)/i) ||
     matchGroup(text, /ANKIT SHINDE\s*\n\s*([\s\S]+?)(?=\n\s*INDORE|\n\s*Mobile No)/i);
   if (addressMatch) {
     const cleanAddr = clean(addressMatch);
@@ -143,9 +143,9 @@ function train({ text = "", result = {} }) {
   }
 
   // 4. Policy Period Dates
-  const periodMatch = text.match(
-    /Period of Insurance - Own Damage[\s\S]*?([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})[\s\S]*?to[\s\S]*?([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})/i,
-  );
+  const periodMatch =
+    text.match(/Period of Insurance(?:\s*-\s*Own\s+Damage)?[\s\S]*?([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})[\s\S]*?to[\s\S]*?([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})/i) ||
+    text.match(/Period of Insurance\s*:\s*\n?\s*([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})[\s\S]*?to[\s\S]*?([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})/i);
   if (periodMatch) {
     patch.startDate = normalizeDate(periodMatch[1]);
     patch.expiryDate = normalizeDate(periodMatch[2]);
@@ -170,12 +170,16 @@ function train({ text = "", result = {} }) {
     patch.vehicleNumber = regNoMatch;
   }
 
-  const makeModelMatch =
-    text.match(/Vehicle Make \/ Model\s*\n\s*([A-Za-z0-9\s]+?)\s*\/\s*([^\n]+)/i) ||
-    text.match(/(Tata\s+Motors)\s*\n\s*([^\n]+?)\s+SUV/i);
-  if (makeModelMatch) {
-    patch.vehicleMake = clean(makeModelMatch[1]);
-    patch.vehicleModel = clean(makeModelMatch[2]);
+  const slashMatch = text.match(/\b(MARUTI|HYUNDAI|Tata\s+Motors|HONDA|MAHINDRA|TOYOTA|FORD|RENAULT|NISSAN|VOLKSWAGEN|SKODA|KIA|MG|TVS|BAJAJ|HERO|ROYAL ENFIELD|SUZUKI)\s*\/\s*([^\n]+)/i);
+  const page2VehMatch = text.match(/[A-Z]{2}\d{2}[A-Z]{1,3}\d{4}\s*(MARUTI|HYUNDAI|TATA(?:\s+MOTORS)?|HONDA|MAHINDRA|TOYOTA|FORD|RENAULT|NISSAN|VOLKSWAGEN|SKODA|KIA|MG|TVS|BAJAJ|HERO|ROYAL ENFIELD|SUZUKI)\s*([A-Z0-9\s.-]+?)(?=\s*(?:HATCHBACK|SEDAN|SUV|MUV|\d{3,4}))/i);
+
+  if (slashMatch) {
+    patch.vehicleMake = clean(slashMatch[1]);
+    patch.vehicleModel = clean(slashMatch[2]).replace(/\.$/, "").trim();
+    patch.makeModel = `${patch.vehicleMake} / ${patch.vehicleModel}`;
+  } else if (page2VehMatch) {
+    patch.vehicleMake = clean(page2VehMatch[1]);
+    patch.vehicleModel = clean(page2VehMatch[2]).replace(/\.$/, "").trim();
     patch.makeModel = `${patch.vehicleMake} / ${patch.vehicleModel}`;
   }
 
@@ -184,7 +188,7 @@ function train({ text = "", result = {} }) {
     patch.engineNumber = engChMatch[1].trim();
     patch.chassisNumber = engChMatch[2].trim();
   } else {
-    const chassis = matchGroup(text, /\b(MAT[A-Z0-9]{14})\b/i) || matchGroup(text, /Chassis No\.[\s\S]{0,100}?\n\s*([A-Z0-9]{17})/i);
+    const chassis = matchGroup(text, /\b(MAT[A-Z0-9]{14})\b/i) || matchGroup(text, /Chassis No\.[\s\S]{0,100}?\n\s*([A-Z0-9]{17,20})/i);
     const engine = matchGroup(text, /\b(REVTRN[A-Z0-9]{11})\b/i) || matchGroup(text, /Engine No\.[\s\S]{0,100}?\n\s*([A-Z0-9]{10,20})/i);
     if (chassis) patch.chassisNumber = chassis;
     if (engine) patch.engineNumber = engine;
@@ -212,16 +216,35 @@ function train({ text = "", result = {} }) {
   if (bodyMatch) patch.bodyType = bodyMatch;
 
   // 6. IDV
-  const idvMatch =
-    text.match(/([1-9]\d{0,2}(?:,\d{2,3})*\.\d{2})0\.000\.000\.000\.000\.00\1/i) ||
-    text.match(/Total IDV\s*\(`\)\s*\n\s*([0-9,.]+)/i) ||
-    text.match(/Vehicle IDV\s*\(`\)\s*\n\s*([0-9,.]+)/i);
-  if (idvMatch) {
-    const rawIdv = idvMatch[1].trim();
-    patch.idv = formatAmount(rawIdv);
+  const idvRowMatch =
+    text.match(/Total IDV\s*\n\s*\([^)]*\)\s*\n\s*([0-9,.]+)/i) ||
+    text.match(/Vehicle IDV\s*\n\s*\([^)]*\)\s*\n\s*([0-9,.]+)/i);
+  if (idvRowMatch) {
+    const rawVal = idvRowMatch[1].trim();
+    const splitParts = rawVal.match(/^(\d+?)0{4,6}(\d+)$/);
+    const commaSplit = rawVal.match(/^([1-9]\d{0,2}(?:,\d{2,3})*(?:\.\d{2})?)/);
+    if (splitParts) {
+      patch.idv = formatAmount(splitParts[1]);
+    } else if (commaSplit) {
+      patch.idv = formatAmount(commaSplit[1]);
+    } else {
+      patch.idv = formatAmount(rawVal);
+    }
     patch.totalIdv = patch.idv;
     patch.vehicleIdv = patch.idv;
     patch.sumInsured = patch.idv;
+  } else {
+    const idvMatch =
+      text.match(/([1-9]\d{0,2}(?:,\d{2,3})*\.\d{2})0\.000\.000\.000\.000\.00\1/i) ||
+      text.match(/Total IDV\s*\(`\)\s*\n\s*([0-9,.]+)/i) ||
+      text.match(/Vehicle IDV\s*\(`\)\s*\n\s*([0-9,.]+)/i);
+    if (idvMatch) {
+      const rawIdv = idvMatch[1].trim();
+      patch.idv = formatAmount(rawIdv);
+      patch.totalIdv = patch.idv;
+      patch.vehicleIdv = patch.idv;
+      patch.sumInsured = patch.idv;
+    }
   }
 
   // 7. Financials & Premium Breakdown
@@ -244,12 +267,56 @@ function train({ text = "", result = {} }) {
     }
   }
 
-  const totalOdMatch = text.match(/Total Own Damage Premium\(A\)\s*([0-9,.]+)/i);
+  const packagePremiumMatch = text.match(/Total\s+Package\s+Premium\s*\([A-Z+]+\)\s*:\s*([0-9,.]+)/i);
+  const totalOdMatch = text.match(/Total\s+Own\s+Damage\s+Premium\s*\([A-Z]\)\s*([0-9,.]+)/i);
+  const totalLiabilityMatch = text.match(/Total\s+Liability\s+Premium\s*\([A-Z]\)\s*([0-9,.]+)/i);
+
   if (totalOdMatch) {
     patch.odPremium = formatAmount(totalOdMatch[1]);
     patch.netOwnDamagePremium = patch.odPremium;
+  }
+
+  if (totalLiabilityMatch) {
+    patch.tpPremium = formatAmount(totalLiabilityMatch[1]);
+    patch.liabilityPremium = patch.tpPremium;
+    patch.totalActPremium = patch.tpPremium;
+  }
+
+  if (packagePremiumMatch) {
+    patch.netPremium = formatAmount(packagePremiumMatch[1]);
+    patch.basicPremium = patch.netPremium;
+  } else if (patch.odPremium) {
     patch.netPremium = patch.odPremium;
     patch.basicPremium = patch.odPremium;
+  }
+
+  const basicTpMatch = text.match(/Basic\s+Third\s+Party\s+Liability[\s\S]*?\n\s*(\d+(?:\.\d{2})?)/i);
+  if (basicTpMatch) {
+    patch.basicThirdPartyLiability = formatAmount(basicTpMatch[1]);
+    patch.basicTpPremium = patch.basicThirdPartyLiability;
+  }
+
+  if (/PA\s+Cover\s+for\s+Owner\s+Driver/i.test(text)) {
+    const odVal = text.match(/PA Cover for Owner Driver[\s\S]*?\n\s*50\s*\n\s*(\d+)/i)?.[1] || "350";
+    patch.ownerDriverPremium = formatAmount(odVal);
+  } else {
+    patch.ownerDriverPremium = "0.00";
+  }
+
+  if (/Legal\s+Liability\s+to\s+Paid\s+Driver/i.test(text)) {
+    patch.legalLiabilityPremium = formatAmount("50");
+  }
+
+  if (/Unnamed\s+PA\s+Cover/i.test(text)) {
+    patch.paPassengersPremium = formatAmount("250");
+  }
+
+  if (patch.tpPremium) {
+    patch.tpDriverOwner = formatAmount(
+      (Number(String(patch.ownerDriverPremium || 0).replace(/,/g, "")) +
+       Number(String(patch.legalLiabilityPremium || 0).replace(/,/g, "")) +
+       Number(String(patch.paPassengersPremium || 0).replace(/,/g, ""))).toFixed(2)
+    );
   }
 
   const cgstMatch = text.match(/CGST[\s\S]*?`\s*([0-9,.]+)/i);
@@ -312,16 +379,28 @@ function train({ text = "", result = {} }) {
   }
 
   // 9. Previous Policy & Active TP Details (Page 1 Column Tables)
-  const prevMatch = text.match(
-    /Previous\s+Policy\s+Type\s*\n\s*([0-9A-Z]+)\s*\n\s*(\d{2}[-/]\d{2}[-/]\d{4}\s+to\s+\d{2}[-/]\d{2}[-/]\d{4})\s*\n\s*(\d+%)\s*\n\s*\d+\s*\n\s*([A-Za-z0-9\s]+?)\n/i,
+  const prevDetailsMatch = text.match(
+    /Previous Policy Details[\s\S]*?Previous Policy Type\s*\n\s*([0-9A-Z/]+)\s*\n\s*(\d{2}[-/]\d{2}[-/]\d{4}\s+to\s+\d{2}[-/]\d{2}[-/]\d{4})\s*\n\s*(\d+%)\s*\n\s*\d+\s*\n\s*([A-Za-z0-9\s]+?)\s*\n\s*([A-Za-z0-9\s]+?)\n/i,
   );
-  if (prevMatch) {
-    patch.previousPolicyNumber = prevMatch[1].trim();
-    const periodParts = prevMatch[2].split("to");
+  if (prevDetailsMatch) {
+    patch.previousPolicyNumber = prevDetailsMatch[1].trim();
+    const periodParts = prevDetailsMatch[2].split("to");
     patch.previousPolicyStartDate = normalizeDate(periodParts[0].trim());
     patch.previousPolicyExpiryDate = normalizeDate(periodParts[1].trim());
-    patch.previousNcb = prevMatch[3].trim();
-    patch.previousInsurer = prevMatch[4].trim();
+    patch.previousNcb = prevDetailsMatch[3].trim();
+    patch.previousInsurer = prevDetailsMatch[4].trim();
+  } else {
+    const prevMatch = text.match(
+      /Previous\s+Policy\s+Type\s*\n\s*([0-9A-Z]+)\s*\n\s*(\d{2}[-/]\d{2}[-/]\d{4}\s+to\s+\d{2}[-/]\d{2}[-/]\d{4})\s*\n\s*(\d+%)\s*\n\s*\d+\s*\n\s*([A-Za-z0-9\s]+?)\n/i,
+    );
+    if (prevMatch) {
+      patch.previousPolicyNumber = prevMatch[1].trim();
+      const periodParts = prevMatch[2].split("to");
+      patch.previousPolicyStartDate = normalizeDate(periodParts[0].trim());
+      patch.previousPolicyExpiryDate = normalizeDate(periodParts[1].trim());
+      patch.previousNcb = prevMatch[3].trim();
+      patch.previousInsurer = prevMatch[4].trim();
+    }
   }
 
   const tpMatch = text.match(

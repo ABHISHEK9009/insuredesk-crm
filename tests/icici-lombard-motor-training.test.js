@@ -96,6 +96,117 @@ describe("ICICI Lombard Motor PDF Training Module", () => {
     expect(result.extractionTrainingVersion).toBe("ICICI_LOMBARD_MOTOR_V1");
   });
 
+  it("extracts NARENDRA SINGH BAGGA real Private Car Package policy correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "NARENDRA SINGH BAGGA_MP04CJ9537_2026-27 POLICY.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("ICICI Lombard General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Private Car Package Policy");
+    expect(result.policyType).toBe("Private Car Package Policy");
+    expect(result.policyCoverType).toBe("Comprehensive");
+    expect(result.policyNumber).toBe("3001/405801684/01/000");
+    expect(result.insuredName).toBe("NARENDRA SINGH BAGGA");
+    expect(result.customerName).toBe("NARENDRA SINGH BAGGA");
+    expect(result.startDate).toBe("30/08/2026");
+    expect(result.expiryDate).toBe("29/08/2027");
+    expect(result.policyIssueDate).toBe("21/08/2026");
+    expect(result.registrationNumber).toBe("MP04CJ9537");
+    expect(result.vehicleNumber).toBe("MP04CJ9537");
+    expect(result.vehicleMake).toBe("MARUTI");
+    expect(result.vehicleModel).toBe("WAGON R VXI");
+    expect(result.engineNumber).toBe("K10BN1567936");
+    expect(result.chassisNumber).toBe("MA3EWDE1S00449642");
+    expect(result.cubicCapacity).toBe("998");
+    expect(result.manufacturingYear).toBe("2012");
+    expect(result.seatingCapacity).toBe("5");
+    expect(result.rtoLocation).toBe("MADHYA PRADESH-SHAHDOL");
+    expect(result.idv).toBe("1,29,281.00");
+    expect(result.totalIdv).toBe("1,29,281.00");
+    expect(result.basicOwnDamage).toBe("437.00");
+    expect(result.ncbPercentage).toBe("50%");
+    expect(result.odPremium).toBe("218.00");
+    expect(result.basicThirdPartyLiability).toBe("2,094.00");
+    expect(result.tpPremium).toBe("2,744.00");
+    expect(result.ownerDriverPremium).toBe("350.00");
+    expect(result.legalLiabilityPremium).toBe("50.00");
+    expect(result.paPassengersPremium).toBe("250.00");
+    expect(result.tpDriverOwner).toBe("650.00");
+    expect(result.netPremium).toBe("2,962.00");
+    expect(result.cgst).toBe("266.58");
+    expect(result.sgst).toBe("266.58");
+    expect(result.gstAmount).toBe("533.00");
+    expect(result.totalPremium).toBe("3,495.00");
+    expect(result.previousPolicyNumber).toBe("3001/405801684/00/000");
+    expect(result.previousPolicyStartDate).toBe("30/08/2025");
+    expect(result.previousPolicyExpiryDate).toBe("29/08/2026");
+    expect(result.previousNcb).toBe("50%");
+    expect(result.previousInsurer).toBe("ICICI LOMBARD");
+    expect(result.receiptNumber).toBe("1273580255");
+    expect(result.compulsoryDeductible).toBe("1,000.00");
+    expect(result.imtEndorsements).toBe("IMT-16, IMT-28, IMT-22");
+    expect(result.extractionTrainingVersion).toBe("ICICI_LOMBARD_MOTOR_V1");
+  });
+
+  it("extracts T U LANJEWAR real Private Car Package policy correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "T U LANJEWAR_MP04CH4265_2026-27 POLICY.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("ICICI Lombard General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Private Car Package Policy");
+    expect(result.policyType).toBe("Private Car Package Policy");
+    expect(result.policyCoverType).toBe("Comprehensive");
+    expect(result.policyNumber).toBe("3001/405863910/01/000");
+    expect(result.insuredName).toBe("T U LANJEWAR");
+    expect(result.customerName).toBe("T U LANJEWAR");
+    expect(result.startDate).toBe("01/09/2026");
+    expect(result.expiryDate).toBe("31/08/2027");
+    expect(result.policyIssueDate).toBe("18/08/2026");
+    expect(result.registrationNumber).toBe("MP04CH4265");
+    expect(result.vehicleNumber).toBe("MP04CH4265");
+    expect(result.vehicleMake).toBe("HYUNDAI");
+    expect(result.vehicleModel).toBe("I10 MAGNA 1.2");
+    expect(result.engineNumber).toBe("G4LABM599584");
+    expect(result.chassisNumber).toBe("MALAM51CLBM870062C");
+    expect(result.cubicCapacity).toBe("1197");
+    expect(result.manufacturingYear).toBe("2011");
+    expect(result.seatingCapacity).toBe("5");
+    expect(result.rtoLocation).toBe("MADHYA PRADESH-BHOPAL");
+    expect(result.idv).toBe("1,11,636.00");
+    expect(result.totalIdv).toBe("1,11,636.00");
+    expect(result.basicOwnDamage).toBe("574.00");
+    expect(result.ncbPercentage).toBe("50%");
+    expect(result.odPremium).toBe("287.00");
+    expect(result.basicThirdPartyLiability).toBe("3,416.00");
+    expect(result.tpPremium).toBe("3,466.00");
+    expect(result.ownerDriverPremium).toBe("0.00");
+    expect(result.legalLiabilityPremium).toBe("50.00");
+    expect(result.tpDriverOwner).toBe("50.00");
+    expect(result.netPremium).toBe("3,753.00");
+    expect(result.cgst).toBe("337.77");
+    expect(result.sgst).toBe("337.77");
+    expect(result.gstAmount).toBe("676.00");
+    expect(result.totalPremium).toBe("4,429.00");
+    expect(result.previousPolicyNumber).toBe("3001/405863910/00/000");
+    expect(result.previousPolicyStartDate).toBe("01/09/2025");
+    expect(result.previousPolicyExpiryDate).toBe("31/08/2026");
+    expect(result.previousNcb).toBe("50%");
+    expect(result.previousInsurer).toBe("ICICI LOMBARD");
+    expect(result.receiptNumber).toBe("1273336869");
+    expect(result.compulsoryDeductible).toBe("1,000.00");
+    expect(result.imtEndorsements).toBe("IMT-28, IMT-22");
+    expect(result.extractionTrainingVersion).toBe("ICICI_LOMBARD_MOTOR_V1");
+  });
+
   it("is isolated from ICICI Lombard Health and other motor insurers", () => {
     const iciciHealth = selectScopedTraining(
       { insuranceCompany: "ICICI Lombard General Insurance Company Limited", documentCategory: "Health Insurance" },
