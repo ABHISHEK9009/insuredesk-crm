@@ -1,0 +1,79 @@
+const { normalizeWarehouseDate, parseRobustDate } = require("../../utils/dates.cjs");
+
+const scope = { insurer: "hdfc-ergo", category: "workmen-compensation" };
+
+function formatAmount(val) {
+  if (!val) return "";
+  const num = parseFloat(String(val).replace(/,/g, ""));
+  if (isNaN(num)) return "";
+  return num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function matches({ text = "" }) {
+  return (
+    /HDFC\s*ERGO/i.test(text) &&
+    (/Employees?\s+Compensation\s+Insurance|Workm(?:e|a)n'?s\s+Compensation/i.test(text) ||
+      /\b3114\d{15}\b/.test(text))
+  );
+}
+
+function train({ text = "", result = {} }) {
+  const patch = {};
+
+  patch.insuranceCompany = "HDFC ERGO General Insurance Company Limited";
+  patch.companyName = "HDFC ERGO General Insurance Company Limited";
+  patch.documentCategory = "Workmen Compensation";
+  patch.policyCategory = "Workmen Compensation";
+  patch.policyType = "Employees Compensation Insurance Policy";
+  patch.productName = "Employees Compensation Insurance";
+
+  // Policy Number
+  const polMatch =
+    text.match(/Policy\s+No\.?\s*[:\s]*([0-9]+)/i) ||
+    text.match(/\b(3114\d{15})\b/);
+  if (polMatch) {
+    patch.policyNumber = polMatch[1].trim();
+  }
+
+  // Insured Name
+  const nameMatch =
+    text.match(/HDFC\s+ERGO\s+General\s+Insurance\s+Company\s+Limited\s*\n\s*([^\n]+)/i) ||
+    text.match(/Insured\s*[:\s]*([^\n]+)/i);
+  if (nameMatch) {
+    patch.insuredName = nameMatch[1].replace(/^:\s*/, "").replace(/\s+/g, " ").trim();
+    patch.customerName = patch.insuredName;
+  }
+
+  // Period / Dates
+  const periodMatch =
+    text.match(/From\s*[:\s]*(\d{1,2}[-/][A-Za-z0-9]+[-/]\d{2,4})[^\n]*To\s*[:\s]*(\d{1,2}[-/][A-Za-z0-9]+[-/]\d{2,4})/i) ||
+    text.match(/Period\s+of\s+Insurance\s*[:\s]*From\s*([0-9A-Za-z/-]+)[^\n]*To\s+([0-9A-Za-z/-]+)/i);
+  if (periodMatch) {
+    patch.startDate = parseRobustDate(periodMatch[1]) || normalizeWarehouseDate(periodMatch[1]);
+    patch.expiryDate = parseRobustDate(periodMatch[2]) || normalizeWarehouseDate(periodMatch[2]);
+    patch.policyStartDate = patch.startDate;
+    patch.policyExpiryDate = patch.expiryDate;
+  }
+
+  // Financials
+  const basicMatch = text.match(/Basic\s+Premium[\s\S]{0,100}?\n\s*([0-9,.]+)/i);
+  if (basicMatch) {
+    patch.netPremium = formatAmount(basicMatch[1]);
+  }
+
+  const totMatch =
+    text.match(/Total\s+Premium[\s\S]{0,100}?\n\s*(?:[0-9,.]+\s*\n\s*){1,2}([0-9,.]+)/i) ||
+    text.match(/Total\s+Amount[^\n]*\n?\s*([0-9,.]+)/i);
+  if (totMatch) {
+    patch.totalPremium = formatAmount(totMatch[1]);
+    patch.grossPremium = patch.totalPremium;
+    patch.premium = patch.totalPremium;
+    patch.premiumIncludingGst = patch.totalPremium;
+  }
+
+  patch.extractionTrainingVersion = "HDFC_ERGO_WC_V1";
+
+  return patch;
+}
+
+module.exports = { scope, matches, train };

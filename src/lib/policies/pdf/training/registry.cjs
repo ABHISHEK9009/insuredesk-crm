@@ -1,4 +1,7 @@
 const iciciLombardMotor = require("./icici-lombard/motor.cjs");
+const iciciLombardWc = require("./icici-lombard/wc.cjs");
+const iciciLombardPublicLiability = require("./icici-lombard/public-liability.cjs");
+const iciciLombardFire = require("./icici-lombard/fire.cjs");
 const tataAigWarehouse = require("./tata-aig/warehouse.cjs");
 const iciciLombardHealth = require("./icici-lombard/health.cjs");
 const hdfcErgoHealth = require("./hdfc-ergo/health.cjs");
@@ -16,26 +19,45 @@ const royalSundaramMotor = require("./royal-sundaram/motor.cjs");
 const futureGeneraliMotor = require("./future-generali/motor.cjs");
 const unitedIndiaWarehouse = require("./united-india/warehouse.cjs");
 const unitedIndiaBurglary = require("./united-india/burglary.cjs");
+const unitedIndiaFire = require("./united-india/fire.cjs");
+const unitedIndiaFidelity = require("./united-india/fidelity.cjs");
+const iffcoTokioNonMotor = require("./iffco-tokio/non-motor.cjs");
+const hdfcErgoWc = require("./hdfc-ergo/wc.cjs");
+const iciciLombardFidelity = require("./icici-lombard/fidelity.cjs");
+const iciciLombardCpm = require("./icici-lombard/cpm.cjs");
+const iciciLombardMarine = require("./icici-lombard/marine.cjs");
+const newIndiaNonMotor = require("./new-india/non-motor.cjs");
 
 const trainers = [
   iciciLombardMotor,
+  iciciLombardFire,
+  iciciLombardWc,
+  iciciLombardPublicLiability,
+  iciciLombardFidelity,
+  iciciLombardCpm,
+  iciciLombardMarine,
   tataAigWarehouse,
   iciciLombardHealth,
   hdfcErgoHealth,
   hdfcErgoMotor,
+  hdfcErgoWc,
   unitedIndiaHealth,
+  unitedIndiaWarehouse,
+  unitedIndiaBurglary,
+  unitedIndiaFire,
+  unitedIndiaFidelity,
   tataAigHealth,
   careHealthHealth,
   iffcoTokioMotor,
+  iffcoTokioNonMotor,
   tataAigMotor,
   libertyMotor,
   goDigitMotor,
   newIndiaMotor,
+  newIndiaNonMotor,
   bajajAllianzMotor,
   royalSundaramMotor,
   futureGeneraliMotor,
-  unitedIndiaWarehouse,
-  unitedIndiaBurglary,
 ];
 const protectedScopeFields = [
   "sourceFile",
@@ -71,12 +93,13 @@ function normalizeCategory(value = "") {
   const known = [
     [/Motor/i, "motor"],
     [/Warehouse/i, "warehouse"],
-    [/Fire/i, "fire"],
+    [/Fire|Bharat\s+Sookshma|Griha|MSME\s+Suraksha/i, "fire"],
     [/Health/i, "health"],
     [/Marine/i, "marine"],
     [/Burglary/i, "burglary"],
     [/Fidelity/i, "fidelity"],
-    [/Workm(?:e|a)n(?:'s)?\s+Compensation/i, "workmen-compensation"],
+    [/Public\s+Liability/i, "public-liability"],
+    [/Workm(?:e|a)n(?:'s)?\s+Compensation|Employee(?:'s)?\s+Compensation/i, "workmen-compensation"],
   ];
   return known.find(([pattern]) => pattern.test(category))?.[1] || slug(category);
 }
@@ -88,6 +111,38 @@ function slug(value = "") {
     .replace(/^-|-$/g, "");
 }
 
+function isIciciLombardFire(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV/i.test(text)) return false;
+  return (
+    /\b1030\/|\b1015\//.test(text) ||
+    /MSME\s+Suraksha\s+Kavach\s+Package\s+Policy|Bharat\s+Sookshma\s+Udyam|Standard\s+Fire\s+and\s+Special\s+Perils/i.test(text)
+  );
+}
+
+function isIciciLombardWc(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV/i.test(text)) return false;
+  if (/\b1030\/|\b1015\//.test(text)) return false;
+  return (
+    /\b4010\//.test(text) ||
+    /IRDAN115CP0017V02201920|EMPLOYEE'?S\s+COMPENSATION\s+INSURANCE/i.test(text)
+  );
+}
+
+function isIciciLombardPublicLiability(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV/i.test(text)) return false;
+  if (/\b1030\/|\b1015\//.test(text)) return false;
+  return (
+    /Public\s+Liability\s+Insurance\s*\(Industrial\s+Risks\)|IRDAN115CP0015V01201920|Product\s+Code:\s*4008/i.test(text) ||
+    (/\b10008\d{7}\b/.test(text) && /Aggregate\s+One\s+Year\s*\(AOY\)/i.test(text))
+  );
+}
+
 function isIciciLombardHealth(result = {}, context = {}) {
   const insurer = result.insuranceCompany || result.companyName || "";
   if (insurer && !/ICICI\s+Lombard/i.test(insurer)) return false;
@@ -95,6 +150,7 @@ function isIciciLombardHealth(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   if (!/ICICI\s+Lombard/i.test(text)) return false;
   if (/Private\s+Car|Two\s+Wheeler|Goods\s+Carrying|Commercial\s+Vehicle/i.test(text)) return false;
+  if (/EMPLOYEE'?S\s+COMPENSATION|Public\s+Liability|MSME\s+Suraksha/i.test(text)) return false;
 
   return (
     /ELEVATE|ICIHLIP|Complete\s+Health|Health\s+Shield/i.test(text) ||
@@ -108,7 +164,7 @@ function isHdfcErgoHealth(result = {}, context = {}) {
 
   const text = String(context.text || result.sourceText || "");
   if (!/HDFC\s*ERGO/i.test(text)) return false;
-  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV|Cubic\s+Capacity|Engine\s+No/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Total\s+IDV|Cubic\s+Capacity|Engine\s+No|Employees?\s+Compensation|WORKM(?:E|A)N'?S\s+COMPENSATION|\b3114\d{15}\b/i.test(text)) return false;
 
   return (
     /\bOptima\s+Secure\b/i.test(text) ||
@@ -143,6 +199,60 @@ function isTataAigHealth(result = {}, context = {}) {
   if (/Auto\s*Secure|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle/i.test(text)) return false;
 
   return /Medicare|Health\s*AdvantEdge|TATHLIP|Health\s*Card|80\s*D\s*Certi/i.test(text);
+}
+
+function isUnitedIndiaFire(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/UNITED\s+INDIA\s+INSURANCE/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying/i.test(text)) return false;
+  return /STANDARD\s+FIRE\s+AND\s+SPECIAL\s+PERILS\s+POLICY|FIRE\s+POLICY/i.test(text);
+}
+
+function isUnitedIndiaFidelity(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/UNITED\s+INDIA\s+INSURANCE/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying/i.test(text)) return false;
+  return /FIDELITY\s*[-–]\s*GROUP\s+UNNAMED\s+POLICY|FIDELITY\s+GUARANTEE/i.test(text);
+}
+
+function isIffcoTokioNonMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/IFFCO\s*[- ]?\s*TOKIO/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Goods\s+Carrying\s+Commercial|Passenger\s+Carrying/i.test(text)) return false;
+  return /FLEXI\s+PROPERTY\s+PROTECTOR|BURGLARY\s+AND\s+HOUSE\s+BREAKING|Contractors\s+Plant\s+and\s+Machinery/i.test(text);
+}
+
+function isHdfcErgoWc(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/HDFC\s*ERGO/i.test(text)) return false;
+  return (
+    /Employees?\s+Compensation\s+Insurance|Workm(?:e|a)n'?s\s+Compensation/i.test(text.slice(0, 3000)) ||
+    /\b3114\d{15}\b/.test(text)
+  );
+}
+
+function isIciciLombardFidelity(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  return /FIDELITY|Misc\s*03|\b4003\//i.test(text);
+}
+
+function isIciciLombardCpm(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  return /Engg\s*06|Contractors?\s+Plant\s+and\s+Machinery|\b5006\//i.test(text);
+}
+
+function isIciciLombardMarine(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  return /Marine\s*01|Marine\s+Cargo|Marine\s+Insurance|\b2001\//i.test(text);
+}
+
+function isNewIndiaNonMotor(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/THE\s+NEW\s+INDIA\s+ASSURANCE/i.test(text)) return false;
+  return /Bharat\s+Flexi\s+Griha\s+Raksha|Griha\s+Raksha|PACKAGE\s+INSURANCE\s+POLICY/i.test(text);
 }
 
 function isCareHealth(result = {}, context = {}) {
@@ -286,6 +396,39 @@ function isFutureGeneraliMotor(result = {}, context = {}) {
 }
 
 function deriveTrainingScope(result = {}, context = {}) {
+  if (isIciciLombardFire(result, context)) {
+    return { insurer: "icici-lombard", category: "fire" };
+  }
+  if (isIciciLombardWc(result, context)) {
+    return { insurer: "icici-lombard", category: "workmen-compensation" };
+  }
+  if (isIciciLombardPublicLiability(result, context)) {
+    return { insurer: "icici-lombard", category: "public-liability" };
+  }
+  if (isIciciLombardFidelity(result, context)) {
+    return { insurer: "icici-lombard", category: "fidelity" };
+  }
+  if (isIciciLombardCpm(result, context)) {
+    return { insurer: "icici-lombard", category: "cpm" };
+  }
+  if (isIciciLombardMarine(result, context)) {
+    return { insurer: "icici-lombard", category: "marine" };
+  }
+  if (isNewIndiaNonMotor(result, context)) {
+    return { insurer: "new-india", category: "fire" };
+  }
+  if (isUnitedIndiaFire(result, context)) {
+    return { insurer: "united-india", category: "fire" };
+  }
+  if (isUnitedIndiaFidelity(result, context)) {
+    return { insurer: "united-india", category: "fidelity" };
+  }
+  if (isIffcoTokioNonMotor(result, context)) {
+    return { insurer: "iffco-tokio", category: "fire" };
+  }
+  if (isHdfcErgoWc(result, context)) {
+    return { insurer: "hdfc-ergo", category: "workmen-compensation" };
+  }
   if (isIciciLombardHealth(result, context)) {
     return { insurer: "icici-lombard", category: "health" };
   }
@@ -339,6 +482,122 @@ function deriveTrainingScope(result = {}, context = {}) {
 }
 
 function establishTrainingIdentity(result = {}, context = {}) {
+  if (isIciciLombardFire(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Fire Insurance",
+      documentFormat: "ICICI_LOMBARD_FIRE_V1",
+      sourceDocumentType: "ICICI_LOMBARD_FIRE_V1",
+    };
+  }
+  if (isIciciLombardWc(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Workmen Compensation",
+      documentFormat: "ICICI_LOMBARD_WC_V1",
+      sourceDocumentType: "ICICI_LOMBARD_WC_V1",
+    };
+  }
+  if (isIciciLombardPublicLiability(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Public Liability",
+      documentFormat: "ICICI_LOMBARD_PLI_V1",
+      sourceDocumentType: "ICICI_LOMBARD_PLI_V1",
+    };
+  }
+  if (isIciciLombardFidelity(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Fidelity Insurance",
+      documentFormat: "ICICI_LOMBARD_FIDELITY_V1",
+      sourceDocumentType: "ICICI_LOMBARD_FIDELITY_V1",
+    };
+  }
+  if (isIciciLombardCpm(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Contractors Plant & Machinery",
+      documentFormat: "ICICI_LOMBARD_CPM_V1",
+      sourceDocumentType: "ICICI_LOMBARD_CPM_V1",
+    };
+  }
+  if (isIciciLombardMarine(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Marine Insurance",
+      documentFormat: "ICICI_LOMBARD_MARINE_V1",
+      sourceDocumentType: "ICICI_LOMBARD_MARINE_V1",
+    };
+  }
+  if (isNewIndiaNonMotor(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "The New India Assurance Company Limited",
+      companyName: "The New India Assurance Company Limited",
+      documentCategory: "Fire Insurance",
+      documentFormat: "NEW_INDIA_NON_MOTOR_V1",
+      sourceDocumentType: "NEW_INDIA_NON_MOTOR_V1",
+    };
+  }
+  if (isUnitedIndiaFire(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "United India Insurance Company Limited",
+      companyName: "United India Insurance Company Limited",
+      documentCategory: "Fire Insurance",
+      documentFormat: "UNITED_INDIA_FIRE_V1",
+      sourceDocumentType: "UNITED_INDIA_FIRE_V1",
+    };
+  }
+  if (isUnitedIndiaFidelity(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "United India Insurance Company Limited",
+      companyName: "United India Insurance Company Limited",
+      documentCategory: "Fidelity Insurance",
+      documentFormat: "UNITED_INDIA_FIDELITY_V1",
+      sourceDocumentType: "UNITED_INDIA_FIDELITY_V1",
+    };
+  }
+  if (isIffcoTokioNonMotor(result, context)) {
+    const text = String(context.text || result.sourceText || "");
+    const category = /BURGLARY\s+AND\s+HOUSE\s+BREAKING|BURGLARY\s+FIRST\s+LOSS/i.test(text)
+      ? "Burglary Insurance"
+      : /Contractors\s+Plant\s+and\s+Machinery/i.test(text)
+      ? "Contractors Plant & Machinery"
+      : "Fire Insurance";
+    return {
+      ...result,
+      insuranceCompany: "IFFCO Tokio General Insurance Company Limited",
+      companyName: "IFFCO Tokio General Insurance Company Limited",
+      documentCategory: category,
+      documentFormat: "IFFCO_TOKIO_NON_MOTOR_V1",
+      sourceDocumentType: "IFFCO_TOKIO_NON_MOTOR_V1",
+    };
+  }
+  if (isHdfcErgoWc(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "HDFC ERGO General Insurance Company Limited",
+      companyName: "HDFC ERGO General Insurance Company Limited",
+      documentCategory: "Workmen Compensation",
+      documentFormat: "HDFC_ERGO_WC_V1",
+      sourceDocumentType: "HDFC_ERGO_WC_V1",
+    };
+  }
   if (isIciciLombardHealth(result, context)) {
     return {
       ...result,
