@@ -51,6 +51,7 @@ function train({ text = "", result = {} }) {
 
   // Period / Dates
   const periodMatch =
+    text.match(/Period\s+of\s+Insurance\s*From\s*[:\s]*(?:[0-9:]+\s*Hours\s*of\s*)?(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*[:\s]*(?:[0-9:]+\s*Hours\s*of\s*)?(?:Midnight\s*of\s*)?(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
     text.match(/Period\s+of\s+Insurance\s*From\s*[:\s]*(?:00:00\s+Hours\s+of\s*)?([0-9A-Za-z/-]+)\s*To\s*[:\s]*(?:Midnight\s+of\s*)?([0-9A-Za-z/-]+)/i) ||
     text.match(/From\s*[:\s]*([0-9A-Za-z/-]+)\s*(?:00:00\s+Hours\s*)?To\s*(?:Midnight\s+of\s*)?([0-9A-Za-z/-]+)/i) ||
     text.match(/(\d{2}[-/]\d{2}[-/]\d{4})\s+to\s+(\d{2}[-/]\d{2}[-/]\d{4})/i);

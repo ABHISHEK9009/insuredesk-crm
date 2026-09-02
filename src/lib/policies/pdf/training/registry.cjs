@@ -26,6 +26,7 @@ const hdfcErgoWc = require("./hdfc-ergo/wc.cjs");
 const iciciLombardFidelity = require("./icici-lombard/fidelity.cjs");
 const iciciLombardCpm = require("./icici-lombard/cpm.cjs");
 const iciciLombardMarine = require("./icici-lombard/marine.cjs");
+const iciciLombardGpa = require("./icici-lombard/gpa.cjs");
 const newIndiaNonMotor = require("./new-india/non-motor.cjs");
 
 const trainers = [
@@ -36,6 +37,7 @@ const trainers = [
   iciciLombardFidelity,
   iciciLombardCpm,
   iciciLombardMarine,
+  iciciLombardGpa,
   tataAigWarehouse,
   iciciLombardHealth,
   hdfcErgoHealth,
@@ -249,6 +251,12 @@ function isIciciLombardMarine(result = {}, context = {}) {
   return /Marine\s*01|Marine\s+Cargo|Marine\s+Insurance|\b2001\//i.test(text);
 }
 
+function isIciciLombardGpa(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/ICICI\s+Lombard/i.test(text)) return false;
+  return /Group\s+Personal\s+Accident|\b4005\//i.test(text);
+}
+
 function isNewIndiaNonMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   if (!/THE\s+NEW\s+INDIA\s+ASSURANCE/i.test(text)) return false;
@@ -414,6 +422,9 @@ function deriveTrainingScope(result = {}, context = {}) {
   if (isIciciLombardMarine(result, context)) {
     return { insurer: "icici-lombard", category: "marine" };
   }
+  if (isIciciLombardGpa(result, context)) {
+    return { insurer: "icici-lombard", category: "gpa" };
+  }
   if (isNewIndiaNonMotor(result, context)) {
     return { insurer: "new-india", category: "fire" };
   }
@@ -540,6 +551,16 @@ function establishTrainingIdentity(result = {}, context = {}) {
       documentCategory: "Marine Insurance",
       documentFormat: "ICICI_LOMBARD_MARINE_V1",
       sourceDocumentType: "ICICI_LOMBARD_MARINE_V1",
+    };
+  }
+  if (isIciciLombardGpa(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "ICICI Lombard General Insurance Company Limited",
+      companyName: "ICICI Lombard General Insurance Company Limited",
+      documentCategory: "Group Personal Accident",
+      documentFormat: "ICICI_LOMBARD_GPA_V1",
+      sourceDocumentType: "ICICI_LOMBARD_GPA_V1",
     };
   }
   if (isNewIndiaNonMotor(result, context)) {

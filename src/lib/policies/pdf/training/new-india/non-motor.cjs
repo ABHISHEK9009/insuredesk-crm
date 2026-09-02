@@ -41,7 +41,7 @@ function train({ text = "", result = {} }) {
     text.match(/Insured's\s+Name\s*[:\s]*([^\n]+)/i) ||
     text.match(/1\.\s*Insured's\s+Details\s*:\s*\n?\s*([^\n]+)/i);
   if (nameMatch) {
-    patch.insuredName = nameMatch[1].replace(/^:\s*/, "").replace(/E-mail.*/i, "").trim();
+    patch.insuredName = nameMatch[1].replace(/^(?:Insured'?s?\s*Name\s*:?|:\s*)/i, "").replace(/E-mail.*/i, "").trim();
     patch.customerName = patch.insuredName;
   }
 

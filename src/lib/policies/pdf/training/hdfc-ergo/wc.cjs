@@ -46,11 +46,12 @@ function train({ text = "", result = {} }) {
 
   // Period / Dates
   const periodMatch =
+    text.match(/Period\s+of\s+Insurance[\s\S]{0,100}?(\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4})\s+[0-9:]+\s*(?:AM|PM)?[^\n]*?(\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4})/i) ||
     text.match(/From\s*[:\s]*(\d{1,2}[-/][A-Za-z0-9]+[-/]\d{2,4})[^\n]*To\s*[:\s]*(\d{1,2}[-/][A-Za-z0-9]+[-/]\d{2,4})/i) ||
     text.match(/Period\s+of\s+Insurance\s*[:\s]*From\s*([0-9A-Za-z/-]+)[^\n]*To\s+([0-9A-Za-z/-]+)/i);
   if (periodMatch) {
-    patch.startDate = parseRobustDate(periodMatch[1]) || normalizeWarehouseDate(periodMatch[1]);
-    patch.expiryDate = parseRobustDate(periodMatch[2]) || normalizeWarehouseDate(periodMatch[2]);
+    patch.startDate = (periodMatch[1] || "").replace(/\s+/g, "");
+    patch.expiryDate = (periodMatch[2] || "").replace(/\s+/g, "");
     patch.policyStartDate = patch.startDate;
     patch.policyExpiryDate = patch.expiryDate;
   }
