@@ -518,11 +518,32 @@ function train({ text = "", result = {} }) {
       matchGroup(text, /Final Premium\s*(?:Rs\.)?\s*([0-9,.]+)/i),
     );
 
+    const modeOfPayment = clean(
+      matchGroup(text, /Instrument\s*Type[\s\S]*?\n\s*(Credit Card|Debit Card|Cheque|DD|NEFT|RTGS|UPI|Cash|Online)/i) ||
+        matchGroup(text, /Mode\s*Of\s*Payment\s*[:\s]*([^\n]+)/i),
+    );
+    if (modeOfPayment) {
+      patch.modeOfPayment = modeOfPayment;
+    }
+
+    const ownerDriver = /Whether PA cover is opted for owner-driver\s*:\s*Yes/i.test(text)
+      ? amount(matchGroup(text, /PA Cover for Owner-Driver[\s\S]*?(\d+\.\d{2})/i) || "0")
+      : "0.00";
+    const paidDriver = /Whether PA cover is opted for paid driver[\s\S]*?Yes/i.test(text)
+      ? amount(matchGroup(text, /PA Cover For Paid Driver[\s\S]*?(\d+\.\d{2})/i) || "0")
+      : "0.00";
+    const legalLiability = /Is LL to person for Paid driver[\s\S]*?Yes/i.test(text)
+      ? amount(matchGroup(text, /LL to person for Paid driver[\s\S]*?(\d+\.\d{2})/i) || "0")
+      : "0.00";
+
     assign(patch, "odPremium", odNet);
     assign(patch, "basicThirdPartyLiability", basicTp);
     assign(patch, "basicTpPremium", basicTp);
     assign(patch, "tpPremium", basicTp);
     assign(patch, "liabilityPremium", basicTp);
+    assign(patch, "ownerDriverPremium", ownerDriver);
+    assign(patch, "legalLiabilityPremium", legalLiability);
+    assign(patch, "tpDriverOwner", (Number(ownerDriver || 0) + Number(paidDriver || 0)).toFixed(2));
     assign(patch, "netPremium", netPremium);
     assign(patch, "basicPremium", netPremium);
 

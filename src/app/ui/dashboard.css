@@ -3,6 +3,7 @@
 @import "./dashboard/operations.css";
 @import "./dashboard/records-and-customers.css";
 @import "./dashboard/analytics-and-reports.css";
+@import "./dashboard/premium-reports-v3.css";
 @import "./dashboard/authentication.css";
 @import "./dashboard/user-management.css";
 @import "./dashboard/chrome-and-responsive.css";

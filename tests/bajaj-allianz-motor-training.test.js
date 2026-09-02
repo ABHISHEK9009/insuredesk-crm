@@ -451,11 +451,13 @@ describe("Bajaj Allianz motor scoped training", () => {
     expect(result.odPremium).toBe("1068.00");
     expect(result.basicThirdPartyLiability).toBe("16049.00");
     expect(result.tpPremium).toBe("16049.00");
+    expect(result.tpDriverOwner).toBe("0.00");
     expect(result.netPremium).toBe("17117.00");
     expect(result.cgst).toBe("497.00");
     expect(result.sgst).toBe("497.00");
     expect(result.gstAmount).toBe("994.00");
     expect(result.totalPremium).toBe("18111.00");
+    expect(result.modeOfPayment).toBe("Credit Card");
     expect(result.ncb).toBe("35%");
     expect(result.compulsoryDeductible).toBe("500.00");
     expect(result.previousInsurer).toBe("United India Insurance Company Limited");

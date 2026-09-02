@@ -120,46 +120,41 @@ export default async function PremiumReportPage({ params, searchParams }) {
   };
 
   return (
-    <main className={`analytics-report-page premium-report-page premium-report-${reportId}`}>
-      <section className="glass-panel report-detail-card premium-report-hero">
-        <div className="panel-head">
-          <div>
-            <p className="eyebrow">{config.eyebrow}</p>
-            <h1>{config.title}</h1>
-            <p>{config.description}</p>
-          </div>
-          <div className="title-actions">
-            <Link className="secondary-action" href="/dashboard" prefetch={false}>
-              Back to Dashboard
-            </Link>
-          </div>
+    <main className="mtd-premium-v3">
+      <header className="mtd-premium-v3-header">
+        <div>
+          <Link className="mtd-premium-v3-back" href="/dashboard" prefetch={false}>← Reports</Link>
+          <p>{config.eyebrow}</p>
+          <h1>{config.title}</h1>
+          <span>{config.description}</span>
         </div>
+        <div className="mtd-premium-v3-status">
+          <span>Reporting basis</span>
+          <strong>{getBasisLabel(reportId)}</strong>
+        </div>
+      </header>
 
-        <div className="report-summary-grid">
-          <div className="metric-card">
-            <span>Policy count</span>
-            <strong>{report.totalCount}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Premium total</span>
-            <strong>{formatMoney(report.totalPremium)}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Latest saved</span>
-            <strong>
-              {latestRecord ? formatDateTime(latestRecord.reportDate || latestRecord.savedAt || latestRecord.uploadedAt) : "-"}
-            </strong>
-          </div>
-          <div className="metric-card">
-            <span>Report basis</span>
-            <strong>{getBasisLabel(reportId)}</strong>
-          </div>
-        </div>
+      <section className="mtd-premium-v3-summary" aria-label="Report summary">
+        <article className="mtd-premium-v3-total">
+          <span>Premium written</span>
+          <strong>{formatMoney(report.totalPremium)}</strong>
+          <small>{report.totalCount} policies in this report</small>
+        </article>
+        <article>
+          <span>Policies</span>
+          <strong>{report.totalCount}</strong>
+          <small>Recorded in this period</small>
+        </article>
+        <article>
+          <span>Latest activity</span>
+          <strong>{latestRecord ? formatDateTime(latestRecord.reportDate || latestRecord.savedAt || latestRecord.uploadedAt) : "No activity"}</strong>
+          <small>Most recently saved policy</small>
+        </article>
       </section>
 
-      <form className="glass-panel premium-report-filter" method="get">
-        <label style={{ flex: 1 }}>
-          <span>Search within this report</span>
+      <form className="mtd-premium-v3-filter" method="get">
+        <label>
+          <span>Search records</span>
           <input name="q" defaultValue={q} placeholder="Policyholder, policy number, company or policy type" />
         </label>
         <label>
@@ -170,12 +165,12 @@ export default async function PremiumReportPage({ params, searchParams }) {
             <option value="premium_desc">Highest premium</option>
           </select>
         </label>
-        <button className="primary-action" type="submit">Apply</button>
+        <button type="submit">Filter report</button>
       </form>
 
       {pivotRows.length ? (
-        <section className="glass-panel report-detail-table premium-report-pivot">
-          <div className="panel-head">
+        <section className="mtd-premium-v3-section mtd-premium-v3-pivot">
+          <div className="mtd-premium-v3-section-head">
             <div>
               <p className="eyebrow">Pivot Report</p>
               <h2>
@@ -269,8 +264,8 @@ export default async function PremiumReportPage({ params, searchParams }) {
         </section>
       ) : null}
 
-      <section className="glass-panel report-detail-table premium-report-records">
-        <div className="panel-head">
+      <section className="mtd-premium-v3-section mtd-premium-v3-records">
+        <div className="mtd-premium-v3-section-head">
           <div>
             <p className="eyebrow">Policy Records</p>
             <h2>{reportId === "eod" ? "Today uploads" : "Matching policies"}</h2>
