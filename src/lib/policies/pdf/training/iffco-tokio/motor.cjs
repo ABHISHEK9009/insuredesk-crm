@@ -490,6 +490,49 @@ function train({ text = "", result = {} }) {
     patch.previousPolicyExpiryDate = normalizeDate(prevMatch[3]);
   }
 
+  // 13. Additional Coverage & Metadata
+  if (patch.registrationNumber && !patch.rtoLocation) {
+    const rtoMatch = patch.registrationNumber.match(/^([A-Z]{2}\d{2})/i);
+    if (rtoMatch) {
+      const code = rtoMatch[1].toUpperCase();
+      patch.rtoLocation = code === "MP04" ? "MP04-BHOPAL" : code;
+    }
+  }
+
+  if (!patch.fuelType) {
+    const fuelMatch = text.match(/\b(DIESEL|PETROL|CNG|ELECTRIC|LPG)\b/i);
+    if (fuelMatch) {
+      patch.fuelType = fuelMatch[1][0].toUpperCase() + fuelMatch[1].slice(1).toLowerCase();
+    } else if (isTwoWheeler) {
+      patch.fuelType = "Petrol";
+    }
+  }
+
+  const depWaiverMatch = text.match(/Depreciation\s+Wa[iv]{1,2}er\s+Cover\s*([0-9,.]+)/i);
+  if (depWaiverMatch) {
+    patch.depreciationWaiverPremium = normalizeAmount(depWaiverMatch[1]);
+    if (parseFloat(patch.depreciationWaiverPremium || 0) > 0) {
+      patch.depreciationShieldCover = "Yes";
+      patch.depreciationWaiverCover = "Yes";
+      patch.nilDepreciation = "Yes";
+      patch.addOnCovers = "Depreciation Waiver Cover";
+    }
+  }
+
+  const compExcessMatch = text.match(/Compulsory\s+Excess\s*(?:\(IMT\s*22\))?\s*Rs\.?\s*([0-9,.]+)/i);
+  if (compExcessMatch) {
+    patch.compulsoryDeductible = normalizeAmount(compExcessMatch[1]);
+    patch.compulsoryExcess = patch.compulsoryDeductible;
+  }
+
+  const imts = [];
+  if (/IMT\s*22\b/i.test(text)) imts.push("IMT-22");
+  if (/IMT\s*24\b/i.test(text)) imts.push("IMT-24");
+  if (/IMT\s*33\b/i.test(text)) imts.push("IMT-33");
+  if (/IMT\s*10\b/i.test(text)) imts.push("IMT-10");
+  if (/IMT\s*7\b/i.test(text)) imts.push("IMT-7");
+  if (imts.length > 0) patch.imtEndorsements = imts.join(", ");
+
   patch.extractionTrainingVersion = "IFFCO_TOKIO_MOTOR_V2";
 
   return patch;

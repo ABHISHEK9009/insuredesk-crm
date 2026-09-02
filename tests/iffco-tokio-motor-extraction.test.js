@@ -344,22 +344,54 @@ Amount Received 27561.00
     }
 
     // 3. LION ENGINEERING MP04ZF4664
-    const f3 = path.join(process.cwd(), "storage", "LION ENGINEERING CONSULTANTS PRIVATE LIMITED_MP04ZF4664_2026-27.pdf");
+    const f3 = fs.existsSync(path.join(process.cwd(), "storage", "LION ENGINEERING CONSULTANTS PRIVATE LIMITED_MP04ZF4664_2026-27 (1).pdf"))
+      ? path.join(process.cwd(), "storage", "LION ENGINEERING CONSULTANTS PRIVATE LIMITED_MP04ZF4664_2026-27 (1).pdf")
+      : path.join(process.cwd(), "storage", "LION ENGINEERING CONSULTANTS PRIVATE LIMITED_MP04ZF4664_2026-27.pdf");
     if (fs.existsSync(f3)) {
       const d3 = await pdf(fs.readFileSync(f3));
       const res3 = applyScopedTraining({}, { text: d3.text });
+      expect(res3.insuranceCompany).toBe("IFFCO Tokio General Insurance Company Limited");
+      expect(res3.documentCategory).toBe("Motor Insurance");
       expect(res3.policyNumber).toBe("N8294142");
       expect(res3.insuredName).toBe("LION ENGINEERING CONSULTANTS PRIVATE LIMITED");
+      expect(res3.customerName).toBe("LION ENGINEERING CONSULTANTS PRIVATE LIMITED");
       expect(res3.registrationNumber).toBe("MP04ZF4664");
+      expect(res3.vehicleNumber).toBe("MP04ZF4664");
       expect(res3.vehicleMake).toBe("HONDA");
       expect(res3.vehicleModel).toBe("ACTIVA DLX OBD2");
+      expect(res3.makeModel).toBe("HONDA ACTIVA DLX OBD2");
       expect(res3.engineNumber).toBe("JK15EW5005614");
       expect(res3.chassisNumber).toBe("ME4JK156BPW005568");
+      expect(res3.cubicCapacity).toBe("109");
+      expect(res3.seatingCapacity).toBe("2");
+      expect(res3.manufacturingYear).toBe("2023");
       expect(res3.idv).toBe("54000.00");
+      expect(res3.totalIdv).toBe("54000.00");
+      expect(res3.rtoLocation).toBe("MP04-BHOPAL");
+      expect(res3.fuelType).toBe("Petrol");
       expect(res3.productName).toBe("Two Wheeler Policy");
+      expect(res3.policyType).toBe("Two Wheeler Policy");
       expect(res3.policyCoverType).toBe("Stand Alone OD");
+      expect(res3.startDate).toBe("31/08/2026");
+      expect(res3.expiryDate).toBe("30/08/2027");
+      expect(res3.tpInsurerName).toBe("New India Assurance");
+      expect(res3.tpPolicyNumber).toBe("206770756500000");
+      expect(res3.odPremium).toBe("407.00");
+      expect(res3.addonPremium).toBe("176.00");
       expect(res3.netPremium).toBe("583.00");
+      expect(res3.cgst).toBe("52.47");
+      expect(res3.sgst).toBe("52.47");
+      expect(res3.gstAmount).toBe("104.94");
       expect(res3.totalPremium).toBe("687.94");
+      expect(res3.ncbPercentage).toBe("25");
+      expect(res3.ncbDiscount).toBe("136.00");
+      expect(res3.depreciationWaiverPremium).toBe("176.00");
+      expect(res3.depreciationShieldCover).toBe("Yes");
+      expect(res3.depreciationWaiverCover).toBe("Yes");
+      expect(res3.nilDepreciation).toBe("Yes");
+      expect(res3.addOnCovers).toBe("Depreciation Waiver Cover");
+      expect(res3.compulsoryDeductible).toBe("100.00");
+      expect(res3.imtEndorsements).toContain("IMT-22");
     }
 
     // 4. ABHISHEK CHAUDA MP04CB0912
