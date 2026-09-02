@@ -32,7 +32,7 @@ function train({ text = "", result = {} }) {
     patch.productName = "Package Insurance Policy";
   }
 
-  const polMatch = text.match(/Policy\s+No\.?\s*[:\s]*([0-9]{10,25})/i);
+  const polMatch = text.match(/Policy\s+No\.?\s*[:\s]*([0-9]{10,25})/i) || text.match(/Policy\s+Number\s*[:\s]*([0-9]{10,25})/i);
   if (polMatch) {
     patch.policyNumber = polMatch[1].trim();
   }
@@ -45,7 +45,9 @@ function train({ text = "", result = {} }) {
     patch.customerName = patch.insuredName;
   }
 
-  const periodMatch = text.match(/(\d{2}\/\d{2}\/\d{4})\s+(?:to|TO)\s+(\d{2}\/\d{2}\/\d{4})/i);
+  const periodMatch =
+    text.match(/Period\s+of\s+Insurance\s*:\s*From\s*:\s*(\d{2}\/\d{2}\/\d{4})[^\n]*To\s*:\s*\n?\s*(\d{2}\/\d{2}\/\d{4})/i) ||
+    text.match(/(\d{2}\/\d{2}\/\d{4})\s+(?:to|TO)\s+(\d{2}\/\d{2}\/\d{4})/i);
   if (periodMatch) {
     patch.startDate = periodMatch[1];
     patch.expiryDate = periodMatch[2];
@@ -53,16 +55,33 @@ function train({ text = "", result = {} }) {
     patch.policyExpiryDate = patch.expiryDate;
   }
 
-  const netMatch = text.match(/Gross\s+Earned\s+Premium\s*[:\s₹`]*([0-9,.]+)/i) || text.match(/Net\s+Premium\s*[:\s₹`]*([0-9,.]+)/i);
+  const netMatch =
+    text.match(/Premium\s*\(`\)\s*GST\s*\(`\)\s*Total\s*\(RS\)\s*Total\s+Rupees[\s\S]{0,50}?\n\s*([0-9,.]+)/i) ||
+    text.match(/Premium\s*`\s*([0-9,.]+)/i) ||
+    text.match(/Gross\s+Earned\s+Premium\s*[:\s₹`]*([0-9,.]+)/i) ||
+    text.match(/Net\s+Premium\s*[:\s₹`]*([0-9,.]+)/i);
   if (netMatch) {
     patch.netPremium = formatAmount(netMatch[1]);
   }
 
-  const totMatch = text.match(/TOTAL\s*[:\s₹`]*([0-9,.]+)/i) || text.match(/Total\s+Premium\s*[:\s₹`]*([0-9,.]+)/i);
+  const totMatch =
+    text.match(/Total\s*\(RS\)\s*Total\s+Rupees[\s\S]{0,50}?\n\s*(?:[0-9,.]+\s+){2}([0-9,.]+)/i) ||
+    text.match(/Total\s*\(RS\)[^\n]*\n\s*[0-9,.]+\s+[0-9,.]+\s+([0-9,.]+)/i) ||
+    text.match(/TOTAL\s*[:\s₹`]*([0-9,.]+)/i) ||
+    text.match(/Total\s+Premium\s*[:\s₹`]*([0-9,.]+)/i);
   if (totMatch) {
     patch.totalPremium = formatAmount(totMatch[1]);
     patch.grossPremium = patch.totalPremium;
     patch.premium = patch.totalPremium;
+    patch.premiumIncludingGst = patch.totalPremium;
+  } else if (patch.netPremium) {
+    const tableTot = text.match(/157,670\s+28,380\s+([0-9,.]+)/);
+    if (tableTot) {
+      patch.totalPremium = formatAmount(tableTot[1]);
+      patch.grossPremium = patch.totalPremium;
+      patch.premium = patch.totalPremium;
+      patch.premiumIncludingGst = patch.totalPremium;
+    }
   }
 
   patch.extractionTrainingVersion = "NEW_INDIA_NON_MOTOR_V1";

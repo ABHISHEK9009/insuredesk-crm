@@ -12,7 +12,7 @@ function formatAmount(val) {
 function matches({ text = "" }) {
   return (
     /IFFCO\s*[- ]?\s*TOKIO/i.test(text) &&
-    (/FLEXI\s+PROPERTY\s+PROTECTOR|BURGLARY\s+AND\s+HOUSE\s+BREAKING|Contractors\s+Plant\s+and\s+Machinery|STANDARD\s+FIRE/i.test(text))
+    (/Trade\s+Protector|FLEXI\s+PROPERTY\s+PROTECTOR|BURGLARY\s+AND\s+HOUSE\s+BREAKING|Contractors\s+Plant\s+and\s+Machinery|STANDARD\s+FIRE/i.test(text))
   );
 }
 
@@ -22,7 +22,12 @@ function train({ text = "", result = {} }) {
   patch.insuranceCompany = "IFFCO Tokio General Insurance Company Limited";
   patch.companyName = "IFFCO Tokio General Insurance Company Limited";
 
-  if (/BURGLARY\s+AND\s+HOUSE\s+BREAKING|BURGLARY\s+FIRST\s+LOSS/i.test(text)) {
+  if (/Trade\s+Protector/i.test(text)) {
+    patch.documentCategory = "Fire Insurance";
+    patch.policyCategory = "Fire Insurance";
+    patch.policyType = "Trade Protector Policy";
+    patch.productName = "Trade Protector Policy (Sookshma Udyam)";
+  } else if (/BURGLARY\s+AND\s+HOUSE\s+BREAKING|BURGLARY\s+FIRST\s+LOSS/i.test(text)) {
     patch.documentCategory = "Burglary Insurance";
     patch.policyCategory = "Burglary Insurance";
     patch.policyType = "Burglary and House Breaking Insurance Policy";
@@ -41,14 +46,15 @@ function train({ text = "", result = {} }) {
 
   // Policy Number
   const polMatch =
-    text.match(/Policy\s+Number\s*[:\s]*([0-9A-Za-z]+)/i) ||
-    text.match(/Policy\s+No\.?[\s.:]*([0-9A-Za-z]+)/i);
+    text.match(/Policy\s+Number\s*[:\s]*([0-9A-Za-z]{6,25})/i) ||
+    text.match(/Policy\s+No\.?[\s.:]*([0-9A-Za-z]{6,25})/i);
   if (polMatch) {
     patch.policyNumber = polMatch[1].replace(/Bill.*/i, "").trim();
   }
 
   // Insured Name
   const nameMatch =
+    text.match(/Proposer\s*:\s*([^\n]+)/i) ||
     text.match(/Insured's\s*name\s*[:\s]*([^\n]+)/i) ||
     text.match(/Insured\s*([A-Za-z0-9\s.,&/-]+?)(?=\s*Client\s+Number|\s*Corresponding|\n)/i);
   if (nameMatch) {
@@ -58,8 +64,8 @@ function train({ text = "", result = {} }) {
 
   // Period / Dates
   const periodMatch =
-    text.match(/Period\s+of\s+Insurance\s*[:\s]*From\s*[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
-    text.match(/Policy\s+effective\s+from\s+[0-9]+\s+hrs\s+(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*(?:MidNight\s+)?(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    text.match(/Policy\s+effective\s+from\s+[0-9]+\s+hrs\s+(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*(?:MidNight\s+)?(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
+    text.match(/Period\s+of\s+Insurance\s*[:\s]*From\s*[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})\s*To\s*[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i);
   if (periodMatch) {
     patch.startDate = parseRobustDate(periodMatch[1]) || normalizeWarehouseDate(periodMatch[1]);
     patch.expiryDate = parseRobustDate(periodMatch[2]) || normalizeWarehouseDate(periodMatch[2]);

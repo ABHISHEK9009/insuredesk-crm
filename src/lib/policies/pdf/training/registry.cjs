@@ -219,7 +219,7 @@ function isIffcoTokioNonMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   if (!/IFFCO\s*[- ]?\s*TOKIO/i.test(text)) return false;
   if (/Private\s+Car|Two\s+Wheeler|Goods\s+Carrying\s+Commercial|Passenger\s+Carrying/i.test(text)) return false;
-  return /FLEXI\s+PROPERTY\s+PROTECTOR|BURGLARY\s+AND\s+HOUSE\s+BREAKING|Contractors\s+Plant\s+and\s+Machinery/i.test(text);
+  return /Trade\s+Protector|FLEXI\s+PROPERTY\s+PROTECTOR|BURGLARY\s+AND\s+HOUSE\s+BREAKING|Contractors\s+Plant\s+and\s+Machinery/i.test(text);
 }
 
 function isHdfcErgoWc(result = {}, context = {}) {
