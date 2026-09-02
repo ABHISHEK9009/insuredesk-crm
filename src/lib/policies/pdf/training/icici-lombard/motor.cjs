@@ -422,6 +422,21 @@ function train({ text = "", result = {} }) {
   assign(patch, "receiptDate", matchGroup(text, /Receipt Date\s*(\d{2}-\d{2}-\d{4})/i));
   assign(patch, "compulsoryDeductible", formatAmount(matchGroup(text, /Compulsory Deductible \(`\) :\s*([0-9,.]+)/i) || "1000"));
 
+  let normalizedPayMode = "Online";
+  const payMatch = text.match(/Payment\s+Mode\s*[:\s]*([A-Za-z\s]+)/i);
+  if (payMatch) {
+    const rawPay = payMatch[1].toUpperCase();
+    if (rawPay.includes("NEFT") || rawPay.includes("RTGS") || rawPay.includes("DD")) normalizedPayMode = "NEFT / RTGS";
+    else if (rawPay.includes("CHEQUE")) normalizedPayMode = "Cheque";
+    else if (rawPay.includes("UPI")) normalizedPayMode = "UPI";
+    else if (rawPay.includes("CARD")) normalizedPayMode = "Card";
+    else if (rawPay.includes("CASH")) normalizedPayMode = "Cash";
+  }
+
+  patch.paymentMethod = normalizedPayMode;
+  patch.paymentMode = normalizedPayMode;
+  patch.modeOfPayment = normalizedPayMode;
+
   const imtMatch = matchGroup(text, /Applicable IMT Clauses:\s*([0-9,\s.]+?)(?=\n|Compulsory Deductible|$)/i);
   if (imtMatch) {
     patch.imtEndorsements = imtMatch
