@@ -409,6 +409,66 @@ describe("Bajaj Allianz motor scoped training", () => {
     expect(result.extractionTrainingVersion).toBe("BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_LIABILITY_V2");
   });
 
+  it("extracts M/S ADITYA EVENT Commercial Vehicle Package Policy correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "MS ADITYA EVENT_MP04ZL4271_2026-27.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = applyScopedTraining({}, { text: data.text });
+
+    expect(result.insuranceCompany).toBe("Bajaj Allianz General Insurance Company Limited");
+    expect(result.documentCategory).toBe("Motor Insurance");
+    expect(result.productName).toBe("Commercial Vehicle Package Policy");
+    expect(result.policyType).toBe("Commercial Vehicle Package Policy");
+    expect(result.policyCoverType).toBe("Comprehensive");
+    expect(result.uinNumber).toBe("IRDAN113RP0027V01200102");
+    expect(result.policyNumber).toBe("OG-27-2301-1803-00000132");
+    expect(result.insuredName).toBe("M/S ADITYA EVENT");
+    expect(result.customerName).toBe("M/S ADITYA EVENT");
+    expect(result.customerId).toBe("512550150");
+    expect(result.contactNumber).toBe("8319706765");
+    expect(result.customerEmail).toBe("insuredeskbhopal@gmail.com");
+    expect(result.gstin).toBe("23AEHPV5120P1Z5");
+    expect(result.startDate).toBe("26/08/2026");
+    expect(result.expiryDate).toBe("25/08/2027");
+    expect(result.vehicleNumber).toBe("MP04ZL4271");
+    expect(result.registrationNumber).toBe("MP04ZL4271");
+    expect(result.vehicleMake).toBe("ASHOK LEYLAND");
+    expect(result.vehicleModel).toBe("DOST");
+    expect(result.variant).toBe("LE - HALF DECK LOAD BODY");
+    expect(result.makeModel).toBe("ASHOK LEYLAND DOST");
+    expect(result.grossVehicleWeight).toBe("2590");
+    expect(result.manufacturingYear).toBe("2023");
+    expect(result.seatingCapacity).toBe("2");
+    expect(result.chassisNumber).toBe("MB1AA22E9PRKJ0133");
+    expect(result.engineNumber).toBe("KPH027290P");
+    expect(result.rtoLocation).toBe("MP04-BHOPAL");
+    expect(result.fuelType).toBe("Diesel");
+    expect(result.hypothecation).toBe("HDFC BANK LTD");
+    expect(result.financier).toBe("HDFC BANK LTD");
+    expect(result.idv).toBe("495000.00");
+    expect(result.odPremium).toBe("1068.00");
+    expect(result.basicThirdPartyLiability).toBe("16049.00");
+    expect(result.tpPremium).toBe("16049.00");
+    expect(result.netPremium).toBe("17117.00");
+    expect(result.cgst).toBe("497.00");
+    expect(result.sgst).toBe("497.00");
+    expect(result.gstAmount).toBe("994.00");
+    expect(result.totalPremium).toBe("18111.00");
+    expect(result.ncb).toBe("35%");
+    expect(result.compulsoryDeductible).toBe("500.00");
+    expect(result.previousInsurer).toBe("United India Insurance Company Limited");
+    expect(result.previousPolicyNumber).toBe("1907023125P108335609");
+    expect(result.previousPolicyExpiryDate).toBe("25/08/2026");
+    expect(result.agentName).toBe("PRAGATI PANDEY");
+    expect(result.agentCode).toBe("BAG10107590");
+    expect(result.agentMobile).toBe("08818889660");
+    expect(result.agentEmail).toBe("ANAND.SONI10@GMAIL.COM");
+    expect(result.imtEndorsements).toBe("IMT-7, IMT-21, IMT-23");
+    expect(result.extractionTrainingVersion).toBe("BAJAJ_ALLIANZ_MOTOR_COMMERCIAL_PACKAGE_V1");
+  });
+
   it("is isolated from Bajaj non-motor and other motor insurers", () => {
     const bajajWarehouse = selectScopedTraining(
       { insuranceCompany: "Bajaj Allianz General Insurance Company Limited", documentCategory: "Warehouse Insurance" },
