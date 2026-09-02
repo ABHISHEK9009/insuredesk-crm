@@ -375,8 +375,14 @@ Amount Received 27561.00
       expect(res3.startDate).toBe("31/08/2026");
       expect(res3.expiryDate).toBe("30/08/2027");
       expect(res3.tpInsurerName).toBe("New India Assurance");
-      expect(res3.tpPolicyNumber).toBe("206770756500000");
       expect(res3.odPremium).toBe("407.00");
+      expect(res3.tpPremium).toBe("0.00");
+      expect(res3.tpDriverOwner).toBe("0.00");
+      expect(res3.modeOfPayment).toBe("NEFT / RTGS");
+      expect(res3.paymentMode).toBe("NEFT / RTGS");
+      expect(res3.paymentMethod).toBe("NEFT");
+      expect(res3.paymentReference).toBe("UCBAH26222382015");
+      expect(res3.bankName).toBe("UNION BANK");
       expect(res3.addonPremium).toBe("176.00");
       expect(res3.netPremium).toBe("583.00");
       expect(res3.cgst).toBe("52.47");

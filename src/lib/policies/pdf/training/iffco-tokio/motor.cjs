@@ -468,13 +468,49 @@ function train({ text = "", result = {} }) {
   }
 
   // 11. Payment Details
-  const payMatch = text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH)[\s\r\n]+([0-9.]+)[\s\r\n]+([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Z\s]+?)(?=\s+Amount|\n\n|$)/i);
+  const payMatch =
+    text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH|CREDIT\s*CARD|DEBIT\s*CARD|UPI)[\s\r\n]+([0-9.]+)[\s\r\n]+([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Z\s]+?)(?=\s+Amount|\n\n|$)/i) ||
+    text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH|CREDIT\s*CARD|DEBIT\s*CARD|UPI)\s*([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Za-z\s]+?)(?=\s*\n|$)/i);
+
+  let rawPayMode = "";
   if (payMatch) {
-    patch.paymentMethod = payMatch[1];
-    patch.paymentAmount = normalizeAmount(payMatch[2]);
-    patch.paymentReference = payMatch[3].trim();
-    patch.paymentDate = normalizeDate(payMatch[4]);
-    patch.bankName = payMatch[5].replace(/\s+/g, " ").trim();
+    rawPayMode = payMatch[1];
+    if (payMatch[5]) {
+      patch.paymentAmount = normalizeAmount(payMatch[2]);
+      patch.paymentReference = payMatch[3].trim();
+      patch.paymentDate = normalizeDate(payMatch[4]);
+      patch.bankName = payMatch[5].replace(/\s+/g, " ").trim();
+    } else {
+      patch.paymentReference = payMatch[2].trim();
+      patch.paymentDate = normalizeDate(payMatch[3]);
+      patch.bankName = payMatch[4].replace(/\s+/g, " ").trim();
+      patch.paymentAmount = patch.totalPremium || "";
+    }
+  } else {
+    rawPayMode = "Online";
+  }
+
+  const payModeUpper = String(rawPayMode).toUpperCase();
+  const normalizedPayMode =
+    payModeUpper.includes("NEFT") || payModeUpper.includes("RTGS") || payModeUpper.includes("DD")
+      ? "NEFT / RTGS"
+      : payModeUpper.includes("CHEQUE")
+      ? "Cheque"
+      : payModeUpper.includes("UPI")
+      ? "UPI"
+      : payModeUpper.includes("CARD")
+      ? "Card"
+      : payModeUpper.includes("CASH")
+      ? "Cash"
+      : "Online";
+
+  patch.paymentMethod = rawPayMode ? rawPayMode.toUpperCase() : "ONLINE";
+  patch.paymentMode = normalizedPayMode;
+  patch.modeOfPayment = normalizedPayMode;
+
+  if (patch.policyCoverType === "Stand Alone OD") {
+    if (!patch.tpPremium) patch.tpPremium = "0.00";
+    if (!patch.tpDriverOwner) patch.tpDriverOwner = "0.00";
   }
 
   // 12. Financer & Previous Policy Details

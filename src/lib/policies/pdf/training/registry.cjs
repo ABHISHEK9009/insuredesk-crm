@@ -209,10 +209,8 @@ function isIffcoTokioMotor(result = {}, context = {}) {
   const text = String(context.text || result.sourceText || "");
   const category = normalizeCategory(result.documentCategory || result.policyType);
   if (category && category !== "motor") return false;
-  const insurer = result.insuranceCompany || result.companyName || "";
-  if (insurer && !/IFFCO\s*[- ]?\s*TOKIO/i.test(insurer)) return false;
   const header = text.slice(0, 3000);
-  if (!/IFFCO\s*[- ]?\s*TOKIO/i.test(header)) return false;
+  if (!/IFFCO\s*[- ]?\s*TOKIO|iffcotokio\.co\.in/i.test(header)) return false;
   if (/Future\s+Generali|generali|TATA\s*AIG|tataaig\.com|HDFC\s*ERGO|ICICI\s*Lombard|Bajaj\s*Allianz|Royal\s*Sundaram|Shriram|Go\s*Digit/i.test(header) && !/IFFCO-TOKIO\s+GENERAL\s+INSURANCE/i.test(header)) {
     return false;
   }
