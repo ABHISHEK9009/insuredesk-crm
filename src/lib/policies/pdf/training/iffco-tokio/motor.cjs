@@ -27,6 +27,7 @@ function clean(value = "") {
     .replace(/\s*Original\s+Invoice.*$/i, "")
     .replace(/\s*Unique\s+Invoice.*$/i, "")
     .replace(/\s*Address\s*:.*$/i, "")
+    .replace(/[.\s]+$/, "")
     .trim();
 }
 
@@ -102,21 +103,22 @@ function train({ text = "", result = {} }) {
   const header = text.slice(0, 3000);
 
   // 1. Policy Number & Invoices
-  const p400Match = text.match(/P400\s+Policy\s*#\s*:?\s*([A-Z0-9]+)/i);
+  const p400Match = text.match(/P400\s+Policy\s*#[\s\S]{0,20}?([A-Z0-9]+)/i);
   const polScheduleMatch = text.match(/Policy\s+No[^\w\r\n]*[:\s]+([A-Z0-9]+)/iu) ||
     text.match(/Policy\s+Number\s+([A-Z0-9]+)/i);
-  const polNumMatch = text.match(/Policy\s*#\s*:?\s*([A-Z0-9-]+)/i);
+  const polNumMatch = text.match(/Policy\s*#\s*:?\s*([A-Z0-9-]+(?:\s*\r?\n\s*[A-Z0-9]+)?)/i);
   
+  const cleanPolNum = polNumMatch ? polNumMatch[1].replace(/\s+/g, "").trim() : "";
   if (p400Match) {
     patch.policyNumber = p400Match[1].trim();
-    if (polNumMatch && polNumMatch[1].trim() !== patch.policyNumber) {
-      patch.uniqueInvoiceNumber = polNumMatch[1].trim();
-      patch.invoiceNumber = polNumMatch[1].trim();
+    if (cleanPolNum && cleanPolNum !== patch.policyNumber) {
+      patch.uniqueInvoiceNumber = cleanPolNum;
+      patch.invoiceNumber = cleanPolNum;
     }
   } else if (polScheduleMatch) {
     patch.policyNumber = polScheduleMatch[1].trim();
-  } else if (polNumMatch) {
-    patch.policyNumber = polNumMatch[1].trim();
+  } else if (cleanPolNum) {
+    patch.policyNumber = cleanPolNum;
   }
 
   const taxInvMatch = text.match(/Tax\s+Invoice\s+No\s*:?\s*([A-Z0-9-]+)/i);
@@ -126,7 +128,7 @@ function train({ text = "", result = {} }) {
   }
 
   const origInvMatch = text.match(/Original\s+Invoice\s+No\.?\s*([A-Z0-9-]+)/i);
-  const uniqInvMatch = text.match(/Unique\s+Invoice\s+No\.?\s*([A-Z0-9-]+)/i);
+  const uniqInvMatch = text.match(/Unique\s+Invoice\s+No\.?\s*:?\s*([A-Z0-9-]+?)(?=\s*Status|\s*$|\r?\n)/i);
   if (origInvMatch) patch.originalInvoiceNumber = origInvMatch[1].trim();
   if (uniqInvMatch) {
     patch.uniqueInvoiceNumber = uniqInvMatch[1].trim();
@@ -135,7 +137,7 @@ function train({ text = "", result = {} }) {
 
   // 2. Insured / Customer Name
   const correctNameMatch = text.match(/CORRECT\s+INSURED\s+NAME\s*-\s*([^\n]+)/i);
-  const insuredNameColonMatch = text.match(/Insured'?s?\s*Name:\s*([A-Z0-9\s.,&'()-]+?)(?=\s*Policy\s*#:|\s*Tax\s+Invoice|\s*Original|\s*Unique|\n|$)/i);
+  const insuredNameColonMatch = text.match(/Insured['’\s]*s?\s*Name:\s*([A-Z0-9\s.,&'()-]+?)(?=\s*Policy\s*#:|\s*Tax\s+Invoice|\s*Original|\s*Unique|\n|$)/i);
   const headerNameMatch = text.match(/(?:Intermediary\s+Mobile[^\n]*\n+)\s*([A-Z0-9\s.,&'()-]+?)(?=\s*Policy\s*#:|\s*Tax\s+Invoice|\s*Address:)/i);
   const corporateNameMatch = text.match(/\n\s*([A-Z0-9\s.,&'()-]+?(?:PVT\.?\s*LTD\.?|LIMITED|LTD\.?|LLP|CORP|COMPANY))\s*(?=Policy\s*#:|\s*Tax\s+Invoice|\s*Address:)/i);
 
@@ -157,7 +159,7 @@ function train({ text = "", result = {} }) {
   }
 
   // 3. Address & Contact
-  const addressMatch = text.match(/Address:\s*([\s\S]+?)(?=\s*Invoice\/Issuance|State\s+Code|GSTIN|Phone|Pin\s+Code|\n\n)/i);
+  const addressMatch = text.match(/Address:\s*([\s\S]+?)(?=\s*Invoice\/Issuance|State\s+Code|GSTIN|Phone|Pin\s*Code|\n\n)/i);
   if (addressMatch) {
     patch.address = addressMatch[1]
       .replace(/Unique\s+Invoice\s+No\.?[^\n]*/gi, "")
@@ -167,16 +169,23 @@ function train({ text = "", result = {} }) {
       .replace(/Endorsement\s+Effec?itve\s+Date[^\n]*/gi, "")
       .replace(/Invoice\/Issuance\s+Date[^\n]*/gi, "")
       .replace(/Period\s+of\s+Insurance[^\n]*/gi, "")
+      .replace(/Policy\s+effective\s+from[^\n]*/gi, "")
+      .replace(/Pincode:?[^\n]*/gi, "")
+      .replace(/Country\s+Name:?[^\n]*/gi, "")
       .replace(/\s+/g, " ")
       .trim();
   }
-  const pinMatch = text.match(/Pin\s+Code\s*:?\s*(\d{6})/i);
+  const pinMatch = text.match(/Pin\s*Code\s*:?\s*(\d{6})/i);
   if (pinMatch) patch.pinCode = pinMatch[1].trim();
 
-  const phoneMatch = text.match(/Pin\s+Code[\s\S]*?Phone\s*#?\s*:\s*([0-9X]+)/i) ||
-    text.match(/Intermediary\s+Mobile\s*#?\s*:\s*([0-9X]+)/i) ||
-    text.match(/Phone\s*#?\s*:\s*([0-9X]+)/i);
-  if (phoneMatch) patch.contactNumber = phoneMatch[1].trim();
+  const phoneMatch = text.match(/Pin\s*Code[\s\S]*?Phone\s*#?\s*:\s*([0-9X]{10,12})/i) ||
+    text.match(/Intermediary\s+Mobile\s*#?\s*:\s*([0-9X]{10,12})/i) ||
+    text.match(/Phone\s*#?\s*:\s*([0-9X]{10,12})(?!\s*Intermediary)/i);
+  if (phoneMatch) {
+    patch.contactNumber = phoneMatch[1].trim();
+  } else if (result.contactNumber && /Intermediary|Geographical/i.test(result.contactNumber)) {
+    patch.contactNumber = "";
+  }
 
   const gstinMatch = text.match(/Place\s+Of\s+Supply[\s\S]*?GSTIN[\s\S]*?\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1})\b/i);
   if (gstinMatch) {
@@ -227,14 +236,41 @@ function train({ text = "", result = {} }) {
     text.match(/Year\s+of\s+Manuf\.?[\s\S]{0,50}?\b(20\d{2})\b/i);
   if (yomMatch) patch.manufacturingYear = yomMatch[1].trim();
 
+  // Dense vehicle block: Reg + YOM + Model (e.g. MP04ZN4413 2023 FRONX DELTA + 1.2 AGS D VVT AT)
+  const regYomModelMatch = text.match(/([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})\s*(20\d{2})\s*([A-Z0-9\s+.-]+?)(?=\n\s*\d{3,4}(?:Comprehensive|Package|Stand))/i);
+  if (regYomModelMatch) {
+    patch.registrationNumber = patch.registrationNumber || regYomModelMatch[1];
+    patch.vehicleNumber = patch.registrationNumber;
+    patch.manufacturingYear = patch.manufacturingYear || regYomModelMatch[2];
+    const rawModel = regYomModelMatch[3].replace(/\s+/g, " ").trim();
+    const brandMatch = rawModel.match(/^(MARUTI\s*SUZUKI|MARUTI|KIA|HYUNDAI|TATA|MAHINDRA|HONDA|TOYOTA|RENAULT|VOLKSWAGEN|SKODA|NISSAN|MG|FORD|TVS|BAJAJ|HERO|ROYAL\s+ENFIELD)\s+(.*)$/i);
+    if (brandMatch) {
+      const brand = brandMatch[1].toUpperCase();
+      patch.vehicleMake = brand === "MARUTI" ? "MARUTI SUZUKI" : brand;
+      patch.vehicleModel = brandMatch[2].trim();
+    } else if (/FRONX/i.test(rawModel)) {
+      patch.vehicleMake = "MARUTI SUZUKI";
+      patch.vehicleModel = rawModel;
+    }
+    if (patch.vehicleMake && patch.vehicleModel) {
+      patch.makeModel = `${patch.vehicleMake} ${patch.vehicleModel}`.trim();
+    }
+  }
+
   // Engine Number
+  const wrappedK12Eng = text.match(/\b(K12N[A-Z0-9]+)\s*\r?\n\s*(\d+)\b/i);
   const wrappedEng = text.match(/\b(B56B[A-Z0-9]+)\s*\n\s*(\d)\b/i);
+  const denseBlockEng = text.match(/(?:Comprehensive|Package|Stand\s*Alone\s*OD)\s*\d{4,8}\s*([A-Z0-9]{6,25})\s*\r?\n\s*(\d+)/i);
   const directEng =
     text.match(/-\s*([A-Z0-9]{6,30})\s*\n\s*([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})/i) ||
     text.match(/(KG5GS\d+[\s\r\n]*\d+)/i) ||
     text.match(/Engine\s+No\.?[\s\S]{0,30}?-?\s*([A-Z0-9]{6,25})/i);
-  if (wrappedEng) {
+  if (wrappedK12Eng) {
+    patch.engineNumber = (wrappedK12Eng[1] + wrappedK12Eng[2]).trim();
+  } else if (wrappedEng) {
     patch.engineNumber = (wrappedEng[1] + wrappedEng[2]).trim();
+  } else if (denseBlockEng) {
+    patch.engineNumber = (denseBlockEng[1] + denseBlockEng[2]).trim();
   } else if (directEng) {
     const rawEng = directEng[1] || directEng[0] || "";
     patch.engineNumber = rawEng.replace(/^-/, "").replace(/\s+/g, "").trim();
@@ -262,49 +298,66 @@ function train({ text = "", result = {} }) {
     const seatsMatch = text.match(/Chassis\s+No\.?[^\w\n]*[:\s]*(\d{1,2})/i);
     if (seatsMatch) patch.seatingCapacity = seatsMatch[1].trim();
   } else {
-    const chassMatch = text.match(/(ME4[A-Z0-9\s]{14,20}|MA3[A-Z0-9\s]{14,20}|MD6[A-Z0-9\s]{14,20}|MBJ[A-Z0-9\s]{14,20}|DTRMXMAT[A-Z0-9\s]{14,20}|MAT[A-Z0-9\s]{14,20})/i);
-    if (chassMatch) patch.chassisNumber = chassMatch[1].replace(/\s+/g, "").trim().slice(0, 17);
+    const makeModelVinMatch = text.match(
+      /(KIA|MARUTI|HYUNDAI|TATA|MAHINDRA|HONDA|TOYOTA|RENAULT|VOLKSWAGEN|SKODA|NISSAN|MG|FORD|TVS|BAJAJ|HERO|ROYAL\s+ENFIELD)\s+([A-Z0-9\s.-]+?)(MZB[A-Z0-9]{14}|MA3[A-Z0-9]{14}|MAL[A-Z0-9]{14}|MAK[A-Z0-9]{14}|ME4[A-Z0-9]{14}|MD6[A-Z0-9]{14}|MBJ[A-Z0-9]{14}|MAT[A-Z0-9]{14}|DTRMXMAT[A-Z0-9]{10,20})/i
+    );
+    if (makeModelVinMatch) {
+      patch.vehicleMake = makeModelVinMatch[1].toUpperCase();
+      patch.vehicleModel = makeModelVinMatch[2].trim();
+      patch.makeModel = `${patch.vehicleMake} ${patch.vehicleModel}`.trim();
+      patch.chassisNumber = makeModelVinMatch[3].trim();
+    }
+
+    const chassMatch = text.match(/\b(MBH[A-Z0-9\s]{14,22}|MZB[A-Z0-9\s]{14,22}|MAL[A-Z0-9\s]{14,22}|MA3[A-Z0-9\s]{14,22}|ME4[A-Z0-9\s]{14,22}|MD6[A-Z0-9\s]{14,22}|MBJ[A-Z0-9\s]{14,22}|DTRMXMAT[A-Z0-9\s]{14,22}|MAT[A-Z0-9\s]{14,22}|MAK(?!e\b)[A-Z0-9\s]{14,22})\b/i);
+    if (chassMatch && !patch.chassisNumber) {
+      patch.chassisNumber = chassMatch[1].replace(/\s+/g, "").trim().slice(0, 17);
+      if (/^MBH/i.test(patch.chassisNumber) && !patch.vehicleMake) {
+        patch.vehicleMake = "MARUTI SUZUKI";
+      }
+    }
 
     const chassBlockMatch = text.match(
       /Chassis\s+No\.?[^\w\n]*[:\s]*(\d{1,2})[\s\n]+([^\n]+)(?:\n\s*([A-Z0-9\s]+?))?(?=\n\s*(?:Registration\s+Authority|Vehicle|ME4|MA3|MAT|\d{4,}))/i
     );
     if (chassBlockMatch) {
       patch.seatingCapacity = chassBlockMatch[1].trim();
-      let rawModel = chassBlockMatch[2].replace(/\s+/g, " ").trim();
-      if (chassBlockMatch[3] && !/^(?:Registration|Vehicle|ME4|MA3|MAT|\d{4,})/i.test(chassBlockMatch[3].trim())) {
-        rawModel = (rawModel + " " + chassBlockMatch[3].trim()).trim();
-      }
-      if (patch.chassisNumber) {
-        rawModel = rawModel.replace(patch.chassisNumber, "").trim();
-      }
-      rawModel = rawModel.replace(/MA3[A-Z0-9]{14}|ME4[A-Z0-9]{14}|MD6[A-Z0-9]{14}|[A-Z0-9]{17}/g, "").trim();
+      if (!patch.vehicleMake) {
+        let rawModel = chassBlockMatch[2].replace(/\s+/g, " ").trim();
+        if (chassBlockMatch[3] && !/^(?:Registration|Vehicle|ME4|MA3|MAT|\d{4,})/i.test(chassBlockMatch[3].trim())) {
+          rawModel = (rawModel + " " + chassBlockMatch[3].trim()).trim();
+        }
+        if (patch.chassisNumber) {
+          rawModel = rawModel.replace(patch.chassisNumber, "").trim();
+        }
+        rawModel = rawModel.replace(/MA3[A-Z0-9]{14}|ME4[A-Z0-9]{14}|MD6[A-Z0-9]{14}|[A-Z0-9]{17}/g, "").trim();
 
-      if (/HONDA/i.test(rawModel)) {
-        patch.vehicleMake = "HONDA";
-        patch.vehicleModel = rawModel.replace(/^HONDA\s+/i, "");
-      } else if (/WAGON\s*R|MARUTI|SWIFT|ALTO|BALENO|DZIRE|BREZZA|ERTIGA/i.test(rawModel)) {
-        patch.vehicleMake = "MARUTI SUZUKI";
-        patch.vehicleModel = rawModel;
-      } else if (/TATA/i.test(rawModel)) {
-        patch.vehicleMake = "TATA";
-        patch.vehicleModel = rawModel.replace(/^TATA\s+/i, "");
-      } else if (/TVS/i.test(rawModel)) {
-        patch.vehicleMake = "TVS";
-        patch.vehicleModel = rawModel.replace(/^TVS\s+/i, "");
-      } else if (/HERO/i.test(rawModel)) {
-        patch.vehicleMake = "HERO";
-        patch.vehicleModel = rawModel.replace(/^HERO\s+/i, "");
-      } else if (/BAJAJ/i.test(rawModel)) {
-        patch.vehicleMake = "BAJAJ";
-        patch.vehicleModel = rawModel.replace(/^BAJAJ\s+/i, "");
-      } else if (/HYUNDAI/i.test(rawModel)) {
-        patch.vehicleMake = "HYUNDAI";
-        patch.vehicleModel = rawModel.replace(/^HYUNDAI\s+/i, "");
-      } else {
-        patch.vehicleMake = rawModel.split(" ")[0] || rawModel;
-        patch.vehicleModel = rawModel.split(" ").slice(1).join(" ") || rawModel;
+        if (/HONDA/i.test(rawModel)) {
+          patch.vehicleMake = "HONDA";
+          patch.vehicleModel = rawModel.replace(/^HONDA\s+/i, "");
+        } else if (/WAGON\s*R|MARUTI|SWIFT|ALTO|BALENO|DZIRE|BREZZA|ERTIGA/i.test(rawModel)) {
+          patch.vehicleMake = "MARUTI SUZUKI";
+          patch.vehicleModel = rawModel;
+        } else if (/TATA/i.test(rawModel)) {
+          patch.vehicleMake = "TATA";
+          patch.vehicleModel = rawModel.replace(/^TATA\s+/i, "");
+        } else if (/TVS/i.test(rawModel)) {
+          patch.vehicleMake = "TVS";
+          patch.vehicleModel = rawModel.replace(/^TVS\s+/i, "");
+        } else if (/HERO/i.test(rawModel)) {
+          patch.vehicleMake = "HERO";
+          patch.vehicleModel = rawModel.replace(/^HERO\s+/i, "");
+        } else if (/BAJAJ/i.test(rawModel)) {
+          patch.vehicleMake = "BAJAJ";
+          patch.vehicleModel = rawModel.replace(/^BAJAJ\s+/i, "");
+        } else if (/HYUNDAI/i.test(rawModel)) {
+          patch.vehicleMake = "HYUNDAI";
+          patch.vehicleModel = rawModel.replace(/^HYUNDAI\s+/i, "");
+        } else {
+          patch.vehicleMake = rawModel.split(" ")[0] || rawModel;
+          patch.vehicleModel = rawModel.split(" ").slice(1).join(" ") || rawModel;
+        }
+        patch.makeModel = `${patch.vehicleMake} ${patch.vehicleModel}`.trim();
       }
-      patch.makeModel = `${patch.vehicleMake} ${patch.vehicleModel}`.trim();
     }
   }
 
@@ -335,37 +388,56 @@ function train({ text = "", result = {} }) {
   if (!patch.seatingCapacity) {
     const seatsMatch = text.match(/Chassis\s+No\.?[^\w\n]*[:\s]*(\d{1,2})/i) ||
       text.match(/Seating\s+Capacity[\s\S]{0,250}?\n\s*(\d{1,2})\s*\n\s*Insured\s+Declared/i) ||
+      text.match(/(?:MBH|MZB|MA3|ME4|MD6)[A-Z0-9\s]+?\n\s*(\d{1,2})\s*\r?\n\s*Registration/i) ||
       text.match(/MD626[A-Z0-9\s]+?\n\s*(\d{1,2})\b/i) ||
       text.match(/Seating\s+Capacity[\s\S]{0,80}?\b(\d{1,2})\b/i);
     if (seatsMatch) patch.seatingCapacity = seatsMatch[1].trim();
   }
 
   // CC & IDV
-  const ccIdvMatch =
-    text.match(/(\d{2,4})\s*Stand\s*Alone\s*OD\s*([0-9,.]+)/i) ||
-    text.match(/(\d{2,4})\s*Package\s*([0-9,.]+)/i);
-  if (ccIdvMatch) {
-    patch.cubicCapacity = ccIdvMatch[1].trim();
-    patch.idv = normalizeAmount(ccIdvMatch[2]);
+  const denseCovMatch = text.match(/(\d{3,4})\s*(Comprehensive|Package|Stand\s*Alone\s*OD)\s*(\d{5,8})/i);
+  if (denseCovMatch) {
+    patch.cubicCapacity = denseCovMatch[1].trim();
+    patch.policyCoverType = denseCovMatch[2].includes("Stand") ? "Stand Alone OD" : "Comprehensive";
+    patch.idv = normalizeAmount(denseCovMatch[3]);
     patch.totalIdv = patch.idv;
+    patch.sumInsured = patch.idv;
   } else {
-    const ccMatch =
-      text.match(/\b(\d{3,5})\s+Package/i) ||
-      text.match(/\bCC\b[\s\S]{0,60}?\b(\d{2,4})\b/i) ||
-      text.match(/(\d{2,4})\s+Stand\s+Alone\s+OD/i) ||
-      text.match(/(\d{2,4})\s+Own\s+Damage/i);
-    if (ccMatch) patch.cubicCapacity = ccMatch[1].trim();
-
-    const idvMatch =
-      text.match(/Package\s*(\d{5,9})/i) ||
-      text.match(/Stand\s+Alone\s+OD\s+([0-9,.]+)/i) ||
-      text.match(/\bOwn\s+Damage\s+only\s+(\d{4,8})\b/i) ||
-      text.match(/IDV\s+in[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i) ||
-      text.match(/Two\s+Wheeler[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i);
-    if (idvMatch) {
-      patch.idv = normalizeAmount(idvMatch[1].includes(".") ? idvMatch[1] : `${idvMatch[1]}.00`);
+    const ccIdvMatch =
+      text.match(/(\d{2,4})\s*Stand\s*Alone\s*OD\s*([0-9,.]+)/i) ||
+      text.match(/(\d{2,4})\s*Package\s*([0-9,.]+)/i);
+    if (ccIdvMatch) {
+      patch.cubicCapacity = ccIdvMatch[1].trim();
+      patch.idv = normalizeAmount(ccIdvMatch[2]);
       patch.totalIdv = patch.idv;
+      patch.sumInsured = patch.idv;
+    } else {
+      const ccMatch =
+        text.match(/\b(\d{3,5})\s+Package/i) ||
+        text.match(/\bCC\b[\s\S]{0,60}?\b(\d{2,4})\b/i) ||
+        text.match(/(\d{2,4})\s+Stand\s+Alone\s+OD/i) ||
+        text.match(/(\d{2,4})\s+Own\s+Damage/i);
+      if (ccMatch) patch.cubicCapacity = ccMatch[1].trim();
+
+      const idvMatch =
+        text.match(/Package\s*(\d{5,9})/i) ||
+        text.match(/Stand\s+Alone\s+OD\s+([0-9,.]+)/i) ||
+        text.match(/\bOwn\s+Damage\s+only\s+(\d{4,8})\b/i) ||
+        text.match(/IDV\s+in[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i) ||
+        text.match(/Two\s+Wheeler[\s\S]{0,40}?\b(\d{4,8}(?:\.\d{2})?)\b/i);
+      if (idvMatch) {
+        patch.idv = normalizeAmount(idvMatch[1].includes(".") ? idvMatch[1] : `${idvMatch[1]}.00`);
+        patch.totalIdv = patch.idv;
+        patch.sumInsured = patch.idv;
+      }
     }
+  }
+
+  const totalIdvMatch = text.match(/Total\s+IDV[\s\S]{0,30}?\n\s*(\d{5,8})/i);
+  if (totalIdvMatch && !patch.idv) {
+    patch.idv = normalizeAmount(totalIdvMatch[1]);
+    patch.totalIdv = patch.idv;
+    patch.sumInsured = patch.idv;
   }
 
   // 7. Product & Category
@@ -412,9 +484,11 @@ function train({ text = "", result = {} }) {
   const netTPMatch = text.match(/Net\s*\(B\)\s*([0-9,.]+)/i);
   if (netTPMatch) patch.tpPremium = normalizeAmount(netTPMatch[1]);
 
-  const ncbPctMatch = text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)\s*\(\s*(\d+)\s*%\s*\)/i);
-  if (ncbPctMatch) patch.ncbPercentage = ncbPctMatch[1].trim();
-  const ncbAmtMatch = text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)[^\n]*-([0-9,.]+)/i);
+  const ncbPctMatch = text.match(/No\s+Claim\s+Bonus\s*(\d+(?:\.\d+)?)\s*%/i) ||
+    text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)\s*\(\s*(\d+)\s*%\s*\)/i);
+  if (ncbPctMatch) patch.ncbPercentage = String(parseInt(ncbPctMatch[1], 10));
+  const ncbAmtMatch = text.match(/No\s+Claim\s+Bonus\s*\d+(?:\.\d+)?\s*%\s*([0-9,.]+)/i) ||
+    text.match(/No\s+Claim\s+(?:Bonus\s+Discount|Discount)[^\n]*-([0-9,.]+)/i);
   if (ncbAmtMatch) patch.ncbDiscount = normalizeAmount(ncbAmtMatch[1]);
 
   const cgstSgstMatch =
@@ -423,6 +497,33 @@ function train({ text = "", result = {} }) {
   if (cgstSgstMatch) {
     patch.cgst = normalizeAmount(cgstSgstMatch[1]);
     patch.sgst = normalizeAmount(cgstSgstMatch[2]);
+  }
+
+  const tpBasicMatch = text.match(/Basic\s+Premium\s*\(\s*Including\s+TPPD\s*\)\s*([0-9,.]+)/i);
+  if (tpBasicMatch) patch.basicThirdPartyLiability = normalizeAmount(tpBasicMatch[1]);
+
+  const basicOdMatch = text.match(/Basic\s+Premium\s*([0-9,.]+)\s*Basic\s+Premium\s*([0-9,.]+)/i);
+  if (basicOdMatch) {
+    patch.basicOwnDamage = normalizeAmount(basicOdMatch[1]);
+    patch.basicThirdPartyLiability = patch.basicThirdPartyLiability || normalizeAmount(basicOdMatch[2]);
+  }
+
+  const paOwnerMatch = text.match(/PA\s+Owner\s*:?\s*Driver\s+CSI\s*Rs\.?\s*(?:1500000|15,00,000|\d{7})\s*([0-9,.]+)/i) ||
+    text.match(/PA\s+Owner\s+Driver\s+CSI\s+Rs\s*(?:1500000|15,00,000|\d{7})\s*([0-9,.]+)/i);
+  if (paOwnerMatch) patch.paOwnerDriver = normalizeAmount(paOwnerMatch[1]);
+
+  const paPaidDriverMatch = text.match(/Legal\s+Liability\s+to\s+Driver\s*\(IMT\s*28\)\s*([0-9,.]+)/i);
+  if (paPaidDriverMatch) patch.paPaidDriver = normalizeAmount(paPaidDriverMatch[1]);
+
+  const paPassengerMatch = text.match(/PA\s+to\s+Passenger\s+Rs\s*\d+\s+for\s+\d+\s+passengers\s*\(IMT\s*16\)\s*([0-9,.]+)/i);
+  if (paPassengerMatch) patch.paUnnamedPassenger = normalizeAmount(paPassengerMatch[1]);
+
+  const rsaMatch = text.match(/Total\s+Premium\s*\(A\+B\)\s*under\s*Sec\s*2\s*\n\s*([0-9,.]+)/i) ||
+    text.match(/Section\s*2:\s*On\s*Road\s*Protector[\s\S]*?Basic\s+Premium\s*\(A\)\s*([0-9,.]+)/i) ||
+    text.match(/Road\s+Protector\s*([0-9,.]+)/i);
+  if (rsaMatch) {
+    patch.roadsideAssistance = normalizeAmount(rsaMatch[1]);
+    patch.roadsideAssistancePremium = patch.roadsideAssistance;
   }
 
   const bifurcation = extractPremiumBifurcation(text);
@@ -446,17 +547,24 @@ function train({ text = "", result = {} }) {
     }
   } else {
     // Check invoice table on page 2 e.g. Taxable Value / Total Value
-    const invMatch = text.match(/Taxable\s+Value[\s\S]*?Amount\s*([0-9,.]+)\s*([0-9,.]+)\s*([0-9,.]+)\s*([0-9,.]+)\s*([0-9,.]+)/i);
-    const totTaxMatch = text.match(/Total\s+Tax\s*₹?\s*([0-9,.]+)/i);
-    const totValMatch = text.match(/Total\s+Tax[^\n]*\s+Total\s+Value\s*₹?\s*([0-9,.]+)/i) ||
-      text.match(/Total\s+Value\s*₹?\s*([0-9,.]+)/i);
+    const denseAmtMatch = text.match(/Amount\s*(\d{1,7}\.\d{2})\s*(\d{1,7}\.\d{2})\s*(\d{1,7}\.\d{2})/i);
+    const invMatch = text.match(/Taxable\s+Value[\s\S]*?Amount\s*([0-9,.]+)\s+([0-9,.]+)\s+([0-9,.]+)\s+([0-9,.]+)\s+([0-9,.]+)/i);
+    const totTaxMatch = text.match(/Total\s+Tax\s*([0-9,.]+)\s*₹?/i);
+    const totValMatch = text.match(/Total\s+Value\s*([0-9,.]+)\s*₹?/i) ||
+      text.match(/Total\s+Tax[^\n]*\s+Total\s+Value\s*₹?\s*([0-9,.]+)/i);
 
-    if (invMatch) {
+    if (denseAmtMatch) {
+      patch.netPremium = normalizeAmount(denseAmtMatch[1]);
+      patch.basicPremium = patch.netPremium;
+      patch.cgst = normalizeAmount(denseAmtMatch[2]);
+      patch.sgst = normalizeAmount(denseAmtMatch[3]);
+    } else if (invMatch) {
       patch.netPremium = normalizeAmount(invMatch[1]);
       patch.basicPremium = patch.netPremium;
     }
     if (totTaxMatch) {
       patch.gst = normalizeAmount(totTaxMatch[1]);
+      patch.gstAmount = patch.gst;
       patch.taxAmount = patch.gst;
     }
     if (totValMatch) {
@@ -470,7 +578,8 @@ function train({ text = "", result = {} }) {
   // 11. Payment Details
   const payMatch =
     text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH|CREDIT\s*CARD|DEBIT\s*CARD|UPI)[\s\r\n]+([0-9.]+)[\s\r\n]+([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Z\s]+?)(?=\s+Amount|\n\n|$)/i) ||
-    text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH|CREDIT\s*CARD|DEBIT\s*CARD|UPI)\s*([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Za-z\s]+?)(?=\s*\n|$)/i);
+    text.match(/Receipt\s+Particulars:[\s\S]*?(NEFT|CHEQUE|ONLINE|DD|CASH|CREDIT\s*CARD|DEBIT\s*CARD|UPI)\s*([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})\s*([A-Za-z\s]+?)(?=\s*\n|$)/i) ||
+    text.match(/Receipt\s+Particulars:[\s\S]*?(Online-PG|ONLINE|NEFT|RTGS|CHEQUE|UPI|DD|CASH|CARD)\s*([A-Z0-9]+?)\s*(\d{2}\/\d{2}\/\d{4})/i);
 
   let rawPayMode = "";
   if (payMatch) {
@@ -480,10 +589,14 @@ function train({ text = "", result = {} }) {
       patch.paymentReference = payMatch[3].trim();
       patch.paymentDate = normalizeDate(payMatch[4]);
       patch.bankName = payMatch[5].replace(/\s+/g, " ").trim();
+    } else if (payMatch[3] && !payMatch[4]) {
+      patch.paymentReference = payMatch[2].trim();
+      patch.paymentDate = normalizeDate(payMatch[3]);
+      patch.paymentAmount = patch.totalPremium || "";
     } else {
       patch.paymentReference = payMatch[2].trim();
       patch.paymentDate = normalizeDate(payMatch[3]);
-      patch.bankName = payMatch[4].replace(/\s+/g, " ").trim();
+      patch.bankName = payMatch[4] ? payMatch[4].replace(/\s+/g, " ").trim() : "";
       patch.paymentAmount = patch.totalPremium || "";
     }
   } else {
@@ -514,10 +627,21 @@ function train({ text = "", result = {} }) {
   }
 
   // 12. Financer & Previous Policy Details
-  const finMatch = text.match(/Under\s+Hire\s+Purchase\s*\/Hypothecated\/Lease\s+Agreement\s+with\s+([^\n]+)/i);
-  if (finMatch) patch.financerName = finMatch[1].replace(/\s+/g, " ").trim();
+  const finMatch = text.match(/Under\s+Hire\s+Purchase\s*\/Hypo(?:thecated)?\/?\s*(?:Lease\s+Agreement\s+with)?\s*([^\n]+)/i);
+  if (finMatch) {
+    const rawFin = finMatch[1].replace(/\s+/g, " ").trim();
+    if (!/^(?:NA\b|N\/A\b|NONE\b|NANominee|Subject\s+to\s+IMT)/i.test(rawFin)) {
+      patch.financerName = rawFin.replace(/Nominees?.*$/i, "").trim();
+    } else {
+      patch.financerName = "";
+    }
+  } else {
+    patch.financerName = "";
+  }
 
-  const prevMatch = text.match(/Previous\s+Policy\s+Number[^\n]*\n+(\d{10,25})\s*([^\n]+?)\s+(\d{2}\/\d{2}\/\d{4})/i);
+  const prevMatch =
+    text.match(/Previous\s+Policy\s+Number[^\n]*\n+([A-Z0-9]*\d)\s*([A-Z][A-Z\s.,&'()-]+?(?:ASSURANCE|INSURANCE|LTD|LIMITED)[A-Z\s.,&'()-]*?)(\d{2}\/\d{2}\/\d{4})/i) ||
+    text.match(/Previous\s+Policy\s+Number[^\n]*\n+(\d{10,25})\s*([^\n]+?)\s+(\d{2}\/\d{2}\/\d{4})/i);
   if (prevMatch) {
     patch.previousPolicyNumber = prevMatch[1].trim();
     const rawInsurer = prevMatch[2].replace(/\s+/g, " ").trim();
@@ -536,23 +660,31 @@ function train({ text = "", result = {} }) {
   }
 
   if (!patch.fuelType) {
-    const fuelMatch = text.match(/\b(DIESEL|PETROL|CNG|ELECTRIC|LPG)\b/i);
+    const textWithoutHeaders = text.replace(/CNG\/LPG\s*Kit/gi, "").replace(/Fuel\s+Delivery/gi, "");
+    const fuelMatch = textWithoutHeaders.match(/\b(DIESEL|PETROL|ELECTRIC|LPG)\b/i);
     if (fuelMatch) {
       patch.fuelType = fuelMatch[1][0].toUpperCase() + fuelMatch[1].slice(1).toLowerCase();
-    } else if (isTwoWheeler) {
+    } else if (isTwoWheeler || /K12N|VVT|FRONX|SWIFT|ALTO|BALENO|DZIRE/i.test(text)) {
       patch.fuelType = "Petrol";
     }
   }
 
-  const depWaiverMatch = text.match(/Depreciation\s+Wa[iv]{1,2}er\s+Cover\s*([0-9,.]+)/i);
+  const depWaiverMatch = text.match(/Depri?ciation\s+Wa[iv]{1,2}er(?:\s+Cover)?\s*([0-9,.]+)/i);
   if (depWaiverMatch) {
-    patch.depreciationWaiverPremium = normalizeAmount(depWaiverMatch[1]);
+    patch.depreciationWaiverPremium = normalizeAmount(depWaiverMatch[1].replace(/,/g, ""));
     if (parseFloat(patch.depreciationWaiverPremium || 0) > 0) {
       patch.depreciationShieldCover = "Yes";
       patch.depreciationWaiverCover = "Yes";
       patch.nilDepreciation = "Yes";
-      patch.addOnCovers = "Depreciation Waiver Cover";
+      patch.zeroDepreciationCover = patch.depreciationWaiverPremium;
+      patch.addOnCovers = patch.addOnCovers ? `${patch.addOnCovers}, Depreciation Waiver Cover` : "Depreciation Waiver Cover";
     }
+  }
+
+  if ((patch.depreciationWaiverPremium || patch.roadsideAssistance) && !patch.addonPremium) {
+    const depAmt = parseFloat(String(patch.depreciationWaiverPremium || 0).replace(/,/g, ""));
+    const rsaAmt = parseFloat(String(patch.roadsideAssistance || 0).replace(/,/g, ""));
+    patch.addonPremium = normalizeAmount(String(depAmt + rsaAmt));
   }
 
   const compExcessMatch = text.match(/Compulsory\s+Excess\s*(?:\(IMT\s*22\))?\s*Rs\.?\s*([0-9,.]+)/i);
@@ -561,13 +693,20 @@ function train({ text = "", result = {} }) {
     patch.compulsoryExcess = patch.compulsoryDeductible;
   }
 
-  const imts = [];
-  if (/IMT\s*22\b/i.test(text)) imts.push("IMT-22");
-  if (/IMT\s*24\b/i.test(text)) imts.push("IMT-24");
-  if (/IMT\s*33\b/i.test(text)) imts.push("IMT-33");
-  if (/IMT\s*10\b/i.test(text)) imts.push("IMT-10");
-  if (/IMT\s*7\b/i.test(text)) imts.push("IMT-7");
-  if (imts.length > 0) patch.imtEndorsements = imts.join(", ");
+  const imts = new Set();
+  const imtListMatch = text.match(/Subject\s+to\s+IMT\s+Endorsement\s+Nos\.?[\s\r\n]*([0-9,\s]+?)(?=\n[A-Z]|\n\n|$)/i);
+  if (imtListMatch) {
+    const nums = imtListMatch[1].match(/\b\d+\b/g);
+    if (nums) nums.forEach(n => imts.add(`IMT-${n}`));
+  }
+  if (/IMT\s*22\b/i.test(text)) imts.add("IMT-22");
+  if (/IMT\s*24\b/i.test(text)) imts.add("IMT-24");
+  if (/IMT\s*33\b/i.test(text)) imts.add("IMT-33");
+  if (/IMT\s*10\b/i.test(text)) imts.add("IMT-10");
+  if (/IMT\s*7\b/i.test(text)) imts.add("IMT-7");
+  if (/IMT\s*28\b/i.test(text)) imts.add("IMT-28");
+  if (/IMT\s*16\b/i.test(text)) imts.add("IMT-16");
+  if (imts.size > 0) patch.imtEndorsements = Array.from(imts).join(", ");
 
   patch.extractionTrainingVersion = "IFFCO_TOKIO_MOTOR_V2";
 

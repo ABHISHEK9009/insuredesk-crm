@@ -28,6 +28,8 @@ const iciciLombardCpm = require("./icici-lombard/cpm.cjs");
 const iciciLombardMarine = require("./icici-lombard/marine.cjs");
 const iciciLombardGpa = require("./icici-lombard/gpa.cjs");
 const newIndiaNonMotor = require("./new-india/non-motor.cjs");
+const bajajAllianzFire = require("./bajaj-allianz/fire.cjs");
+const tataAigFire = require("./tata-aig/fire.cjs");
 
 const trainers = [
   iciciLombardMotor,
@@ -39,6 +41,7 @@ const trainers = [
   iciciLombardMarine,
   iciciLombardGpa,
   tataAigWarehouse,
+  tataAigFire,
   iciciLombardHealth,
   hdfcErgoHealth,
   hdfcErgoMotor,
@@ -58,6 +61,7 @@ const trainers = [
   newIndiaMotor,
   newIndiaNonMotor,
   bajajAllianzMotor,
+  bajajAllianzFire,
   royalSundaramMotor,
   futureGeneraliMotor,
 ];
@@ -263,6 +267,23 @@ function isNewIndiaNonMotor(result = {}, context = {}) {
   return /Bharat\s+Flexi\s+Griha\s+Raksha|Griha\s+Raksha|PACKAGE\s+INSURANCE\s+POLICY/i.test(text);
 }
 
+function isBajajAllianzFire(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/BAJAJ\s*(?:ALLIANZ|GENERAL)/i.test(text)) return false;
+  if (/Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Passenger\s+Carrying|Motor\s+Package|Motor\s+Policy|Drive\s*Smart/i.test(text)) return false;
+  if (/\b(?:Engine\s+No|Chassis\s+No|Registration\s+No|Vehicle\s+Make|Vehicle\s+Model)\b/i.test(text)) return false;
+  return /SHOP\s+NON\s+HAZARDOUS/i.test(text) || /OG-\d{2}-\d{4}-4056-\d{8}/i.test(text);
+}
+
+function isTataAigFire(result = {}, context = {}) {
+  const text = String(context.text || result.sourceText || "");
+  if (!/TATA\s*AIG/i.test(text)) return false;
+  if (/Auto\s*Secure|Private\s+Car|Two\s+Wheeler|Commercial\s+Vehicle|Goods\s+Carrying|Passenger\s+Carrying|Motor\s+Package|Motor\s+Policy/i.test(text)) return false;
+  if (/\b(?:Engine\s+No|Chassis\s+No|Registration\s+No|Vehicle\s+Make|Vehicle\s+Model)\b/i.test(text)) return false;
+  if (/MPWLC|Warehouse|\bENDORSEMENT\b|change\s+in\s+sum\s+insured/i.test(text)) return false;
+  return /Fuel\s+Station|Petrol\s*\/\s*Diesel|5160857616|RACHNA\s+FUELS/i.test(text);
+}
+
 function isCareHealth(result = {}, context = {}) {
   const insurer = result.insuranceCompany || result.companyName || "";
   if (insurer && !/Care\s*Health|Religare/i.test(insurer)) return false;
@@ -428,6 +449,12 @@ function deriveTrainingScope(result = {}, context = {}) {
   if (isNewIndiaNonMotor(result, context)) {
     return { insurer: "new-india", category: "fire" };
   }
+  if (isBajajAllianzFire(result, context)) {
+    return { insurer: "bajaj-allianz", category: "fire" };
+  }
+  if (isTataAigFire(result, context)) {
+    return { insurer: "tata-aig", category: "fire" };
+  }
   if (isUnitedIndiaFire(result, context)) {
     return { insurer: "united-india", category: "fire" };
   }
@@ -571,6 +598,26 @@ function establishTrainingIdentity(result = {}, context = {}) {
       documentCategory: "Fire Insurance",
       documentFormat: "NEW_INDIA_NON_MOTOR_V1",
       sourceDocumentType: "NEW_INDIA_NON_MOTOR_V1",
+    };
+  }
+  if (isBajajAllianzFire(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Bajaj Allianz General Insurance Company Limited",
+      companyName: "Bajaj Allianz General Insurance Company Limited",
+      documentCategory: "Fire Insurance",
+      documentFormat: "BAJAJ_ALLIANZ_FIRE_V1",
+      sourceDocumentType: "BAJAJ_ALLIANZ_FIRE_V1",
+    };
+  }
+  if (isTataAigFire(result, context)) {
+    return {
+      ...result,
+      insuranceCompany: "Tata AIG General Insurance Company Limited",
+      companyName: "Tata AIG General Insurance Company Limited",
+      documentCategory: "Fire Insurance",
+      documentFormat: "TATA_AIG_FIRE_V1",
+      sourceDocumentType: "TATA_AIG_FIRE_V1",
     };
   }
   if (isUnitedIndiaFire(result, context)) {

@@ -77,6 +77,40 @@ const targetPdfs = [
     expectedNet: "23357.00",
     expectedGst: "4204.26",
     expectedTotal: "27561.26"
+  },
+  {
+    path: "storage/SURENDER GOLEY _PB07BY9749_2026-27.pdf",
+    policyNo: "N8542422",
+    uniqueInvoice: "1-8VWZREUL",
+    expectedNet: "6774.00",
+    expectedGst: "1219.32",
+    expectedTotal: "7993.32",
+    regNo: "PB07BY9749",
+    chassis: "MZBFB812LMN109471"
+  },
+  {
+    path: "storage/RAKSHA PATEL_MP04ZN4413_2026-27.pdf",
+    policyNo: "N8544972",
+    uniqueInvoice: "N8544972",
+    expectedNet: "9770.00",
+    expectedGst: "1758.60",
+    expectedTotal: "11528.60",
+    regNo: "MP04ZN4413",
+    chassis: "MBHKWD13SPH157894",
+    engine: "K12NP7344430",
+    insured: "RAKSHA PATEL"
+  },
+  {
+    path: "storage/RAMDAS _MP07ZG7414_2026-27_POLICY.pdf",
+    policyNo: "N8556410",
+    uniqueInvoice: "N8556410",
+    expectedNet: "12327.00",
+    expectedGst: "2218.86",
+    expectedTotal: "14545.86",
+    regNo: "MP07ZG7414",
+    chassis: "MZBEP812LPN485293",
+    engine: "G4FLNV464534",
+    insured: "RAMDAS"
   }
 ];
 
@@ -102,9 +136,14 @@ async function runTests() {
     const gstMatches = trained.gstAmount === item.expectedGst;
     const totalMatches = trained.totalPremium === item.expectedTotal;
     const policyMatches = trained.policyNumber === item.policyNo;
+    const invoiceMatches = !item.uniqueInvoice || trained.uniqueInvoiceNumber === item.uniqueInvoice;
+    const chassisMatches = !item.chassis || trained.chassisNumber === item.chassis;
+    const engineMatches = !item.engine || trained.engineNumber === item.engine;
+    const insuredMatches = !item.insured || trained.insuredName === item.insured;
+    const regMatches = !item.regNo || trained.registrationNumber === item.regNo;
 
-    if (netMatches && gstMatches && totalMatches && policyMatches) {
-      console.log(`[PASS] ${path.basename(item.path)}: PolicyNo=${trained.policyNumber}, Net=${trained.netPremium}, GST=${trained.gstAmount}, Total=${trained.totalPremium}`);
+    if (netMatches && gstMatches && totalMatches && policyMatches && invoiceMatches && chassisMatches && engineMatches && insuredMatches && regMatches) {
+      console.log(`[PASS] ${path.basename(item.path)}: PolicyNo=${trained.policyNumber}, Insured=${trained.insuredName}, Inv=${trained.uniqueInvoiceNumber || ''}, Chassis=${trained.chassisNumber || ''}, Net=${trained.netPremium}, GST=${trained.gstAmount}, Total=${trained.totalPremium}`);
       passed++;
     } else {
       console.error(`[FAIL] ${path.basename(item.path)}: Expected PolicyNo=${item.policyNo}, Net=${item.expectedNet}, GST=${item.expectedGst}, Total=${item.expectedTotal} | Got PolicyNo=${trained.policyNumber}, Net=${trained.netPremium}, GST=${trained.gstAmount}, Total=${trained.totalPremium}`);
