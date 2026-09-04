@@ -56,6 +56,7 @@ export const FIELD_LABELS = {
   fidelitySumInsured: "Fidelity Sum Insured",
   financerName: "Financer Name",
   fuelType: "Fuel Type",
+  grossPremium: "Gross Premium",
   grossVehicleWeight: "Gross Vehicle Weight",
   groupName: "Group Name",
   gstAmount: "GST",
@@ -332,6 +333,8 @@ export const FIELD_GROUPS = [
       "expiryDate",
       "policyTenure",
       "sumInsured",
+      "netPremium",
+      "grossPremium",
       "premium",
       "duration",
       "policyCoverType",
@@ -371,8 +374,9 @@ export const FIELD_GROUPS = [
   {
     title: "Payment",
     fields: [
-      "totalPremium",
       "netPremium",
+      "grossPremium",
+      "totalPremium",
       "basicPremium",
       "odPremium",
       "tpPremium",
@@ -976,9 +980,10 @@ export function getCategoryDefaultFieldKeys(category = "all") {
       "insuranceCompany",
       "startDate",
       "expiryDate",
-      "premium",
-      "totalPremium",
       "netPremium",
+      "grossPremium",
+      "totalPremium",
+      "premium",
       "basicPremium",
       "odPremium",
       "tpPremium",
@@ -1003,6 +1008,9 @@ export function getCategoryDefaultFieldKeys(category = "all") {
       "insuranceCompany",
       "startDate",
       "expiryDate",
+      "netPremium",
+      "grossPremium",
+      "totalPremium",
       "premium",
       "sumInsured",
       "occupancy",
@@ -1091,6 +1099,47 @@ export function getExportValueForRecord(record = {}, key = "") {
   }
   if (key === "extractionMethod") {
     return record.extractionMethod || "-";
+  }
+
+  if (key === "grossPremium") {
+    const val =
+      record.grossPremium ??
+      record.totalPremium ??
+      record.premium ??
+      record?.extractedData?.grossPremium ??
+      record?.extractedData?.totalPremium ??
+      record?.extractedData?.premium;
+    if (val !== undefined && val !== null && val !== "") return val;
+  }
+  if (key === "netPremium") {
+    const val =
+      record.netPremium ??
+      record.basicPremium ??
+      record?.extractedData?.netPremium ??
+      record?.extractedData?.basicPremium;
+    if (val !== undefined && val !== null && val !== "") return val;
+  }
+  if (key === "totalPremium") {
+    const val =
+      record.totalPremium ??
+      record.grossPremium ??
+      record.premium ??
+      record?.extractedData?.totalPremium ??
+      record?.extractedData?.grossPremium ??
+      record?.extractedData?.premium;
+    if (val !== undefined && val !== null && val !== "") return val;
+  }
+  if (key === "premium") {
+    const val =
+      record.premium ??
+      record.grossPremium ??
+      record.totalPremium ??
+      record.netPremium ??
+      record?.extractedData?.premium ??
+      record?.extractedData?.grossPremium ??
+      record?.extractedData?.totalPremium ??
+      record?.extractedData?.netPremium;
+    if (val !== undefined && val !== null && val !== "") return val;
   }
 
   const rawVal = record[key] ?? record?.extractedData?.[key] ?? "";

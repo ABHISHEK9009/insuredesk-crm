@@ -216,11 +216,21 @@ export function normalizeRecord(record) {
       payload.premium ||
       legacy.premium ||
       "",
+    grossPremium:
+      payload.grossPremium ||
+      legacy.grossPremium ||
+      payload.totalPremium ||
+      legacy.totalPremium ||
+      payload.premiumIncludingGst ||
+      legacy.premiumIncludingGst ||
+      payload.premium ||
+      legacy.premium ||
+      "",
     totalPremium:
       payload.totalPremium ||
       legacy.totalPremium ||
-      payload.netPremium ||
-      legacy.netPremium ||
+      payload.grossPremium ||
+      legacy.grossPremium ||
       payload.premium ||
       legacy.premium ||
       payload.basicPremium ||
@@ -229,7 +239,13 @@ export function normalizeRecord(record) {
       legacy.collectedAmount ||
       payload["Total Premium"] ||
       "",
-    netPremium: payload.netPremium || legacy.netPremium || payload["Net Premium"] || "",
+    netPremium:
+      payload.netPremium ||
+      legacy.netPremium ||
+      payload["Net Premium"] ||
+      payload.basicPremium ||
+      legacy.basicPremium ||
+      "",
     basicPremium: payload.basicPremium || legacy.basicPremium || "",
     taxAmount: payload.taxAmount || legacy.taxAmount || "",
     gstAmount: payload.gstAmount || legacy.gstAmount || "",

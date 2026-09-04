@@ -21,6 +21,8 @@ const DEFAULT_RECORD_COLUMNS = [
     fallbackKey: "registrationNumber",
   },
   { key: "insuranceCompany", label: "Insurance Company", className: "col-company" },
+  { key: "netPremium", fallbackKeys: ["basicPremium"], label: "Net Premium", className: "col-money", format: "money" },
+  { key: "grossPremium", fallbackKeys: ["totalPremium", "premium"], label: "Gross Premium", className: "col-money", format: "money" },
   { key: "whatsappGroupName", label: "WP Group Name", className: "col-group" },
 ];
 
