@@ -91,6 +91,8 @@ function train({ text = "", result = {} }) {
     patch.mailingAddress = cleanAddr;
     patch.communicationAddress = cleanAddr;
     patch.address = cleanAddr;
+    const pin = cleanAddr.match(/\b(\d{6})\b/);
+    if (pin) patch.pinCode = pin[1];
   }
 
   const contactNo =
@@ -177,6 +179,8 @@ function train({ text = "", result = {} }) {
   );
 
   const chEngMatch = text.match(
+    /Chassis\s+no\.\s*\/\s*Engine\s+(?:no\.|Number)\s*:?\s*([A-Z0-9]+)\s*\/\s*([A-Z0-9]+[\s\r\n]*[A-Z0-9]+)/i,
+  ) || text.match(
     /Chassis\s+no\.\s*\/\s*Engine\s+no\.\s*:?\s*([A-Z0-9]+)\s*\/\s*([A-Z0-9]+[\s\r\n]*[A-Z0-9]+)/i,
   );
   if (chEngMatch) {
@@ -237,11 +241,19 @@ function train({ text = "", result = {} }) {
   const financierMatch = text.match(/Name\s+of\s+the\s+Financier\s*:?\s*([^\n\r]*)/i);
   if (financierMatch) {
     const rawVal = clean(financierMatch[1]);
-    if (rawVal && !/Chassis\s+no|Engine\s+no/i.test(rawVal)) {
+    if (rawVal && !/Chassis\s+no|Engine\s+no|Cover\s*Note|none/i.test(rawVal)) {
       patch.hypothecation = rawVal;
       patch.financier = rawVal;
       patch.financerName = rawVal;
+    } else {
+      patch.hypothecation = "";
+      patch.financier = "";
+      patch.financerName = "";
     }
+  } else if (/Cover\s*Note|none/i.test(result.financerName || "")) {
+    patch.hypothecation = "";
+    patch.financier = "";
+    patch.financerName = "";
   }
 
   // 7. IDV (Insured Declared Value) Table
@@ -271,21 +283,34 @@ function train({ text = "", result = {} }) {
 
   const calcOdMatch =
     text.match(/Calculated\s+OD\s+Premium\s*(\d+(?:\.\d+)?)/i) ||
-    text.match(/Total\s+OD\s+Premium\s*\(Rs\)\s*(\d+(?:\.\d+)?)/i);
+    text.match(/Total\s+OD\s+Premium\s*(?:\(Rs\)|in\s*Rs)?\s*(\d+(?:\.\d+)?)/i);
   const totalOd = amount(calcOdMatch ? calcOdMatch[1] : basicOd);
 
   const calcTpMatch =
     text.match(/Calculated\s+TP\s+Premium\s*(\d+(?:\.\d+)?)/i) ||
-    text.match(/Total\s+TP\s+Premium\s*\(Rs\)\s*(\d+(?:\.\d+)?)/i);
+    text.match(/Total\s+TP\s+Premium\s*(?:\(Rs\)|in\s*Rs)?\s*(\d+(?:\.\d+)?)/i);
   const totalTp = amount(calcTpMatch ? calcTpMatch[1] : basicTp);
 
-  const netMatch = text.match(/Net\s+Premium\s*\(Rs\)\s*([0-9,.]+)/i);
+  const paMatch = text.match(/PA\s+Premium\s+for\s+Owner\s+Driver[\s\S]*?(\d+)\s*\n\s*(\d+)/i) ||
+    text.match(/Compulsory\s+PA\s+Premium\s+for\s+Owner\s+Driver[\s\S]{0,100}?\n\s*(\d+(?:\.\d+)?)/i);
+  if (paMatch) {
+    patch.paOwnerDriver = amount(paMatch[2] || paMatch[1]);
+  }
+
+  const ncbMatch = text.match(/Total\s+NCB\s+Discount\s*\(\s*(\d+(?:\.\d+)?)\s*%\s*\)[\s\S]*?\n\s*\d+\s*\n\s*([0-9.]+)/i);
+  if (ncbMatch) {
+    patch.ncbPercentage = ncbMatch[1].trim();
+    patch.ncb = `${patch.ncbPercentage}%`;
+    patch.ncbDiscount = amount(ncbMatch[2]);
+  }
+
+  const netMatch = text.match(/Net\s+Premium\s*(?:in\s*Rs|\(Rs\))?\s*[:\s]*([0-9,.]+)/i);
   const netPremium = amount(netMatch ? netMatch[1] : totalTp);
 
-  const gstMatch = text.match(/GST\s*\(Rs\)\s*([0-9,.]+)/i);
+  const gstMatch = text.match(/GST\s*(?:in\s*Rs|\(Rs\))?\s*[:\s]*([0-9,.]+)/i);
   const totalGst = amount(gstMatch ? gstMatch[1] : "0");
 
-  const payableMatch = text.match(/Total\s+Payable\s*\(Rs\)\s*([0-9,.]+)/i);
+  const payableMatch = text.match(/Total\s+Payable\s*(?:in\s*Rs|\(Rs\))?\s*[:\s]*([0-9,.]+)/i);
   const totalPayable = amount(payableMatch ? payableMatch[1] : (Number(netPremium || 0) + Number(totalGst || 0)).toFixed(2));
 
   patch.odPremium = totalOd;

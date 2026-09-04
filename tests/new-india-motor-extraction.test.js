@@ -195,6 +195,43 @@ describe("New India Commercial Vehicle Motor Policy extraction", () => {
     expect(result.extractionTrainingVersion).toBe("NEW_INDIA_MOTOR_V2");
   });
 
+  it("extracts PARAS SETHI real PDF correctly", async () => {
+    const filePath = path.join(process.cwd(), "storage", "PARAS SETHI_MP05MP5782_2026-27_ NEW INDIA.pdf");
+    if (!fs.existsSync(filePath)) return;
+    const buf = fs.readFileSync(filePath);
+    const data = await pdf(buf);
+
+    const result = extractPolicyFromText(data.text, "PARAS SETHI_MP05MP5782_2026-27_ NEW INDIA.pdf");
+
+    expect(result.insuranceCompany).toBe("The New India Assurance Company Limited");
+    expect(result.policyNumber).toBe("45140031260100005171");
+    expect(result.insuredName).toBe("PARAS SETHI");
+    expect(result.registrationNumber).toBe("MP-05-MP-5782");
+    expect(result.vehicleNumber).toBe("MP-05-MP-5782");
+    expect(result.chassisNumber).toBe("MBLHA10BSFHL24804");
+    expect(result.engineNumber).toBe("HA10EVFHL27267");
+    expect(result.makeModel).toBe("HERO/PASSION PRO");
+    expect(result.variant).toBe("LTD EDITION");
+    expect(result.startDate).toBe("04/09/2026");
+    expect(result.expiryDate).toBe("03/09/2027");
+    expect(result.idv).toBe("15492.00");
+    expect(result.odPremium).toBe("56.00");
+    expect(result.tpPremium).toBe("1114.00");
+    expect(result.paOwnerDriver).toBe("400.00");
+    expect(result.ncbDiscount).toBe("55.84");
+    expect(result.ncbPercentage).toBe("50");
+    expect(result.netPremium).toBe("1170.00");
+    expect(result.cgst).toBe("105.00");
+    expect(result.sgst).toBe("105.00");
+    expect(result.gstAmount).toBe("210.00");
+    expect(result.totalPremium).toBe("1380.00");
+    expect(result.financerName).toBe("");
+    expect(result.pinCode).toBe("461001");
+    expect(result.previousInsurer).toBe("THE NEW INDIA ASSURANCE COMPANY LTD.");
+    expect(result.previousPolicyNumber).toBe("45140031250100005174");
+    expect(result.extractionTrainingVersion).toBe("NEW_INDIA_MOTOR_V2");
+  });
+
   it("isolates New India Motor trainer from non-motor and other insurers", () => {
     const newIndiaWarehouse = {
       insuranceCompany: "The New India Assurance Company Limited",
