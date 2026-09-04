@@ -59,5 +59,27 @@ describe("client birthday helper functions", () => {
     expect(compiled).not.toContain("{{customerName}}");
     expect(compiled).not.toContain("{{companyName}}");
   });
+
+  it("normalizes phone numbers and sanitizes birthday payloads properly", async () => {
+    const { normalizeIndianPhone, sanitizeCustomerProfilePayload } = await import(
+      "../src/lib/customer-profiles/utils.js"
+    );
+
+    expect(normalizeIndianPhone("9876543210")).toBe("9876543210");
+    expect(normalizeIndianPhone("+91 98765 43210")).toBe("9876543210");
+    expect(normalizeIndianPhone("09876543210")).toBe("9876543210");
+    expect(normalizeIndianPhone("12345")).toBe(""); // Invalid phone
+
+    const sanitized = sanitizeCustomerProfilePayload({
+      name: "Paras Sethi",
+      phone: "+91 9876543210",
+      email: "paras@example.com",
+      dob: "1995-09-04",
+    });
+
+    expect(sanitized.name).toBe("Paras Sethi");
+    expect(sanitized.phone).toBe("9876543210");
+    expect(sanitized.dob).toBeInstanceOf(Date);
+  });
 });
 

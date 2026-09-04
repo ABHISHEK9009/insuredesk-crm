@@ -31,6 +31,7 @@ export async function GET(request) {
     const where = {
       ...ownProfileFilter,
       deletedAt: null,
+      dob: { not: null },
     };
 
     const profiles = await prisma.customerProfile.findMany({
@@ -42,7 +43,9 @@ export async function GET(request) {
       },
     });
 
-    const serialized = profiles.map(serializeCustomerProfile);
+    const serialized = profiles
+      .map(serializeCustomerProfile)
+      .filter((p) => Boolean(p.dob));
 
     return NextResponse.json({
       profiles: serialized,
@@ -64,10 +67,24 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { profiles: importList } = body;
+    let importList = body.profiles;
 
     if (!Array.isArray(importList)) {
-      return NextResponse.json({ error: "Invalid payload format. Expected list of profiles." }, { status: 400 });
+      if (body.name && body.phone && body.dob) {
+        importList = [
+          {
+            name: body.name,
+            phone: body.phone,
+            email: body.email || "",
+            dob: body.dob,
+          },
+        ];
+      } else {
+        return NextResponse.json(
+          { error: "Invalid payload format. Expected list of profiles or single client with name, phone, and dob." },
+          { status: 400 },
+        );
+      }
     }
 
     const actorId = session.userId || session.id;
@@ -179,6 +196,10 @@ export async function POST(request) {
       } catch (rowErr) {
         errors.push(`Row ${i + 1}: ${rowErr.message || "Failed to process record."}`);
       }
+    }
+
+    if (importList.length === 1 && errors.length > 0 && createdCount === 0 && updatedCount === 0) {
+      return NextResponse.json({ error: errors[0].replace(/^Row 1:\s*/, "") }, { status: 400 });
     }
 
     return NextResponse.json({
