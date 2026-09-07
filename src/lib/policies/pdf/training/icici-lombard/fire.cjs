@@ -49,13 +49,69 @@ function train({ text = "", result = {} }) {
   }
   patch.customerName = patch.insuredName;
 
+  // Contact Person / Proprietor
+  const propMatch =
+    text.match(/PROP(?:RIETOR)?\.?\s+([A-Za-z\s]+?)(?:,|\s+JASALPUR|\s+TEH|\s+DIST|\s+MADHYA|\n)/i) ||
+    text.match(/Contact\s+Person\s*[:\s]*([^\n]+)/i);
+  if (propMatch) {
+    patch.contactPerson = propMatch[1].replace(/\s+/g, " ").trim();
+  }
+
   // Address
+  const scheduleAddrMatch = text.match(/Mailing\s+Address\s+of\s+the\s*Insured\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Period\s+of|\s*Business|\s*Premises|\n\s*1030)/i);
   const addrMatch =
     text.match(/Address\s+of\s+the\s+Customer\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*GSTIN|\s*Unique|\s*Invoice|\n\n)/i) ||
     text.match(/Address\s+of\s+the\s+Insured\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Telephone|\s*Email|\s*Period|\s*Pincode|\n\n)/i) ||
     text.match(/Date\s*:\s*[^\n]+\n\s*[^\n]+\n\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Policy\s+No|\s*Mailing|\n\n)/i);
-  if (addrMatch) {
+  const premiseMatch = text.match(/Premises\s+to\s+be\s+Insured\s*[:\s]*\n?\s*([A-Za-z0-9\s.,&/()-]+?)(?=\s*Premium|\s*Hypothecation|\s*Section)/i);
+
+  if (scheduleAddrMatch) {
+    patch.mailingAddress = scheduleAddrMatch[1].replace(/\s+/g, " ").trim();
+    patch.communicationAddress = patch.mailingAddress;
+  } else if (addrMatch) {
     patch.communicationAddress = addrMatch[1].replace(/\s+/g, " ").trim();
+    patch.mailingAddress = patch.communicationAddress;
+  }
+
+  if (premiseMatch) {
+    patch.riskLocation = premiseMatch[1].replace(/--+/g, ", ").replace(/\s+/g, " ").trim();
+    patch.premisesAddress = patch.riskLocation;
+  } else if (patch.mailingAddress) {
+    patch.riskLocation = patch.mailingAddress;
+    patch.premisesAddress = patch.mailingAddress;
+  }
+
+  // District, Tehsil, Pincode
+  const pinMatch = (patch.mailingAddress || text).match(/\b([1-9][0-9]{5})\b/);
+  if (pinMatch) patch.pincode = pinMatch[1];
+
+  const distMatch = (patch.mailingAddress || text).match(/(?:DIST(?:RICT)?\.?|TEH\s+AND\s+DIST)\s+([A-Za-z]+)/i);
+  if (distMatch) patch.district = distMatch[1].trim();
+
+  const tehMatch = (patch.mailingAddress || text).match(/TEH(?:SIL)?\.?\s+(?:AND\s+DIST\s+)?([A-Za-z]+)/i);
+  if (tehMatch) patch.tehsil = tehMatch[1].trim();
+
+  // Business Description
+  const bizMatch = text.match(/Business\s+of\s+the\s+Insured\s*[:\s]*\n?\s*([\s\S]+?)(?=\s*Issued\s+at|\s*Premises)/i);
+  if (bizMatch) {
+    patch.businessDescription = bizMatch[1].replace(/\s+/g, " ").trim();
+    patch.occupancy = patch.businessDescription;
+  }
+
+  // Invoice Details
+  const invNumMatch = text.match(/Invoice\s+Number\s*[:\s]*([0-9]+)/i);
+  if (invNumMatch) patch.invoiceNumber = invNumMatch[1].trim();
+
+  const invDateMatch = text.match(/Invoice\s+Date\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i);
+  if (invDateMatch) patch.invoiceDate = invDateMatch[1].trim();
+
+  // Intermediary / Broker Details
+  const intermediaryRowMatch = text.match(/(\d{10,20})\s*([A-Za-z]+)\s*(\d{10})\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/i);
+  if (intermediaryRowMatch) {
+    patch.brokerCode = intermediaryRowMatch[1].trim();
+    patch.brokerName = intermediaryRowMatch[2].trim();
+    patch.brokerMobile = intermediaryRowMatch[3].trim();
+    patch.brokerEmail = intermediaryRowMatch[4].trim();
   }
 
   // Period / Dates
@@ -80,14 +136,25 @@ function train({ text = "", result = {} }) {
     patch.netPremium = formatAmount(netMatch[1]);
   }
 
-  const cgstMatch = text.match(/CGST\s*(?:₹|`|Rs\.?)?\s*([0-9,.]+)/i) || text.match(/1CGST\d+\s*([0-9,.]+)/i);
+  const cgstMatch =
+    text.match(/1\s*CGST\s*9(?:\.0+)?\s*([0-9,.]+)/i) ||
+    text.match(/CGST\s*(?:₹|`|Rs\.?)?\s*([0-9,.]+)/i);
   if (cgstMatch) patch.cgst = formatAmount(cgstMatch[1]);
 
-  const sgstMatch = text.match(/SGST\s*(?:₹|`|Rs\.?)?\s*([0-9,.]+)/i) || text.match(/2SGST\d+\s*([0-9,.]+)/i);
+  const sgstMatch =
+    text.match(/2\s*SGST\s*9(?:\.0+)?\s*([0-9,.]+)/i) ||
+    text.match(/SGST\s*(?:₹|`|Rs\.?)?\s*([0-9,.]+)/i);
   if (sgstMatch) patch.sgst = formatAmount(sgstMatch[1]);
 
-  const igstMatch = text.match(/IGST\s*(?:₹|`|Rs\.?)?\s*([0-9,.]+)/i) || text.match(/3IGST\d+\s*([0-9,.]+)/i);
-  if (igstMatch) patch.igst = formatAmount(igstMatch[1]);
+  const igst18Match = text.match(/3\s*IGST\s*18(?:\.0+)?\s*([0-9,.]+)/i);
+  if (igst18Match) {
+    patch.igst = formatAmount(igst18Match[1]);
+  } else if (/3\s*IGST\s*00?/i.test(text)) {
+    patch.igst = "0.00";
+  } else {
+    const igstMatch = text.match(/IGST\s*(?:₹|`|Rs\.?)?\s*([0-9,.]+)/i);
+    if (igstMatch) patch.igst = formatAmount(igstMatch[1]);
+  }
 
   const totalGstMatch =
     text.match(/Total\s+Tax\s+Amount[^\n]*\n?\s*(?:`|₹)?\s*([0-9,.]+)/i) ||
@@ -95,6 +162,17 @@ function train({ text = "", result = {} }) {
   if (totalGstMatch) {
     patch.gstAmount = formatAmount(totalGstMatch[1]);
     patch.taxAmount = patch.gstAmount;
+  }
+
+  // Cross-verify CGST/SGST with Total Tax Amount (9% + 9%)
+  if (patch.gstAmount) {
+    const totalGstNum = parseFloat(String(patch.gstAmount).replace(/,/g, ""));
+    const cgstNum = parseFloat(String(patch.cgst || "").replace(/,/g, ""));
+    if (totalGstNum > 0 && (!cgstNum || cgstNum >= totalGstNum)) {
+      const half = totalGstNum / 2;
+      patch.cgst = formatAmount(half);
+      patch.sgst = formatAmount(half);
+    }
   }
 
   const totMatch =
@@ -108,7 +186,20 @@ function train({ text = "", result = {} }) {
     patch.premiumIncludingGst = patch.totalPremium;
   }
 
-  // Sum Insured
+  // Section-wise Sum Insured
+  const bldgMatch = text.match(/MSME\s+Suraksha\s+Kavach\s*-\s*Buildings[^\d]*([0-9,.]+)/i);
+  if (bldgMatch) patch.buildingSumInsured = formatAmount(bldgMatch[1]);
+
+  const cntMatch = text.match(/MSME\s+Suraksha\s+Kavach\s*-\s*Contents[^\d]*([0-9,.]+)/i);
+  if (cntMatch) patch.contentsSumInsured = formatAmount(cntMatch[1]);
+
+  const burgMatch = text.match(/Burglary(?:\s+Basic\s+Cover)?[^\d]*([0-9,.]+)/i);
+  if (burgMatch) patch.burglarySumInsured = formatAmount(burgMatch[1]);
+
+  const fidMatch = text.match(/Fidelity(?:\s+Basic\s+Cover)?[^\d]*([0-9,.]+)/i);
+  if (fidMatch) patch.fidelitySumInsured = formatAmount(fidMatch[1]);
+
+  // Total Sum Insured
   const sumInsuredMatch =
     text.match(/Fire\s+Basic\s+Covers\s*\(`\)\s*([0-9,.]+)/i) ||
     text.match(/Total\s+Sum\s+Insured\s*[:\s₹`]*([0-9,.]+)/i) ||
@@ -116,6 +207,15 @@ function train({ text = "", result = {} }) {
   if (sumInsuredMatch) {
     patch.sumInsured = formatAmount(sumInsuredMatch[1]);
     patch.totalSumInsured = patch.sumInsured;
+  }
+
+  if (patch.buildingSumInsured && patch.contentsSumInsured) {
+    const bVal = parseFloat(String(patch.buildingSumInsured).replace(/,/g, "")) || 0;
+    const cVal = parseFloat(String(patch.contentsSumInsured).replace(/,/g, "")) || 0;
+    if (!patch.sumInsured || patch.sumInsured === patch.buildingSumInsured) {
+      patch.sumInsured = formatAmount(bVal + cVal);
+      patch.totalSumInsured = patch.sumInsured;
+    }
   }
 
   // Payment Details
