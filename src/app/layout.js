@@ -1,6 +1,8 @@
 import { Plus_Jakarta_Sans, Manrope, Be_Vietnam_Pro } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo/site";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import SmoothScroll from "@/app/components/SmoothScroll";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 import "./landing.css";
 
@@ -84,6 +86,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${plusJakartaSans.variable} ${beVietnamPro.variable} ${manrope.variable}`} suppressHydrationWarning>
+        <SmoothScroll />
         {children}
         <SpeedInsights />
       </body>

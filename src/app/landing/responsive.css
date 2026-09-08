@@ -409,120 +409,23 @@
     }
   }
 
-  /* Compact Mobile Services Grid */
+  /* Keep the complete service cards readable on small screens. */
   .landing-shell .services-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-  }
-
-  .landing-shell .service-card {
-    min-height: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 16px 8px !important;
-    border-radius: 16px !important;
-    background: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(3, 22, 56, 0.04) !important;
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .landing-shell .service-card-copy {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    min-height: auto !important;
-    width: 100% !important;
+    padding: 20px;
   }
 
-  .landing-shell .service-card-icon {
-    width: 40px !important;
-    height: 40px !important;
-    margin-bottom: 8px !important;
-  }
-
-  .landing-shell .service-card-icon .material-symbols-outlined {
-    font-size: 20px !important;
+  .landing-shell .service-card-media {
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .landing-shell .service-card h3 {
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    line-height: 1.3 !important;
-    margin: 0 !important;
-    color: #031638 !important;
-  }
-
-  .landing-shell .service-card p,
-  .landing-shell .service-card-link,
-  .landing-shell .service-card-media,
-  .landing-shell .service-card-watermark {
-    display: none !important;
-  }
-
-  /* Bento Grid Mobile Layout */
-  .landing-shell #solutions + section .grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(1),
-  .landing-shell #solutions + section .grid > div:nth-child(2),
-  .landing-shell #solutions + section .grid > div:nth-child(3) {
-    grid-column: span 1 !important;
-  }
-
-  /* Compact padding, rounded corners, and prevent vertical stretching */
-  .landing-shell #solutions + section .glass-card,
-  .landing-shell #solutions + section .bg-primary {
-    padding: 20px !important;
-    border-radius: 20px !important;
-    min-height: auto !important;
-  }
-
-  .landing-shell #solutions + section .grid .material-symbols-outlined {
-    margin-bottom: 12px !important;
-  }
-
-  /* Typography on all bento cards */
-  .landing-shell #solutions + section .grid > div:nth-child(1) h3,
-  .landing-shell #solutions + section .grid > div:nth-child(2) h3,
-  .landing-shell #solutions + section .grid > div:nth-child(3) h3 {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    line-height: 1.25 !important;
-    margin-bottom: 8px !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(1) p,
-  .landing-shell #solutions + section .grid > div:nth-child(2) p,
-  .landing-shell #solutions + section .grid > div:nth-child(3) p {
-    font-size: 15px !important;
-    line-height: 1.55 !important;
-    margin-bottom: 0 !important;
-  }
-
-  /* Compact Card 1 bottom tags/pills */
-  .landing-shell #solutions + section .grid > div:nth-child(1) .flex.flex-wrap {
-    margin-top: 16px !important;
-    gap: 8px !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(1) .flex.flex-wrap > div {
-    font-size: 12px !important;
-    padding: 6px 12px !important;
-    border-radius: 8px !important;
-  }
-
-  /* Compact Card 2 CTA Button */
-  .landing-shell #solutions + section .grid > div:nth-child(2) a {
-    margin-top: 16px !important;
-    padding-top: 10px !important;
-    padding-bottom: 10px !important;
+    font-size: 20px;
   }
 
   /* Claim Assistance Process (#process) Mobile Styles */

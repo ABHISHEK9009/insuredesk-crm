@@ -1664,7 +1664,7 @@ export default function CustomerProfilingPage() {
     updateFilter("status", status);
     window.setTimeout(() => {
       document.querySelector(".customer-profile-list-panel")?.scrollIntoView({
-        behavior: "smooth",
+        behavior: "instant",
         block: "start",
       });
     }, 80);

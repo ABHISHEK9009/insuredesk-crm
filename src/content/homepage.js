@@ -2,31 +2,28 @@ import { BUSINESS_DETAILS } from "./business";
 
 export const HOMEPAGE_CONTENT = {
   hero: {
-    brandBadge: "By InsureDesk IMF Pvt. Ltd. (IRDAI Compliant)",
-    heading: "Independent Risk Advisory & 24/7 Claim Advocacy Across India",
-    subheading: "Trusted Insurance Consultancy for Individuals, Fleets & Enterprises",
+    heading: "Insurance Guidance for Your Life & Business",
+    subheading: "Understand Your Coverage. Choose With Confidence.",
     description:
-      "Bima Headquarter helps individuals, families, warehouses, transporters, and corporate enterprises make informed insurance decisions. From our head office in Bhopal, we provide independent policy audits, coverage optimization, policy renewals, and emergency 24/7 claims representation across India.",
-    ctaConsultationText: "Request Free Policy Audit",
-    ctaClaimsText: "⚡ 24/7 Emergency Claim Line",
+      "Bima Headquarter by Insuredesk IMF Pvt. Ltd. helps individuals, families and businesses compare insurance policies and understand their coverage. Based in Bhopal, we offer guidance on motor, health, life, warehouse and business insurance, with support for policy renewals and claim documentation.",
+    ctaConsultationText: "Request a Policy Review",
+    ctaClaimsText: "Get Claim Support",
     stats: [
       {
         value: "25+",
-        label: "Partner Insurers",
-        isCounter: true,
-        id: "partners-counter",
+        label: "PARTNER INSURERS",
       },
       {
         value: "10,000+",
-        label: "Policies Managed",
+        label: "POLICIES MANAGED",
       },
       {
         value: "₹50Cr+",
-        label: "Claims Settled",
+        label: "CLAIMS SETTLED",
       },
       {
         value: "98.6%",
-        label: "Settlement Ratio",
+        label: "SETTLEMENT RATIO",
       },
     ],
   },

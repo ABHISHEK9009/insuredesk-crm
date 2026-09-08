@@ -1,123 +1,141 @@
-/* ==========================================
-   Why Choose Bento Card Polish
-   ========================================== */
-
-.landing-shell #solutions + section {
-  overflow: hidden;
+/* Homepage company overview */
+.landing-shell .company-overview {
+  padding: 80px 0;
+  background: #f3f6fb;
 }
 
-.landing-shell #solutions + section .grid > div:nth-child(2) {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  gap: 26px !important;
-  min-height: 352px !important;
-  padding: clamp(32px, 3.2vw, 44px) !important;
-  background: #031638 !important;
+.landing-shell .company-overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+  gap: 24px;
+  align-items: stretch;
 }
 
-.landing-shell #solutions + section .grid > div:nth-child(2) .material-symbols-outlined {
-  flex: 0 0 auto !important;
-  margin-bottom: 0 !important;
+.landing-shell .company-overview-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-self: start;
+  align-items: flex-start;
+  gap: 24px;
+  padding: clamp(24px, 2.8vw, 36px);
+  border: 1px solid #dce5df;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.landing-shell .company-overview-brand {
+  display: block;
+  max-width: 100%;
+}
+
+.landing-shell .company-overview-brand .brand-logo-image {
+  display: block;
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.landing-shell .company-overview-intro h2 {
+  margin: 0;
+  color: #031638 !important;
+  font-family: var(--font-display), Manrope, sans-serif;
+  font-size: clamp(26px, 2.4vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.landing-shell .company-overview-intro p {
+  margin-top: 14px;
+  color: #536173 !important;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.landing-shell .company-overview-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 100%;
+  padding: 14px 18px;
+  border: 1px solid #1c6c39;
+  border-radius: 10px;
+  background: #1c6c39;
   color: #ffffff !important;
-  font-size: 34px !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
-.landing-shell #solutions + section .grid > div:nth-child(2) h3 {
-  max-width: 320px !important;
-  margin-bottom: 18px !important;
+.landing-shell .company-overview-cta .material-symbols-outlined {
   color: #ffffff !important;
-  font-size: clamp(30px, 2.5vw, 38px) !important;
-  line-height: 1.14 !important;
+  font-size: 20px;
 }
 
-.landing-shell #solutions + section .grid > div:nth-child(2) p {
-  max-width: 330px !important;
-  margin: 0 0 24px !important;
-  color: rgba(255, 255, 255, 0.82) !important;
-  font-size: 16px !important;
-  line-height: 1.58 !important;
+.landing-shell .company-overview-cta:focus-visible {
+  outline: 2px solid #1c6c39;
+  outline-offset: 5px;
 }
 
-.landing-shell #solutions + section .grid > div:nth-child(2) a {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: auto !important;
-  min-width: 172px !important;
-  min-height: 50px !important;
-  padding: 0 22px !important;
-  border-radius: 12px !important;
-  background: #1c6c39 !important;
-  color: #ffffff !important;
-  font-size: 14px !important;
-  font-weight: 900 !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
+.landing-shell .company-overview-details {
+  padding: 8px 28px;
+  border: 1px solid rgba(8, 27, 55, 0.1);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.landing-shell .company-overview-item {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 18px;
+  padding: 24px 0;
+}
+
+.landing-shell .company-overview-item + .company-overview-item {
+  border-top: 1px solid #e8edf3;
+}
+
+.landing-shell .company-overview-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #e5f4eb;
+  color: #1c6c39 !important;
+  font-size: 24px;
+}
+
+.landing-shell .company-overview-item h3 {
+  margin: 0;
+  color: #031638 !important;
+  font-family: var(--font-display), Manrope, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.landing-shell .company-overview-item p {
+  margin: 8px 0 0;
+  color: #536173 !important;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 @media (max-width: 900px) {
-  .landing-shell #solutions + section > .max-w-container-max > .flex {
-    align-items: flex-start !important;
-    margin-bottom: 34px !important;
-  }
-
-  .landing-shell #solutions + section > .max-w-container-max > .flex h2 {
-    font-size: clamp(28px, 7vw, 34px) !important;
-    line-height: 1.12 !important;
+  .landing-shell .company-overview-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
-@media (max-width: 768px) {
-  .landing-shell #solutions + section .grid > div:nth-child(2) {
-    gap: 14px !important;
-    min-height: 0 !important;
-    padding: 22px !important;
-    border-radius: 20px !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(2) .material-symbols-outlined {
-    font-size: 30px !important;
-    margin-bottom: 0 !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(2) h3 {
-    max-width: none !important;
-    margin-bottom: 10px !important;
-    font-size: 23px !important;
-    line-height: 1.2 !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(2) p {
-    max-width: none !important;
-    margin: 0 0 16px !important;
-    font-size: 15px !important;
-    line-height: 1.5 !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(2) a {
-    width: auto !important;
-    min-width: 0 !important;
-    min-height: 42px !important;
-    margin: 0 !important;
-    padding: 0 14px !important;
-    align-self: flex-start !important;
-    border-radius: 10px !important;
-    font-size: 13px !important;
-  }
+@media (max-width: 640px) {
+  .landing-shell .company-overview { padding: 52px 0; }
+  .landing-shell .company-overview-intro { padding: 28px 24px; }
+  .landing-shell .company-overview-details { padding: 0 20px; }
+  .landing-shell .company-overview-item { grid-template-columns: 1fr; gap: 12px; }
+  .landing-shell .company-overview-item h3 { font-size: 19px; }
 }
-
-@media (max-width: 380px) {
-  .landing-shell #solutions + section .grid > div:nth-child(2) {
-    padding: 20px !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(2) h3 {
-    font-size: 21px !important;
-  }
-
-  .landing-shell #solutions + section .grid > div:nth-child(2) p {
-    font-size: 14px !important;
-  }
-}
-

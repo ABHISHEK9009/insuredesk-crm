@@ -18,9 +18,14 @@ const navItems = [
 ];
 
 export default function PublicHeader() {
+  const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const menuTitleId = useId();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -162,7 +167,8 @@ export default function PublicHeader() {
         onClick={() => setMobileMenuOpen(false)}
       />
 
-      <aside
+      {/* Mount after hydration so browser extensions cannot alter the SSR drawer. */}
+      {mounted && <aside
         id="landing-mobile-menu"
         className={`landing-mobile-menu ${mobileMenuOpen ? "open" : ""}`}
         aria-hidden={!mobileMenuOpen}
@@ -170,7 +176,6 @@ export default function PublicHeader() {
         role="dialog"
         aria-modal="true"
         inert={!mobileMenuOpen ? true : undefined}
-        suppressHydrationWarning
       >
         <div className="landing-mobile-menu-head">
           <div>
@@ -211,7 +216,7 @@ export default function PublicHeader() {
             Login
           </Link>
         </div>
-      </aside>
+      </aside>}
 
       <Link href="/contact" className="landing-floating-consultation" aria-label="Get Consultation">
         <span className="material-symbols-outlined" aria-hidden="true">

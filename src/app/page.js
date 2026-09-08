@@ -4,10 +4,39 @@ import Script from "next/script";
 import PublicHeader from "@/app/components/public/PublicHeader";
 import LandingEffects from "@/app/components/LandingEffects";
 import PublicFooter from "@/app/components/public/PublicFooter";
+import BrandLogo from "@/app/components/brand/BrandLogo";
 import { INSURER_LOGOS } from "@/app/components/brand/logoAssets";
-import { BUSINESS_DETAILS, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/seo/site";
+import { BUSINESS_DETAILS, SITE_URL } from "@/lib/seo/site";
 import { HOMEPAGE_CONTENT } from "@/content/homepage";
 import { SERVICES } from "@/content/services";
+
+const companyName = "Bima Headquarter by Insuredesk IMF Pvt. Ltd.";
+const homepageTitle = "Bima Headquarter by Insuredesk IMF Pvt. Ltd. | Insurance Guidance";
+const homepageDescription = "Bima Headquarter by Insuredesk IMF Pvt. Ltd. offers insurance guidance in Bhopal, policy comparisons, renewal assistance and claim documentation support.";
+
+export const metadata = {
+  title: { absolute: homepageTitle },
+  description: homepageDescription,
+  applicationName: companyName,
+  authors: [{ name: companyName, url: SITE_URL }],
+  creator: companyName,
+  publisher: companyName,
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: SITE_URL,
+    siteName: companyName,
+    title: homepageTitle,
+    description: homepageDescription,
+    images: [{ url: "/brand/main-logo-wide.webp", width: 1024, height: 570, alt: `${companyName} logo` }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: homepageTitle,
+    description: homepageDescription,
+    images: ["/brand/main-logo-wide.webp"],
+  },
+};
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -15,15 +44,15 @@ const structuredData = {
     {
       "@type": ["Organization", "LocalBusiness", "InsuranceAgency"],
       "@id": `${SITE_URL}/#organization`,
-      name: SITE_NAME,
+      name: companyName,
       alternateName: ["BimaHeadquarter", "bimaheadquarter.com"],
-      legalName: BUSINESS_DETAILS.legalName,
+      legalName: companyName,
       url: SITE_URL,
       logo: `${SITE_URL}/brand/main-logo-wide.webp`,
       image: `${SITE_URL}/brand/main-logo-wide.webp`,
       email: BUSINESS_DETAILS.email,
       telephone: BUSINESS_DETAILS.phoneHref,
-      description: SITE_DESCRIPTION,
+      description: homepageDescription,
       foundingDate: BUSINESS_DETAILS.foundingDate,
       slogan: "Trusted Insurance Consultancy",
       address: {
@@ -61,9 +90,6 @@ const structuredData = {
         jobTitle: "Founder Director",
         sameAs: ["https://www.linkedin.com/in/anand-soni-976b7024/"],
       },
-      parentOrganization: {
-        "@id": `${SITE_URL}/#company`,
-      },
       knowsAbout: [
         "Insurance consulting",
         "Claim assistance",
@@ -71,21 +97,12 @@ const structuredData = {
       ],
     },
     {
-      "@type": "Organization",
-      "@id": `${SITE_URL}/#company`,
-      name: BUSINESS_DETAILS.legalName,
-      legalName: BUSINESS_DETAILS.legalName,
-      url: SITE_URL,
-      founder: { "@id": `${SITE_URL}/about#anand-soni` },
-      brand: { "@id": `${SITE_URL}/#organization` },
-    },
-    {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
-      name: SITE_NAME,
-      headline: SITE_TITLE,
-      description: SITE_DESCRIPTION,
+      name: companyName,
+      headline: homepageTitle,
+      description: homepageDescription,
       publisher: {
         "@id": `${SITE_URL}/#organization`,
       },
@@ -199,15 +216,6 @@ export default function RootPage() {
             box-shadow: 0px 20px 40px rgba(26, 43, 78, 0.1);
         }
 
-        .partner-slider {
-            animation: slide 40s linear infinite;
-        }
-
-        @keyframes slide {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
         .reveal {
             opacity: 0;
             transform: translateY(30px);
@@ -233,25 +241,6 @@ export default function RootPage() {
             transform-style: preserve-3d;
         }
         
-        .hero-brand-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(28, 108, 57, 0.08) !important;
-            color: #1c6c39 !important;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            border: 1px solid rgba(28, 108, 57, 0.12);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 24px;
-        }
-        .hero-brand-pill .material-symbols-outlined {
-            color: #1c6c39 !important;
-            font-size: 16px;
-        }
         .hero-stats-container {
             display: flex;
             flex-wrap: wrap;
@@ -378,15 +367,6 @@ export default function RootPage() {
           >
             <div className="max-w-container-max w-full mx-auto px-margin-mobile md:px-margin-desktop relative z-10">
               <div className="hero-content flex flex-col items-start text-left justify-center max-w-[680px]">
-                <div className="hero-brand-pill">
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    verified
-                  </span>
-                  {HOMEPAGE_CONTENT.hero.brandBadge}
-                </div>
                 <h1 className="typing-headline font-display-lg text-display-lg text-primary mb-3 leading-tight text-[40px] md:text-[48px] font-bold text-left">
                   {HOMEPAGE_CONTENT.hero.heading}
                 </h1>
@@ -443,6 +423,7 @@ export default function RootPage() {
                 <span
                   className={`partner-logo-card ${logo.className || ""}`.trim()}
                   key={`${logo.src}-${index}`}
+                  aria-hidden={index >= INSURER_LOGOS.length ? true : undefined}
                 >
                   <Image unoptimized src={logo.src} alt={`${logo.name} logo`} width={136} height={44} />
                 </span>
@@ -474,35 +455,12 @@ export default function RootPage() {
               </div>
 
               <div className="services-grid">
-                {SERVICES.filter((s) => s.slug !== "risk-advisory").map((service, index) => (
+                {SERVICES.filter((s) => s.slug !== "risk-advisory").slice(0, 6).map((service, index) => (
                   <Link
                     key={index}
                     href={service.route}
                     className="service-card group reveal"
-                    style={{ transitionDelay: service.delay }}
                   >
-                    <div className="service-card-copy">
-                      {/* Shield background overlay */}
-                      <div className="service-card-watermark" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                      </div>
-
-                      <div>
-                        <div className="service-card-icon">
-                          <span className="material-symbols-outlined text-[24px]">{service.icon}</span>
-                        </div>
-                        <h3 className="font-headline-md font-bold">{service.title}</h3>
-                        <p className="text-body-md">{service.desc}</p>
-                      </div>
-
-                      <span className="service-card-link font-label-md group/btn">
-                        Learn More{" "}
-                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                      </span>
-                    </div>
-
                     <div className="service-card-media">
                       <div className="service-image-clip">
                         <Image
@@ -510,8 +468,25 @@ export default function RootPage() {
                           alt={`${service.title} consultancy by Bima Headquarter`}
                           width={600}
                           height={400}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                       </div>
+                    </div>
+                    <div className="service-card-copy">
+                      <div>
+                        <div className="service-card-heading">
+                          <div className="service-card-icon" aria-hidden="true">
+                            <span className="material-symbols-outlined text-[24px]">{service.icon}</span>
+                          </div>
+                          <h3 className="font-headline-md font-bold">{service.title}</h3>
+                        </div>
+                        <p className="text-body-md">{service.desc}</p>
+                      </div>
+
+                      <span className="service-card-link font-label-md group/btn">
+                        Learn More{" "}
+                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
+                      </span>
                     </div>
                   </Link>
                 ))}
@@ -537,45 +512,36 @@ export default function RootPage() {
             </div>
           </section>
 
-          {/* Why Choose Us: Bento Grid Layout */}
-          <section className="py-24 bg-surface-container-low">
+          {/* Company overview */}
+          <section className="company-overview" aria-labelledby="company-overview-heading">
             <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
-              <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8 reveal">
-                <div className="max-w-xl">
-                  <h2 className="font-headline-lg text-headline-lg text-primary mb-4 text-[32px] font-bold">
-                    {HOMEPAGE_CONTENT.whyChooseUs.heading}
-                  </h2>
-                  <p className="font-body-lg text-body-lg text-on-surface-variant text-[18px]">
-                    {HOMEPAGE_CONTENT.whyChooseUs.subheading}
-                  </p>
+              <div className="company-overview-layout">
+                <div className="company-overview-intro">
+                  <BrandLogo className="company-overview-brand" />
+                  <div>
+                    <h2 id="company-overview-heading">
+                      {HOMEPAGE_CONTENT.whyChooseUs.heading}
+                    </h2>
+                    <p>{HOMEPAGE_CONTENT.whyChooseUs.subheading}</p>
+                  </div>
+                  <a href="#process" className="company-overview-cta">
+                    {HOMEPAGE_CONTENT.whyChooseUs.ctaText}
+                    <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                  </a>
                 </div>
-                <a
-                  href="#process"
-                  className="font-label-md text-label-md text-primary inline-flex items-center gap-2 px-6 py-3 border border-outline rounded-xl hover:bg-white transition-all bg-transparent min-h-0 text-[14px]"
-                >
-                  {HOMEPAGE_CONTENT.whyChooseUs.ctaText}
-                </a>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-                {HOMEPAGE_CONTENT.whyChooseUs.cards.map((card, index) => (
-                  <div
-                    key={index}
-                    className="glass-card p-10 rounded-3xl flex flex-col justify-between reveal border border-outline-variant/20"
-                    style={{ transitionDelay: `${index * 0.1}s` }}
-                  >
-                    <div>
-                      <span className="material-symbols-outlined text-secondary text-[40px] mb-6">
+                <div className="company-overview-details">
+                  {HOMEPAGE_CONTENT.whyChooseUs.cards.map((card) => (
+                    <article className="company-overview-item" key={card.title}>
+                      <span className="company-overview-icon material-symbols-outlined" aria-hidden="true">
                         {card.icon}
                       </span>
-                      <h3 className="font-headline-md text-headline-md text-primary mb-3 font-semibold text-[24px]">
-                        {card.title}
-                      </h3>
-                      <p className="text-body-md text-on-surface-variant text-[16px] leading-relaxed">
-                        {card.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                      <div>
+                        <h3>{card.title}</h3>
+                        <p>{card.desc}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
             </div>
           </section>

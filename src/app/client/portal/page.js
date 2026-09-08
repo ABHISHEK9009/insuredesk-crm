@@ -379,14 +379,14 @@ export default function ClientPortal() {
     setClaimSuccess("");
     setShowInitiateForm(true);
     setActiveTab("claims");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const openPolicyDetails = (policy) => setSelectedPolicy(policy);
   const openServiceRequest = (requestType, policy) => {
     setServiceAction({ type: requestType, policyNo: policy ? (policy.reviewedData || policy.data || {}).policyNumber || "" : "" });
     setActiveTab("services");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const updateProfile = (nextProfile) => setProfile((current) => ({ ...current, ...nextProfile }));
@@ -1739,7 +1739,7 @@ export default function ClientPortal() {
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  window.scrollTo({ top: 0, behavior: "instant" });
                 }}
                 className={`flex flex-col items-center gap-1.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
                   isSelected ? "text-emerald-600 font-semibold scale-105" : "text-emerald-800/40 hover:text-emerald-600/70"
