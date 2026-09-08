@@ -210,3 +210,66 @@ export const HOMEPAGE_CONTENT = {
     scheduleCtaText: "Schedule Consultation",
   },
 };
+
+export const SERVICE_CARD_META = {
+  "motor-insurance": {
+    pill: "VEHICLE & FLEET",
+    checklist: [
+      "Private car & two-wheeler coverage",
+      "Commercial vehicle & fleet protection",
+      "Renewal and claim assistance support",
+    ],
+    slogan: ["SAFER", "JOURNEYS", "BRIGHTER", "TOMORROWS"],
+    image: "/brand/services/motor-hero.jpg",
+  },
+  "life-insurance": {
+    pill: "FAMILY & LEGACY",
+    checklist: [
+      "Pure term & family income protection",
+      "Keyman & business continuity covers",
+      "Tax-free claim benefits under Sec 10(10D)",
+    ],
+    slogan: ["SECURE", "FUTURES", "LASTING", "LEGACY"],
+    image: "/brand/services/life.jpg",
+  },
+  "warehouse-insurance": {
+    pill: "STOCK & STORAGE",
+    checklist: [
+      "Godown civil & high-bay racking cover",
+      "Bailee's legal liability for 3PL stock",
+      "Monthly declaration policies for inventory",
+    ],
+    slogan: ["GUARDED", "GOODS", "SEAMLESS", "LOGISTICS"],
+    image: "/brand/services/warehouse.jpg",
+  },
+  "marine-insurance": {
+    pill: "TRANSIT & CARGO",
+    checklist: [
+      "Inland transit ICC(A) all-risks cover",
+      "Loading, unloading & container depot dwell",
+      "Annual open policies for automated dispatch",
+    ],
+    slogan: ["SMOOTH", "TRANSIT", "PROTECTED", "CARGO"],
+    image: "/brand/services/marine.jpg",
+  },
+  "commercial-insurance": {
+    pill: "ENTERPRISE & SME",
+    checklist: [
+      "Industrial All Risk & machinery breakdown",
+      "Commercial general & statutory liability",
+      "Fire Loss of Profits (FLOP) business shield",
+    ],
+    slogan: ["RESILIENT", "PLANTS", "UNBROKEN", "GROWTH"],
+    image: "/brand/services/commercial.jpg",
+  },
+  "general-insurance": {
+    pill: "PROPERTY & ASSETS",
+    checklist: [
+      "Home, villa & residential building cover",
+      "Burglary, electrical fire & natural perils",
+      "Transparent policy wording gap advisory",
+    ],
+    slogan: ["SHIELDED", "ASSETS", "TOTAL", "PEACE"],
+    image: "/brand/services/home.jpg",
+  },
+};

@@ -7,7 +7,7 @@ import PublicFooter from "@/app/components/public/PublicFooter";
 import BrandLogo from "@/app/components/brand/BrandLogo";
 import { INSURER_LOGOS } from "@/app/components/brand/logoAssets";
 import { BUSINESS_DETAILS, SITE_URL } from "@/lib/seo/site";
-import { HOMEPAGE_CONTENT } from "@/content/homepage";
+import { HOMEPAGE_CONTENT, SERVICE_CARD_META } from "@/content/homepage";
 import { SERVICES } from "@/content/services";
 
 const homepageFaqs = HOMEPAGE_CONTENT.faqSection.faqs.slice(0, 6);
@@ -457,41 +457,97 @@ export default function RootPage() {
               </div>
 
               <div className="services-grid">
-                {SERVICES.filter((s) => s.slug !== "risk-advisory").slice(0, 6).map((service, index) => (
-                  <Link
-                    key={index}
-                    href={service.route}
-                    className="service-card group reveal"
-                  >
-                    <div className="service-card-media">
-                      <div className="service-image-clip">
-                        <Image
-                          src={service.image}
-                          alt={`${service.title} consultancy by Bima Headquarter`}
-                          width={600}
-                          height={400}
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                      </div>
-                    </div>
-                    <div className="service-card-copy">
-                      <div>
-                        <div className="service-card-heading">
+                {SERVICES.filter((s) => s.slug !== "risk-advisory").slice(0, 6).map((service, index) => {
+                  const meta = SERVICE_CARD_META[service.slug] || {
+                    pill: service.eyebrow?.toUpperCase() || "INSURANCE",
+                    checklist: [
+                      "Comprehensive coverage comparison",
+                      "Independent policy gap review",
+                      "Renewal and claim assistance support",
+                    ],
+                    slogan: ["TRUSTED", "ADVISORY", "TOTAL", "SECURITY"],
+                    image: service.image,
+                  };
+                  const seqNum = String(index + 1).padStart(2, "0");
+
+                  return (
+                    <Link
+                      key={index}
+                      href={service.route}
+                      className="service-card group reveal"
+                    >
+                      {/* Top Header: Icon + Pill on Left, Sequence Number on Right */}
+                      <div className="service-card-top">
+                        <div className="service-card-top-left">
                           <div className="service-card-icon" aria-hidden="true">
-                            <span className="material-symbols-outlined text-[24px]">{service.icon}</span>
+                            <span className="material-symbols-outlined">{service.icon}</span>
                           </div>
-                          <h3 className="font-headline-md font-bold">{service.title}</h3>
+                          <span className="service-card-pill">{meta.pill}</span>
                         </div>
-                        <p className="text-body-md">{service.desc}</p>
+                        <span className="service-card-index">{seqNum}</span>
                       </div>
 
-                      <span className="service-card-link font-label-md group/btn">
-                        Learn More{" "}
-                        <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                      {/* Title & Description */}
+                      <div className="service-card-header">
+                        <h3 className="service-card-title">{service.title}</h3>
+                        <p className="service-card-desc">{service.desc}</p>
+                      </div>
+
+                      {/* Organic Hero Visual */}
+                      <div className="service-card-visual">
+                        <div className="service-card-visual-frame">
+                          <Image
+                            src={meta.image || service.image}
+                            alt={`${service.title} consultancy by Bima Headquarter`}
+                            width={600}
+                            height={360}
+                            className="service-card-photo"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+                          <div className="service-card-fade-mask" aria-hidden="true" />
+                        </div>
+                      </div>
+
+                      {/* Feature Checklist */}
+                      <ul className="service-card-checklist" aria-label={`${service.title} highlights`}>
+                        {meta.checklist.map((point, pIdx) => (
+                          <li key={pIdx} className="service-card-check-item">
+                            <span className="service-card-check-circle" aria-hidden="true">
+                              <span className="material-symbols-outlined">check</span>
+                            </span>
+                            <span className="service-card-check-text">{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Subtle Horizontal Divider */}
+                      <div className="service-card-divider" />
+
+                      {/* Bottom Action Button & Micro-Creed Slogan */}
+                      <div className="service-card-bottom">
+                        <span className="service-card-btn">
+                          Learn More{" "}
+                          <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                        </span>
+                        <div className="service-card-creed" aria-hidden="true">
+                          <div className="service-card-creed-lines">
+                            {meta.slogan.map((word, wIdx) => (
+                              <span key={wIdx}>{word}</span>
+                            ))}
+                          </div>
+                          <span className="service-card-creed-bar" />
+                        </div>
+                      </div>
+
+                      {/* Decorative Concentric Corner Wave Graphic */}
+                      <svg className="service-card-corner-wave" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M160,0 C100,20 40,80 0,160 L160,160 Z" fill="rgba(22, 163, 74, 0.04)" />
+                        <path d="M160,40 C110,60 70,110 40,160" stroke="rgba(22, 163, 74, 0.18)" strokeWidth="1.5" />
+                        <path d="M160,85 C125,98 95,128 75,160" stroke="rgba(22, 163, 74, 0.12)" strokeWidth="1.5" />
+                      </svg>
+                    </Link>
+                  );
+                })}
               </div>
 
               {/* Trust Indicator Bar */}
