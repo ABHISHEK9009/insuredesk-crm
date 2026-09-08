@@ -14,7 +14,14 @@ export function generateStaticParams() {
   return MARKETING_PAGES.filter((page) => {
     const segments = page.path.split("/").filter(Boolean);
     const isMultiSegment = segments.length > 1;
-    const isTopLevelFolderRoute = ["/blog", "/services"].includes(page.path);
+    const isTopLevelFolderRoute = [
+      "/blog",
+      "/services",
+      "/privacy-policy",
+      "/terms-and-conditions",
+      "/disclaimer",
+      "/faq",
+    ].includes(page.path);
     return !isMultiSegment && !isTopLevelFolderRoute;
   }).map((page) => ({
     slug: page.path.replace("/", ""),
