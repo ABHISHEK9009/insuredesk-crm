@@ -495,6 +495,7 @@ export default function RootPage() {
 
                       {/* Organic Hero Visual */}
                       <div className="service-card-visual">
+                        <div className="service-card-visual-glow" aria-hidden="true" />
                         <div className="service-card-visual-frame">
                           <Image
                             src={meta.image || service.image}
@@ -520,7 +521,7 @@ export default function RootPage() {
                         ))}
                       </ul>
 
-                      {/* Subtle Horizontal Divider */}
+                      {/* Partial Horizontal Divider */}
                       <div className="service-card-divider" />
 
                       {/* Bottom Action Button & Micro-Creed Slogan */}
@@ -540,10 +541,34 @@ export default function RootPage() {
                       </div>
 
                       {/* Decorative Concentric Corner Wave Graphic */}
-                      <svg className="service-card-corner-wave" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M120,15 C85,28 45,55 10,90 L120,90 Z" fill="rgba(22, 163, 74, 0.035)" />
-                        <path d="M120,36 C90,46 60,66 35,90" stroke="rgba(22, 163, 74, 0.12)" strokeWidth="1" />
-                        <path d="M120,58 C100,65 80,76 62,90" stroke="rgba(22, 163, 74, 0.08)" strokeWidth="1" />
+                      <svg
+                        className="service-card-corner-wave"
+                        viewBox="0 0 160 140"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M160,0 C110,35 60,85 0,140 L160,140 Z"
+                          fill="url(#cardWaveGrad)"
+                        />
+                        <path
+                          d="M160,30 C120,58 80,98 32,140"
+                          stroke="rgba(22, 163, 74, 0.14)"
+                          strokeWidth="1.2"
+                        />
+                        <path
+                          d="M160,65 C132,84 102,112 68,140"
+                          stroke="rgba(22, 163, 74, 0.09)"
+                          strokeWidth="1.2"
+                        />
+                        <defs>
+                          <radialGradient id="cardWaveGrad" cx="100%" cy="100%" r="100%">
+                            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.07" />
+                            <stop offset="65%" stopColor="#16a34a" stopOpacity="0.02" />
+                            <stop offset="100%" stopColor="#16a34a" stopOpacity="0" />
+                          </radialGradient>
+                        </defs>
                       </svg>
                     </Link>
                   );
