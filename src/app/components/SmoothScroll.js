@@ -20,12 +20,15 @@ export default function SmoothScroll() {
       if (document.body.style.overflow === "hidden") lenis.stop();
       else lenis.start();
     };
-    const observer = new MutationObserver(syncScrollLock);
-    observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
+    const ObserverClass = typeof window !== "undefined" ? window.MutationObserver : null;
+    const observer = ObserverClass ? new ObserverClass(syncScrollLock) : null;
+    if (observer) {
+      observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
+    }
     syncScrollLock();
 
     return () => {
-      observer.disconnect();
+      if (observer) observer.disconnect();
       lenis.destroy();
     };
   }, [pathname]);
