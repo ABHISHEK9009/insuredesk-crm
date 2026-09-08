@@ -100,54 +100,106 @@ export const HOMEPAGE_CONTENT = {
     ctaText: "Contact Support",
     faqs: [
       {
-        question: "What is Bima Headquarter?",
-        answer:
-          "Bima Headquarter is an insurance consultancy brand owned and operated by InsureDesk IMF Pvt. Ltd. Based in Bhopal and serving clients across India, it helps individuals and businesses understand coverage, compare suitable insurance options, manage renewals, and prepare claim documentation across motor, health, life, commercial, fire, marine, and related insurance needs.",
-      },
-      {
-        question: "Who owns Bima Headquarter?",
-        answer:
-          "Bima Headquarter is a brand owned and operated by InsureDesk IMF Pvt. Ltd. Founder Director Anand Soni leads the company and its insurance consultancy work. This relationship is consistent across the website: Bima Headquarter is the customer-facing brand, while InsureDesk IMF Pvt. Ltd. is the company behind its operations.",
-      },
-      {
+        category: "General & Consultation",
         question: "What does Bima Headquarter do?",
         answer:
-          "Bima Headquarter helps individuals and businesses understand insurance, review coverage, compare suitable policy options, plan renewals, identify risk gaps, and prepare claim documentation. Its team advises on motor, health, life, commercial, fire, marine, warehouse, and related insurance needs while coordinating with insurers when servicing or claims support is required.",
+          "Bima Headquarter by InsureDesk IMF Pvt. Ltd. helps individuals and businesses understand insurance, compare suitable policies, review coverage gaps, manage renewals, and get assistance with insurance claims.",
       },
       {
+        category: "General & Consultation",
         question: "Is Bima Headquarter an insurance company?",
         answer:
-          "Bima Headquarter is an insurance consultancy brand, not an insurance carrier. It is owned and operated by InsureDesk IMF Pvt. Ltd. and helps clients evaluate insurance options, understand policy terms, coordinate servicing, and obtain claims assistance. Insurance policies are issued and claims are ultimately decided by the respective licensed insurance companies.",
+          "We provide insurance guidance and servicing support. Your policy is issued by the respective insurance company, which also assesses and settles claims according to the policy terms.",
       },
       {
-        question: "Where is Bima Headquarter located and whom does it serve?",
+        category: "General & Consultation",
+        question: "Which types of insurance can you help with?",
         answer:
-          "Bima Headquarter is based in Bhopal, Madhya Pradesh, India. Its consultancy team serves individuals, families, professionals, transporters, warehouses, manufacturers, SMEs, and other businesses across India through policy guidance, risk review, renewal support, documentation assistance, and insurer coordination.",
+          "We assist with motor, health, life, fire, warehouse, marine transit, and commercial insurance, alongside policy reviews, renewals, and claims assistance.",
       },
       {
-        question: "Does Bima Headquarter help with insurance claims?",
+        category: "General & Consultation",
+        question: "Do you assist customers outside Bhopal?",
         answer:
-          "Yes. Bima Headquarter provides claims assistance for documentation review, claim intimation guidance, surveyor and insurer coordination, follow-up, and rejection review. The team helps clients present complete and accurate information, while final claim assessment and approval remain subject to the policy terms and the insurer's decision.",
+          "Yes. Based in Bhopal, Madhya Pradesh, we assist individuals and businesses across India through phone, email, and online coordination.",
       },
       {
-        question: "Why choose Bima Headquarter?",
+        category: "General & Consultation",
+        question: "Can you review a policy I already have?",
         answer:
-          "Clients choose Bima Headquarter for a single consultancy relationship across personal and commercial insurance needs. The Bhopal-based team serves clients across India, explains policy terms in practical language, reviews coverage gaps, supports renewals, and assists with claim documentation and coordination. Recommendations remain subject to insurer underwriting and the terms of each policy.",
+          "Yes. We can review your existing policy to explain its coverage, exclusions, limits, and deductibles, and identify potential gaps based on your current requirements.",
       },
       {
-        question: "Is the first consultation really free?",
+        category: "General & Consultation",
+        question: "What should I share for a policy review?",
         answer:
-          "Yes, we provide initial policy review and consultation at no cost to help you understand your current coverage gaps and potential savings.",
+          "Start with your policy schedule, policy wording, and any endorsements. Tell us what you want to protect and any concerns you have. Additional information depends on the type of insurance.",
       },
       {
-        question: "How many insurance partners do you work with?",
+        category: "General & Consultation",
+        question: "How do you help me compare insurance policies?",
         answer:
-          "We are authorized partners with over 10 leading national insurance companies, ensuring you get a wide range of quotes and feature sets.",
+          "We help you compare coverage, exclusions, deductibles, limits, and relevant benefits alongside the premium, so you can understand what each option offers before deciding.",
       },
       {
-        question: "Can you help with a claim for a policy I didn't buy through you?",
+        category: "Commercial & Business",
+        question: "Can you help insure my warehouse, factory, or business stock?",
         answer:
-          "Absolutely. Our Claim Assistance service is available for all policyholders, regardless of where the policy was originally purchased. Fees may apply for third-party advocacy.",
+          "Yes. We review your premises, business activities, assets, and stock to help identify suitable insurance options. The protection available depends on the selected policy and insurer’s acceptance.",
+      },
+      {
+        category: "Commercial & Business",
+        question: "Can you help with insurance for goods in transit?",
+        answer:
+          "Yes. We assist with marine transit insurance for goods transported by road, rail, air, or sea, helping you understand the scope of cover and relevant conditions.",
+      },
+      {
+        category: "Motor Insurance",
+        question: "Do you assist with commercial vehicles and fleets?",
+        answer:
+          "Yes. We help commercial vehicle owners and fleet operators review motor insurance options, understand policy terms, coordinate renewals, and prepare claim documentation.",
+      },
+      {
+        category: "Health Insurance",
+        question: "Can you help me choose health or life insurance for my family?",
+        answer:
+          "Yes. We help you understand suitable options based on your family’s requirements and budget, explaining benefits, exclusions, and conditions before you make a decision.",
+      },
+      {
+        category: "General & Consultation",
+        question: "Can you help renew my existing insurance policy?",
+        answer:
+          "Yes. We help review your existing cover, identify changes in your requirements, and coordinate renewal. Contact us before expiry to allow time for review and any insurer requirements.",
+      },
+      {
+        category: "Claims Support & Ombudsman",
+        question: "Can you help with a claim if I purchased the policy elsewhere?",
+        answer:
+          "Yes. We can assist with claim documentation and review even when the policy was purchased elsewhere. Contact our team with your policy and claim details to discuss the support available.",
+      },
+      {
+        category: "Claims Support & Ombudsman",
+        question: "How does Bima Headquarter help during a claim?",
+        answer:
+          "We help you understand documentation requirements, organize supporting records, coordinate with insurers and surveyors, and follow up on the claim’s progress.",
+      },
+      {
+        category: "Claims Support & Ombudsman",
+        question: "Can you help if my claim is delayed, partly paid, or rejected?",
+        answer:
+          "Yes. We review the insurer’s communication alongside your policy and supporting documents, help identify unresolved issues, and assist with a request for clarification or reconsideration where appropriate.",
+      },
+      {
+        category: "Claims Support & Ombudsman",
+        question: "Do you guarantee claim approval or settlement?",
+        answer:
+          "No. Claim decisions remain with the insurer and depend on the policy terms and circumstances of the loss. Our role is to help you present complete, accurate information and navigate the process.",
+      },
+      {
+        category: "General & Consultation",
+        question: "How can I contact Bima Headquarter?",
+        answer:
+          "Call +91 88188 89660, email info@bimaheadquarter.com, or submit an enquiry through our website. Share whether you need help with a new policy, an existing policy, renewal, or a claim.",
       },
     ],
   },

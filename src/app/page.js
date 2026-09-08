@@ -10,6 +10,8 @@ import { BUSINESS_DETAILS, SITE_URL } from "@/lib/seo/site";
 import { HOMEPAGE_CONTENT } from "@/content/homepage";
 import { SERVICES } from "@/content/services";
 
+const homepageFaqs = HOMEPAGE_CONTENT.faqSection.faqs.slice(0, 6);
+
 const companyName = "Bima Headquarter by Insuredesk IMF Pvt. Ltd.";
 const homepageTitle = "Bima Headquarter by Insuredesk IMF Pvt. Ltd. | Insurance Guidance";
 const homepageDescription = "Bima Headquarter by Insuredesk IMF Pvt. Ltd. offers insurance guidance in Bhopal, policy comparisons, renewal assistance and claim documentation support.";
@@ -143,7 +145,7 @@ const structuredData = {
     {
       "@type": "FAQPage",
       "@id": `${SITE_URL}/#faq`,
-      mainEntity: HOMEPAGE_CONTENT.faqSection.faqs.map((faq) => ({
+      mainEntity: homepageFaqs.map((faq) => ({
         "@type": "Question",
         name: faq.question,
         acceptedAnswer: {
@@ -434,7 +436,7 @@ export default function RootPage() {
           {/* Insurance Categories Grid */}
           <section className="services-section py-24 relative overflow-hidden" id="solutions">
             <div className="services-section-texture absolute inset-0"></div>
-            <div className="relative max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+            <div className="relative home-section-container">
               <div className="services-heading text-center reveal">
                 <div className="services-kicker">
                   <div></div>
@@ -514,7 +516,7 @@ export default function RootPage() {
 
           {/* Company overview */}
           <section className="company-overview" aria-labelledby="company-overview-heading">
-            <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+            <div className="home-section-container">
               <div className="company-overview-layout">
                 <div className="company-overview-intro">
                   <BrandLogo className="company-overview-brand" />
@@ -548,93 +550,72 @@ export default function RootPage() {
 
           {/* Claim Assistance Process */}
           <section
-            className="py-24 max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop"
+            className="claims-process home-section-container"
             id="process"
+            aria-labelledby="claims-process-heading"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="order-2 lg:order-1 reveal">
+            <div className="claims-process-header">
+              <div>
+                <span className="claims-process-kicker">{HOMEPAGE_CONTENT.processSection.kicker}</span>
+                <h2 id="claims-process-heading">{HOMEPAGE_CONTENT.processSection.heading}</h2>
+              </div>
+              <a href="#cta-banner" className="claims-process-cta">
+                {HOMEPAGE_CONTENT.processSection.ctaText}
+                <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              </a>
+            </div>
+            <div className="claims-process-layout">
+              <div className="claims-process-media">
                 <Image
                   alt="Bima Headquarter insurance claim assistance consultation"
-                  className="rounded-3xl shadow-2xl w-full aspect-video object-cover"
                   src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=80"
                   width={1200}
                   height={675}
+                  sizes="(max-width: 900px) 100vw, 45vw"
                 />
               </div>
-              <div className="order-1 lg:order-2 reveal" style={{ transitionDelay: "0.2s" }}>
-                <span className="font-label-md text-secondary uppercase tracking-widest text-[12px] mb-4 block font-semibold">
-                  {HOMEPAGE_CONTENT.processSection.kicker}
-                </span>
-                <h2 className="font-headline-lg text-headline-lg text-primary mb-8 text-[32px] font-bold">
-                  {HOMEPAGE_CONTENT.processSection.heading}
-                </h2>
-                <div className="space-y-8">
-                  {HOMEPAGE_CONTENT.processSection.steps.map((step) => (
-                    <div className="flex gap-6 group" key={step.number}>
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold transition-transform group-hover:scale-110">
-                        {step.number}
-                      </div>
-                      <div>
-                        <h3 className="font-headline-md text-[18px] text-primary mb-1 font-semibold">
-                          {step.title}
-                        </h3>
-                        <p className="text-body-md text-on-surface-variant">
-                          {step.desc}
-                        </p>
-                      </div>
+              <ol className="claims-process-timeline" role="list">
+                {HOMEPAGE_CONTENT.processSection.steps.map((step) => (
+                  <li className="claims-process-step" key={step.number}>
+                    <span className="claims-process-number" aria-hidden="true">{step.number}</span>
+                    <div>
+                      <h3>{step.title}</h3>
+                      <p>{step.desc}</p>
                     </div>
-                  ))}
-                </div>
-                <a
-                  href="#cta-banner"
-                  className="mt-12 px-8 py-4 bg-primary text-on-primary rounded-xl font-label-md hover:shadow-lg transition-all reveal border-0 min-h-0 text-[14px] inline-block text-center"
-                  style={{ transitionDelay: "0.4s" }}
-                >
-                  {HOMEPAGE_CONTENT.processSection.ctaText}
-                </a>
-              </div>
+                  </li>
+                ))}
+              </ol>
             </div>
           </section>
 
           {/* FAQ Section */}
           <section
-            className="py-24 max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop"
+            className="home-faq home-section-container"
             id="faq"
+            aria-labelledby="home-faq-heading"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-              <div className="reveal">
-                <h2 className="font-headline-lg text-headline-lg text-primary mb-6 text-[32px] font-bold">
-                  {HOMEPAGE_CONTENT.faqSection.heading}
-                </h2>
-                <p className="text-body-lg text-on-surface-variant mb-8 text-[18px]">
-                  {HOMEPAGE_CONTENT.faqSection.subheading}
-                </p>
-                <a
-                  href="#cta-banner"
-                  className="text-secondary font-label-md inline-flex items-center gap-2 hover:underline group bg-transparent p-0 min-h-0 shadow-none hover:translate-y-0 text-[14px]"
-                >
-                  {HOMEPAGE_CONTENT.faqSection.ctaText}{" "}
-                  <span className="material-symbols-outlined group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
-                    arrow_outward
-                  </span>
-                </a>
+            <div className="home-faq-panel">
+              <div className="home-faq-header">
+                <div>
+                  <h2 id="home-faq-heading">{HOMEPAGE_CONTENT.faqSection.heading}</h2>
+                  <p>{HOMEPAGE_CONTENT.faqSection.subheading}</p>
+                </div>
+                <Link href="/faq" className="home-faq-support">
+                  View All FAQs
+                  <span className="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+                </Link>
               </div>
-              <div className="lg:col-span-2 space-y-4">
-                {HOMEPAGE_CONTENT.faqSection.faqs.map((faq, index) => (
-                  <details
-                    key={index}
-                    className="group bg-white rounded-2xl p-6 border border-outline-variant/30 open:shadow-md transition-all reveal"
-                    style={{ transitionDelay: `${(index + 1) * 0.1}s` }}
-                  >
-                    <summary className="list-none cursor-pointer flex justify-between items-center font-headline-md text-[18px] text-primary font-semibold">
-                      {faq.question}
-                      <span className="material-symbols-outlined group-open:rotate-180 transition-transform">
-                        expand_more
+              <div className="home-faq-list">
+                {homepageFaqs.map((faq) => (
+                  <details key={faq.question} name="homepage-faq" className="home-faq-item">
+                    <summary>
+                      <span>{faq.question}</span>
+                      <span className="home-faq-toggle" aria-hidden="true">
+                        <span className="material-symbols-outlined home-faq-plus">add</span>
+                        <span className="material-symbols-outlined home-faq-minus">remove</span>
                       </span>
                     </summary>
-                    <p className="mt-4 text-body-md text-on-surface-variant">
-                      {faq.answer}
-                    </p>
+                    <p>{faq.answer}</p>
                   </details>
                 ))}
               </div>

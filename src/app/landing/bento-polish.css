@@ -1,6 +1,10 @@
 /* Homepage company overview */
+.landing-shell #solutions {
+  padding-bottom: 48px;
+}
+
 .landing-shell .company-overview {
-  padding: 80px 0;
+  padding: 48px 0 80px;
   background: #f3f6fb;
 }
 
@@ -15,13 +19,12 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-self: start;
   align-items: flex-start;
   gap: 24px;
-  padding: clamp(24px, 2.8vw, 36px);
-  border: 1px solid #dce5df;
+  padding: 32px;
+  border: 1px solid #c3d7c9;
   border-radius: 20px;
-  background: #ffffff;
+  background: #deebe2;
 }
 
 .landing-shell .company-overview-brand {
@@ -60,6 +63,7 @@
   justify-content: space-between;
   gap: 24px;
   max-width: 100%;
+  margin-top: auto;
   padding: 14px 18px;
   border: 1px solid #1c6c39;
   border-radius: 10px;
@@ -82,9 +86,9 @@
 
 .landing-shell .company-overview-details {
   padding: 8px 28px;
-  border: 1px solid rgba(8, 27, 55, 0.1);
+  border: 1px solid #ccd7e7;
   border-radius: 20px;
-  background: #ffffff;
+  background: #e3eaf5;
 }
 
 .landing-shell .company-overview-item {
@@ -95,7 +99,7 @@
 }
 
 .landing-shell .company-overview-item + .company-overview-item {
-  border-top: 1px solid #e8edf3;
+  border-top: 1px solid #c8d4e4;
 }
 
 .landing-shell .company-overview-icon {
@@ -104,7 +108,7 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: #e5f4eb;
+  background: #d0e4d7;
   color: #1c6c39 !important;
   font-size: 24px;
 }
@@ -133,7 +137,8 @@
 }
 
 @media (max-width: 640px) {
-  .landing-shell .company-overview { padding: 52px 0; }
+  .landing-shell #solutions { padding-bottom: 32px; }
+  .landing-shell .company-overview { padding: 32px 0 52px; }
   .landing-shell .company-overview-intro { padding: 28px 24px; }
   .landing-shell .company-overview-details { padding: 0 20px; }
   .landing-shell .company-overview-item { grid-template-columns: 1fr; gap: 12px; }
