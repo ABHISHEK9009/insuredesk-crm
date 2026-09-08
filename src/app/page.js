@@ -540,10 +540,10 @@ export default function RootPage() {
                       </div>
 
                       {/* Decorative Concentric Corner Wave Graphic */}
-                      <svg className="service-card-corner-wave" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M160,0 C100,20 40,80 0,160 L160,160 Z" fill="rgba(22, 163, 74, 0.04)" />
-                        <path d="M160,40 C110,60 70,110 40,160" stroke="rgba(22, 163, 74, 0.18)" strokeWidth="1.5" />
-                        <path d="M160,85 C125,98 95,128 75,160" stroke="rgba(22, 163, 74, 0.12)" strokeWidth="1.5" />
+                      <svg className="service-card-corner-wave" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M120,15 C85,28 45,55 10,90 L120,90 Z" fill="rgba(22, 163, 74, 0.035)" />
+                        <path d="M120,36 C90,46 60,66 35,90" stroke="rgba(22, 163, 74, 0.12)" strokeWidth="1" />
+                        <path d="M120,58 C100,65 80,76 62,90" stroke="rgba(22, 163, 74, 0.08)" strokeWidth="1" />
                       </svg>
                     </Link>
                   );
