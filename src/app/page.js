@@ -594,28 +594,87 @@ export default function RootPage() {
             id="faq"
             aria-labelledby="home-faq-heading"
           >
-            <div className="home-faq-panel">
-              <div className="home-faq-header">
-                <div>
-                  <h2 id="home-faq-heading">{HOMEPAGE_CONTENT.faqSection.heading}</h2>
-                  <p>{HOMEPAGE_CONTENT.faqSection.subheading}</p>
+            <div className="home-faq-layout">
+              {/* Left Column: Context & Direct Advisor Card */}
+              <div className="home-faq-sidebar">
+                <div className="home-faq-badge">
+                  <span className="home-faq-pulse-dot" aria-hidden="true" />
+                  <span>Clear Answers • No Jargon</span>
                 </div>
-                <Link href="/faq" className="home-faq-support">
-                  View All FAQs
+
+                <h2 id="home-faq-heading" className="home-faq-title">
+                  {HOMEPAGE_CONTENT.faqSection.heading}
+                </h2>
+
+                <p className="home-faq-subtitle">
+                  {HOMEPAGE_CONTENT.faqSection.subheading}
+                </p>
+
+                {/* Direct Advisor Support Card */}
+                <div className="home-faq-advisor-card">
+                  <div className="home-faq-advisor-status">
+                    <span className="home-faq-status-dot" aria-hidden="true" />
+                    <span>Live Advisory Assistance</span>
+                  </div>
+
+                  <div className="home-faq-advisor-header">
+                    <div className="home-faq-advisor-avatar" aria-hidden="true">
+                      <span className="material-symbols-outlined">support_agent</span>
+                    </div>
+                    <div>
+                      <h3 className="home-faq-advisor-title">Have a specific question?</h3>
+                      <p className="home-faq-advisor-desc">Talk directly with a certified insurance advisor.</p>
+                    </div>
+                  </div>
+
+                  <div className="home-faq-advisor-actions">
+                    <a
+                      href={`tel:${BUSINESS_DETAILS.phoneHref}`}
+                      className="home-faq-advisor-btn-call"
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">call</span>
+                      <span>Call +91 {BUSINESS_DETAILS.phone}</span>
+                    </a>
+                    <Link
+                      href="/contact"
+                      className="home-faq-advisor-btn-contact"
+                    >
+                      <span>Request Consultation</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </Link>
+                  </div>
+                </div>
+
+                <Link href="/faq" className="home-faq-view-all">
+                  <span>Browse All 17+ FAQs</span>
                   <span className="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
                 </Link>
               </div>
-              <div className="home-faq-list">
-                {homepageFaqs.map((faq) => (
-                  <details key={faq.question} name="homepage-faq" className="home-faq-item">
-                    <summary>
-                      <span>{faq.question}</span>
-                      <span className="home-faq-toggle" aria-hidden="true">
-                        <span className="material-symbols-outlined home-faq-plus">add</span>
-                        <span className="material-symbols-outlined home-faq-minus">remove</span>
+
+              {/* Right Column: Interactive FAQ Accordion Cards */}
+              <div className="home-faq-accordion-group">
+                {homepageFaqs.map((faq, idx) => (
+                  <details
+                    key={faq.question}
+                    name="homepage-faq"
+                    className="home-faq-card"
+                    {...(idx === 0 ? { open: true } : {})}
+                  >
+                    <summary className="home-faq-summary">
+                      <div className="home-faq-question-wrap">
+                        {faq.category && (
+                          <span className="home-faq-category-tag">{faq.category}</span>
+                        )}
+                        <span className="home-faq-question-text">{faq.question}</span>
+                      </div>
+                      <span className="home-faq-icon-bubble" aria-hidden="true">
+                        <span className="material-symbols-outlined home-faq-icon-plus">add</span>
+                        <span className="material-symbols-outlined home-faq-icon-minus">remove</span>
                       </span>
                     </summary>
-                    <p>{faq.answer}</p>
+                    <div className="home-faq-answer-wrap">
+                      <p className="home-faq-answer-text">{faq.answer}</p>
+                    </div>
                   </details>
                 ))}
               </div>
@@ -624,40 +683,83 @@ export default function RootPage() {
 
           {/* CTA Banner */}
           <section
-            className="py-20 max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-margin-desktop"
+            className="home-cta-section home-section-container"
             id="cta-banner"
+            aria-labelledby="cta-banner-heading"
           >
-            <div className="relative bg-primary rounded-3xl p-12 lg:p-20 overflow-hidden text-center text-on-primary shadow-2xl reveal border border-primary/20">
-              <div className="absolute inset-0 -z-10 opacity-10">
-                <div className="absolute top-0 left-0 w-64 h-64 bg-secondary rounded-full blur-[100px]"></div>
-                <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary rounded-full blur-[100px]"></div>
+            <div className="home-cta-card">
+              <div className="home-cta-mesh-bg" aria-hidden="true">
+                <div className="home-cta-glow-blue-1" />
+                <div className="home-cta-glow-blue-2" />
+                <div className="home-cta-mesh-pattern" />
               </div>
-              <h2 className="font-display-lg text-display-lg mb-6 entry-anim text-white text-[48px] font-bold">
-                {HOMEPAGE_CONTENT.ctaBanner.heading}
-              </h2>
-              <p
-                className="font-body-lg text-body-lg mb-10 opacity-80 max-w-2xl mx-auto entry-anim text-white/80 text-[18px]"
-                style={{ animationDelay: "0.2s" }}
-              >
-                {HOMEPAGE_CONTENT.ctaBanner.subheading}
-              </p>
-              <div
-                className="flex flex-wrap justify-center gap-6 entry-anim"
-                style={{ animationDelay: "0.4s" }}
-              >
-                <a
-                  href={`tel:${BUSINESS_DETAILS.phoneHref}`}
-                  className="px-10 py-5 bg-secondary text-white rounded-xl font-label-md text-label-md flex items-center gap-3 hover:scale-105 transition-all text-[14px]"
-                >
-                  <span className="material-symbols-outlined">call</span> {HOMEPAGE_CONTENT.ctaBanner.callCtaText}{" "}
-                  {BUSINESS_DETAILS.phone}
-                </a>
-                <Link
-                  href="/contact"
-                  className="px-10 py-5 bg-white text-primary rounded-xl font-label-md text-label-md flex items-center gap-3 hover:scale-105 transition-all border-0 min-h-0 text-[14px]"
-                >
-                  {HOMEPAGE_CONTENT.ctaBanner.scheduleCtaText}
-                </Link>
+
+              <div className="home-cta-split-layout">
+                {/* Left Column: Brand & Value Proposition */}
+                <div className="home-cta-left">
+                  <div className="home-cta-brand-wrap">
+                    <BrandLogo className="home-cta-brand-logo" />
+                  </div>
+
+                  <h2 id="cta-banner-heading" className="home-cta-heading">
+                    {HOMEPAGE_CONTENT.ctaBanner.heading}
+                  </h2>
+
+                  <p className="home-cta-desc">
+                    {HOMEPAGE_CONTENT.ctaBanner.subheading}
+                  </p>
+
+                  <div className="home-cta-trust-list">
+                    <div className="home-cta-trust-point">
+                      <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                      <span>25+ Partner Insurers</span>
+                    </div>
+                    <div className="home-cta-trust-point">
+                      <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                      <span>100% Free Assessment</span>
+                    </div>
+                    <div className="home-cta-trust-point">
+                      <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                      <span>Pan-India Claims Support</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Elevated Action Card */}
+                <div className="home-cta-action-card">
+                  <div className="home-cta-action-header">
+                    <div className="home-cta-action-avatar" aria-hidden="true">
+                      <span className="material-symbols-outlined">headset_mic</span>
+                    </div>
+                    <div>
+                      <h3 className="home-cta-action-title">Speak with a Specialist</h3>
+                      <p className="home-cta-action-desc">Immediate guidance, zero sales pressure.</p>
+                    </div>
+                  </div>
+
+                  <div className="home-cta-action-buttons">
+                    <a
+                      href={`tel:${BUSINESS_DETAILS.phoneHref}`}
+                      className="home-cta-btn-call"
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">call</span>
+                      <span>{HOMEPAGE_CONTENT.ctaBanner.callCtaText} {BUSINESS_DETAILS.phone}</span>
+                    </a>
+
+                    <Link
+                      href="/contact"
+                      className="home-cta-btn-schedule"
+                    >
+                      <span>{HOMEPAGE_CONTENT.ctaBanner.scheduleCtaText}</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </Link>
+                  </div>
+
+                  <div className="home-cta-action-hours">
+                    <span className="material-symbols-outlined" aria-hidden="true">schedule</span>
+                    <span>Available Mon – Sat • 9:00 AM – 6:00 PM</span>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

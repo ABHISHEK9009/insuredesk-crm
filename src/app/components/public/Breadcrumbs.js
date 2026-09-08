@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { SITE_URL } from "@/lib/seo/site";
@@ -58,35 +57,11 @@ export default function Breadcrumbs() {
   };
 
   return (
-    <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-4 flex flex-col gap-1">
-      <Script
-        id={`breadcrumb-schema-${segments.join("-")}`}
-        type="application/ld+json"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-      <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-sm text-on-surface-variant/70">
-        <Link href="/" className="hover:text-secondary transition-colors text-[14px]">
-          Home
-        </Link>
-        {breadcrumbs.map((crumb, index) => {
-          const isLast = index === breadcrumbs.length - 1;
-          return (
-            <div key={crumb.path} className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm opacity-50 text-[14px]">chevron_right</span>
-              {isLast ? (
-                <span className="text-primary font-semibold text-[14px]" aria-current="page">
-                  {crumb.name}
-                </span>
-              ) : (
-                <Link href={crumb.path} className="hover:text-secondary transition-colors text-[14px]">
-                  {crumb.name}
-                </Link>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-    </div>
+    <Script
+      id={`breadcrumb-schema-${segments.join("-")}`}
+      type="application/ld+json"
+      strategy="beforeInteractive"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
   );
 }

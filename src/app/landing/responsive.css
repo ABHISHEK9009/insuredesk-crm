@@ -322,6 +322,11 @@
     pointer-events: none !important;
   }
 
+  .landing-shell #hero.services-hero-header::before {
+    background-image: url("/brand/service-bg.webp") !important;
+    background-position: 80% bottom !important;
+  }
+
   .landing-shell .hero-content {
     margin: 0 auto !important;
     text-align: center !important;

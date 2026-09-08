@@ -589,7 +589,7 @@ export const SERVICES = [
       "Check active policies against operational asset registers.",
       "Prioritize risk mitigation and coverage extensions.",
     ],
-    eyebrow: "Risk Engineering",
+    eyebrow: "Risk & Policy Review",
     seoTitle: "Corporate Risk Advisory Services Across India | Bima Headquarter",
     description: "Identify insurance gaps, asset valuation issues, operational exposures, and risk-control priorities with corporate advisory support across India.",
     heroImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1400&q=80",

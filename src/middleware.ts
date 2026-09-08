@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/d/") ||
     pathname.startsWith("/logo") ||
     pathname.startsWith("/brand") ||
+    pathname.startsWith("/images") ||
     pathname.startsWith("/docs") ||
     pathname === "/ai.txt" ||
     pathname === "/apple-icon.png" ||

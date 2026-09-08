@@ -157,6 +157,8 @@ export default function PublicHeader() {
         </div>
       </nav>
 
+      <div className="landing-nav-spacer" aria-hidden="true" />
+
       <Breadcrumbs />
 
       <button

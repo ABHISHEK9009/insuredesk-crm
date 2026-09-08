@@ -4,12 +4,17 @@ import { BUSINESS_DETAILS, SITE_NAME } from "@/lib/seo/site";
 
 const serviceLinks = [
   ["General Insurance", "/services/general-insurance"],
-  ["Motor Insurance", "/services/motor-insurance"],
   ["Health Insurance", "/services/health-insurance"],
+  ["Motor Insurance", "/services/motor-insurance"],
   ["Life Insurance", "/services/life-insurance"],
+  ["Home Insurance", "/services/general-insurance"],
+  ["Travel Insurance", "/services/general-insurance"],
+  ["Fire Insurance", "/services/fire-insurance"],
+];
+
+const moreCoverageLinks = [
   ["Commercial Insurance", "/services/commercial-insurance"],
   ["Warehouse Insurance", "/services/warehouse-insurance"],
-  ["Fire Insurance", "/services/fire-insurance"],
   ["Marine Insurance", "/services/marine-insurance"],
   ["Claims Assistance", "/services/claims-assistance"],
   ["Policy Renewals", "/services/policy-renewals"],
@@ -88,7 +93,7 @@ export default function PublicFooter() {
               <h5>Company</h5>
               <ul>
                 {quickLinks.map(([label, href]) => (
-                  <li key={href}>
+                  <li key={label}>
                     <Link href={href}>{label}</Link>
                   </li>
                 ))}
@@ -97,9 +102,20 @@ export default function PublicFooter() {
 
             <div>
               <h5>Services</h5>
-              <ul className="public-footer-service-list">
+              <ul>
                 {serviceLinks.map(([label, href]) => (
-                  <li key={href}>
+                  <li key={label}>
+                    <Link href={href}>{label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h5>More Coverage</h5>
+              <ul>
+                {moreCoverageLinks.map(([label, href]) => (
+                  <li key={label}>
                     <Link href={href}>{label}</Link>
                   </li>
                 ))}
